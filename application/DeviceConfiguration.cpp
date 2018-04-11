@@ -26,14 +26,23 @@ namespace wolkabout
 {
 using nlohmann::json;
 
-DeviceConfiguration::DeviceConfiguration(std::string name, std::string protocol, std::string localMqttUri)
-: m_name(std::move(name)), m_protocol(std::move(protocol)), m_localMqttUri(std::move(localMqttUri))
+DeviceConfiguration::DeviceConfiguration(std::string name, std::string key, std::string protocol,
+                                         std::string localMqttUri)
+: m_name(std::move(name))
+, m_key(std::move(key))
+, m_protocol(std::move(protocol))
+, m_localMqttUri(std::move(localMqttUri))
 {
 }
 
 const std::string& DeviceConfiguration::getName() const
 {
     return m_name;
+}
+
+const std::string& DeviceConfiguration::getKey() const
+{
+    return m_protocol;
 }
 
 const std::string& DeviceConfiguration::getProtocol() const
@@ -61,9 +70,10 @@ wolkabout::DeviceConfiguration DeviceConfiguration::fromJson(const std::string& 
 
     auto j = json::parse(deviceConfigurationJson);
     const auto name = j.at("name").get<std::string>();
+    const auto key = j.at("key").get<std::string>();
     const auto protocol = j.at("protocol").get<std::string>();
     const auto localMqttUri = j.at("localMqttUri").get<std::string>();
 
-    return DeviceConfiguration(name, protocol, localMqttUri);
+    return DeviceConfiguration(name, key, protocol, localMqttUri);
 }
 }    // namespace wolkabout

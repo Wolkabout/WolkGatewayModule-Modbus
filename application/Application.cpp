@@ -16,14 +16,21 @@
 
 #include "DeviceConfiguration.h"
 #include "Wolk.h"
+#include "modbus/LibModbusClient.h"
+#include "modbus/ModbusBridge.h"
+#include "modbus/ModbusClient.h"
 #include "modbus/ModbusConfiguration.h"
 #include "modbus/ModbusRegisterMapping.h"
+#include "model/ActuatorManifest.h"
 #include "model/DeviceManifest.h"
+#include "model/SensorManifest.h"
 #include "service/FirmwareInstaller.h"
 #include "utilities/ConsoleLogger.h"
 
+#include <algorithm>
 #include <chrono>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <memory>
 #include <random>
@@ -69,10 +76,10 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    std::vector<wolkabout::ModbusRegisterMapping> modbusRegisterMapping;
+    std::unique_ptr<std::vector<wolkabout::ModbusRegisterMapping>> modbusRegisterMappings;
     try
     {
-        const auto registerMapping = wolkabout::ModbusRegisterMappingFactory::fromJson(argv[3]);
+        modbusRegisterMappings = wolkabout::ModbusRegisterMappingFactory::fromJson(argv[3]);
         LOG(INFO) << "WolkGatewayModbusModule Application: Loaded modbus register mapping from '" << argv[3] << "'";
     }
     catch (std::logic_error& e)
@@ -82,23 +89,138 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    wolkabout::DeviceManifest deviceManifest1{
-      "DEVICE_MANIFEST_NAME_1", "DEVICE_MANIFEST_DESCRIPTION_1", "JsonProtocol", "", {}, {}, {}, {}};
-    wolkabout::Device device1{"DEVICE_NAME_1", "DEVICE_KEY_1", deviceManifest1};
+    if (modbusRegisterMappings->empty())
+    {
+        LOG(ERROR) << "WolkGatewayModbusModule Application: Register mapping file is empty";
+        return -1;
+    }
 
-    std::unique_ptr<wolkabout::Wolk> wolk =
-      wolkabout::Wolk::newBuilder()
-        .deviceStatusProvider([](const std::string & /* deviceKey */) -> wolkabout::DeviceStatus {
-            return wolkabout::DeviceStatus::CONNECTED;
-        })
-        .host(deviceConfiguration.getLocalMqttUri())
-        .build();
+    auto sensorManifests =
+      std::unique_ptr<std::vector<wolkabout::SensorManifest>>(new std::vector<wolkabout::SensorManifest>());
+    auto actuatorManifests =
+      std::unique_ptr<std::vector<wolkabout::ActuatorManifest>>(new std::vector<wolkabout::ActuatorManifest>());
 
+    // TODO: Extract to function
+    for (const wolkabout::ModbusRegisterMapping& modbusRegisterMapping : *modbusRegisterMappings)
+    {
+        switch (modbusRegisterMapping.getRegisterType())
+        {
+        case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER:
+        {
+            double minimum = 0.0;
+            double maximum = 0.0;
+            int precision = 0;
+
+            if (modbusRegisterMapping.getDataType() == wolkabout::ModbusRegisterMapping::DataType::INT16)
+            {
+                minimum = -32768.0;
+                maximum = 32767.0;
+                precision = 5;
+            }
+            else if (modbusRegisterMapping.getDataType() == wolkabout::ModbusRegisterMapping::DataType::UINT16)
+            {
+                minimum = 0.0;
+                maximum = 65535.0;
+                precision = 5;
+            }
+            else if (modbusRegisterMapping.getDataType() == wolkabout::ModbusRegisterMapping::DataType::REAL32)
+            {
+                minimum = std::numeric_limits<float>::min();
+                maximum = std::numeric_limits<float>::max();
+                precision = std::numeric_limits<float>::max_digits10;
+            }
+
+            actuatorManifests->emplace_back(
+              modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), "description", "unit", "GENERIC",
+              wolkabout::ActuatorManifest::DataType::NUMERIC, precision, minimum, maximum);
+            break;
+        }
+
+        case wolkabout::ModbusRegisterMapping::RegisterType::COIL:
+        {
+            actuatorManifests->emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
+                                            "description", "unit", "GENERIC",
+                                            wolkabout::ActuatorManifest::DataType::BOOLEAN, 1, 0, 1);
+            break;
+        }
+
+        case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_REGISTER:
+        {
+            double minimum = 0.0;
+            double maximum = 0.0;
+            int precision = 0;
+
+            if (modbusRegisterMapping.getDataType() == wolkabout::ModbusRegisterMapping::DataType::INT16)
+            {
+                minimum = -32768.0;
+                maximum = 32767.0;
+                precision = 5;
+            }
+            else if (modbusRegisterMapping.getDataType() == wolkabout::ModbusRegisterMapping::DataType::UINT16)
+            {
+                minimum = 0.0;
+                maximum = 65535.0;
+                precision = 5;
+            }
+            else if (modbusRegisterMapping.getDataType() == wolkabout::ModbusRegisterMapping::DataType::REAL32)
+            {
+                minimum = std::numeric_limits<float>::min();
+                maximum = std::numeric_limits<float>::max();
+                precision = std::numeric_limits<float>::max_digits10 + std::numeric_limits<float>::max_exponent10;
+            }
+
+            sensorManifests->emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
+                                          "description", "unit", "GENERIC",
+                                          wolkabout::SensorManifest::DataType::NUMERIC, precision, minimum, maximum);
+            break;
+        }
+
+        case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_BIT:
+        {
+            sensorManifests->emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
+                                          "description", "unit", "GENERIC",
+                                          wolkabout::SensorManifest::DataType::BOOLEAN, 1, 0, 1);
+            break;
+        }
+
+        default:
+        {
+            LOG(WARN) << "WolkGatewayModbusModule Application: Mapping with reference '"
+                      << modbusRegisterMapping.getReference()
+                      << "' not added to device manifest - Unknown register type";
+            break;
+        }
+        }
+    }
+
+    auto libModbusClient = std::unique_ptr<wolkabout::LibModbusClient>(new wolkabout::LibModbusClient(
+      modbusConfiguration.getIp(), modbusConfiguration.getPort(), modbusConfiguration.getResponseTimeout()));
+
+    auto modbusBridge = std::make_shared<wolkabout::ModbusBridge>(*libModbusClient, *modbusRegisterMappings,
+                                                                  modbusConfiguration.getReadPeriod());
+
+    auto modbusBridgeManifest = std::unique_ptr<wolkabout::DeviceManifest>(new wolkabout::DeviceManifest(
+      deviceConfiguration.getName() + "_Manifest", "WolkGateway Modbus Module", deviceConfiguration.getProtocol(), "",
+      {}, {*sensorManifests}, {}, {*actuatorManifests}));
+
+    auto modbusBridgeDevice = std::make_shared<wolkabout::Device>(deviceConfiguration.getName(),
+                                                                  deviceConfiguration.getKey(), *modbusBridgeManifest);
+
+    std::unique_ptr<wolkabout::Wolk> wolk = wolkabout::Wolk::newBuilder()
+                                              .deviceStatusProvider(modbusBridge)
+                                              .actuatorStatusProvider(modbusBridge)
+                                              .actuationHandler(modbusBridge)
+                                              .host(deviceConfiguration.getLocalMqttUri())
+                                              .build();
+
+    wolk->addDevice(*modbusBridgeDevice);
     wolk->connect();
+
+    modbusBridge->start();
 
     while (true)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 
     return 0;

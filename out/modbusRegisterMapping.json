@@ -21,14 +21,17 @@
          "reference": "mappingReference3",
 
          "address": 2,
-         "registerType": "INPUT_BIT"
+         "registerType": "INPUT_BIT",
+         "dataType": "BOOL"
+
       },
       {
          "name":"mappingName4",
          "reference": "mappingReference4",
 
          "address": 3,
-         "registerType": "COIL"
+         "registerType": "COIL",
+         "dataType": "BOOL"
       }
    ]
 }

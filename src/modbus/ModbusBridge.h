@@ -36,7 +36,7 @@ namespace wolkabout
 class ModbusRegisterMapping;
 class ModbusClient;
 
-class ModbusBridge : public ActuationHandler, ActuatorStatusProvider, DeviceStatusProvider
+class ModbusBridge : public ActuationHandler, public ActuatorStatusProvider, public DeviceStatusProvider
 {
 public:
     ModbusBridge(ModbusClient& modbusClient, const std::vector<ModbusRegisterMapping>& modbusRegisterMappings,
@@ -47,6 +47,7 @@ public:
     void onSensorReading(std::function<void(const std::string& reference, const std::string& value)> onSensorReading);
     void onActuatorStatusChange(std::function<void(const std::string& reference)> onActuatorStatusChange);
 
+    void start();
     void stop();
 
 protected:

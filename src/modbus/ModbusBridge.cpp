@@ -37,7 +37,7 @@ namespace wolkabout
 {
 ModbusBridge::ModbusBridge(ModbusClient& modbusClient, const std::vector<ModbusRegisterMapping>& modbusRegisterMappings,
                            std::chrono::duration<long long, std::milli> registerReadPeriod)
-: m_modbusClient(modbusClient), m_registerReadPeriod(std::move(registerReadPeriod)), m_readerShouldRun(true)
+: m_modbusClient(modbusClient), m_registerReadPeriod(std::move(registerReadPeriod)), m_readerShouldRun(false)
 {
     for (const ModbusRegisterMapping& modbusRegisterMapping : modbusRegisterMappings)
     {
@@ -46,8 +46,6 @@ ModbusBridge::ModbusBridge(ModbusClient& modbusClient, const std::vector<ModbusR
         m_referenceToModbusRegisterMapping.emplace(reference, modbusRegisterMapping);
         m_referenceToModbusRegisterWatcherMapping.emplace(reference, ModbusRegisterWatcher{});
     }
-
-    m_reader = std::unique_ptr<std::thread>(new std::thread(&ModbusBridge::run, this));
 }
 
 ModbusBridge::~ModbusBridge()
@@ -124,6 +122,17 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatus(const std::string& /* 
 wolkabout::DeviceStatus ModbusBridge::getStatus(const std::string& /* deviceKey */)
 {
     return m_modbusClient.isConnected() ? DeviceStatus::CONNECTED : DeviceStatus::OFFLINE;
+}
+
+void ModbusBridge::start()
+{
+    if (m_readerShouldRun)
+    {
+        return;
+    }
+
+    m_readerShouldRun = true;
+    m_reader = std::unique_ptr<std::thread>(new std::thread(&ModbusBridge::run, this));
 }
 
 void ModbusBridge::stop()
@@ -236,7 +245,7 @@ void ModbusBridge::run()
 
 void ModbusBridge::readAndReportModbusRegistersValues()
 {
-    LOG(INFO) << "ModbusBridge: Reading and reporting register values";
+    LOG(DEBUG) << "ModbusBridge: Reading and reporting register values";
 
     for (const auto& it : m_referenceToModbusRegisterMapping)
     {
@@ -303,6 +312,7 @@ bool ModbusBridge::isHoldingRegisterValueUpdated(const ModbusRegisterMapping& mo
     switch (modbusRegisterMapping.getDataType())
     {
     case ModbusRegisterMapping::DataType::INT16:
+    {
         signed short valueShort;
         if (!m_modbusClient.readHoldingRegister(modbusRegisterMapping.getAddress(), valueShort))
         {
@@ -312,8 +322,10 @@ bool ModbusBridge::isHoldingRegisterValueUpdated(const ModbusRegisterMapping& mo
         }
 
         return modbusRegisterWatcher.update(valueShort);
+    }
 
     case ModbusRegisterMapping::DataType::UINT16:
+    {
         unsigned short valueUnsignedShort;
         if (!m_modbusClient.readHoldingRegister(modbusRegisterMapping.getAddress(), valueUnsignedShort))
         {
@@ -323,8 +335,10 @@ bool ModbusBridge::isHoldingRegisterValueUpdated(const ModbusRegisterMapping& mo
         }
 
         return modbusRegisterWatcher.update(valueUnsignedShort);
+    }
 
     case ModbusRegisterMapping::DataType::REAL32:
+    {
         float valueFloat;
         if (!m_modbusClient.readHoldingRegister(modbusRegisterMapping.getAddress(), valueFloat))
         {
@@ -334,6 +348,20 @@ bool ModbusBridge::isHoldingRegisterValueUpdated(const ModbusRegisterMapping& mo
         }
 
         return modbusRegisterWatcher.update(valueFloat);
+    }
+
+    case ModbusRegisterMapping::DataType::BOOL:
+    {
+        signed short valueShort;
+        if (!m_modbusClient.readHoldingRegister(modbusRegisterMapping.getAddress(), valueShort))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to read holding register with address '"
+                       << modbusRegisterMapping.getAddress() << "'";
+            return false;
+        }
+
+        return modbusRegisterWatcher.update(valueShort != 0 ? true : false);
+    }
     }
 
     LOG(ERROR) << "ModbusBridge: isHoldingRegisterValueUpdated - Unhandled data type for reference'"
@@ -348,6 +376,7 @@ bool ModbusBridge::isInputRegisterValueUpdated(const ModbusRegisterMapping& modb
     switch (modbusRegisterMapping.getDataType())
     {
     case ModbusRegisterMapping::DataType::INT16:
+    {
         signed short valueShort;
         if (!m_modbusClient.readInputRegister(modbusRegisterMapping.getAddress(), valueShort))
         {
@@ -357,8 +386,10 @@ bool ModbusBridge::isInputRegisterValueUpdated(const ModbusRegisterMapping& modb
         }
 
         return modbusRegisterWatcher.update(valueShort);
+    }
 
     case ModbusRegisterMapping::DataType::UINT16:
+    {
         unsigned short valueUnsignedShort;
         if (!m_modbusClient.readInputRegister(modbusRegisterMapping.getAddress(), valueUnsignedShort))
         {
@@ -368,8 +399,10 @@ bool ModbusBridge::isInputRegisterValueUpdated(const ModbusRegisterMapping& modb
         }
 
         return modbusRegisterWatcher.update(valueUnsignedShort);
+    }
 
     case ModbusRegisterMapping::DataType::REAL32:
+    {
         float valueFloat;
         if (!m_modbusClient.readInputRegister(modbusRegisterMapping.getAddress(), valueFloat))
         {
@@ -379,6 +412,20 @@ bool ModbusBridge::isInputRegisterValueUpdated(const ModbusRegisterMapping& modb
         }
 
         return modbusRegisterWatcher.update(valueFloat);
+    }
+
+    case ModbusRegisterMapping::DataType::BOOL:
+    {
+        signed short valueShort;
+        if (!m_modbusClient.readInputRegister(modbusRegisterMapping.getAddress(), valueShort))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to read input register with address '"
+                       << modbusRegisterMapping.getAddress() << "'";
+            return false;
+        }
+
+        return modbusRegisterWatcher.update(valueShort != 0 ? true : false);
+    }
     }
 
     LOG(ERROR) << "ModbusBridge: isInputRegisterValueUpdated - Unhandled data type for reference'"

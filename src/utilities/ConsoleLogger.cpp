@@ -29,27 +29,27 @@ void ConsoleLogger::logEntry(Log& log)
         {
         case LogLevel::TRACE:
         {
-            std::cout << "[T]" << log.getMessage();
+            std::cout << "[T] " << log.getMessage();
             break;
         }
         case LogLevel::DEBUG:
         {
-            std::cout << "[D]" << log.getMessage();
+            std::cout << "[D] " << log.getMessage();
             break;
         }
         case LogLevel::INFO:
         {
-            std::cout << "[I]" << log.getMessage();
+            std::cout << "[I] " << log.getMessage();
             break;
         }
         case LogLevel::WARN:
         {
-            std::cout << "[W]" << log.getMessage();
+            std::cout << "[W] " << log.getMessage();
             break;
         }
         case LogLevel::ERROR:
         {
-            std::cout << "[E]" << log.getMessage();
+            std::cout << "[E] " << log.getMessage();
             break;
         }
         }

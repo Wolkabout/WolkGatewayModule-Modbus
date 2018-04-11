@@ -1,5 +1,6 @@
 {
-    "name": "",
-    "protocol": "",
-    "localMqttUri": ""
+    "name": "WolkGateway Modbus Bridge",
+    "key": "modbus_bridge",
+    "protocol": "JsonProtocol",
+    "localMqttUri": "tcp://localhost:1883"
 }

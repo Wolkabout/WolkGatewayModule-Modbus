@@ -18,6 +18,7 @@
 #include "utilities/FileSystemUtils.h"
 #include "utilities/json.hpp"
 
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -63,7 +64,7 @@ const std::string& ModbusRegisterMapping::getReference() const
     return m_reference;
 }
 
-std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::fromJson(
+std::unique_ptr<std::vector<wolkabout::ModbusRegisterMapping>> ModbusRegisterMappingFactory::fromJson(
   const std::string& modbusRegisterMappingFile)
 {
     if (!FileSystemUtils::isFilePresent(modbusRegisterMappingFile))
@@ -77,7 +78,8 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
         throw std::logic_error("Unable to read modbus configuration file.");
     }
 
-    std::vector<wolkabout::ModbusRegisterMapping> modbusRegisterMappingVector;
+    auto modbusRegisterMappingVector =
+      std::unique_ptr<std::vector<wolkabout::ModbusRegisterMapping>>(new std::vector<ModbusRegisterMapping>());
 
     auto j = json::parse(modbusRegisterMappingJsonStr);
     for (const auto& modbusRegisterMappingJson : j["modbusRegisterMapping"].get<json::array_t>())
@@ -90,15 +92,10 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
         const auto registerTypeStr = modbusRegisterMappingJson.at("registerType").get<std::string>();
         const auto registerType = deserializeRegisterType(registerTypeStr);
 
-        ModbusRegisterMapping::DataType dataType;
-        if (registerType != ModbusRegisterMapping::RegisterType::COIL &&
-            registerType != ModbusRegisterMapping::RegisterType::INPUT_BIT)
-        {
-            const auto dataTypeStr = modbusRegisterMappingJson.at("dataType").get<std::string>();
-            dataType = deserializeDataType(dataTypeStr);
-        }
+        const auto dataTypeStr = modbusRegisterMappingJson.at("dataType").get<std::string>();
+        const auto dataType = deserializeDataType(dataTypeStr);
 
-        modbusRegisterMappingVector.emplace_back(name, reference, address, registerType, dataType);
+        modbusRegisterMappingVector->emplace_back(name, reference, address, registerType, dataType);
     }
 
     return modbusRegisterMappingVector;
@@ -140,6 +137,10 @@ ModbusRegisterMapping::DataType ModbusRegisterMappingFactory::deserializeDataTyp
     else if (dataType == "REAL32")
     {
         return ModbusRegisterMapping::DataType::REAL32;
+    }
+    else if (dataType == "BOOL")
+    {
+        return ModbusRegisterMapping::DataType::BOOL;
     }
 
     throw std::logic_error("Unknown data type: " + dataType);
