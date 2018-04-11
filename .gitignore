@@ -1,0 +1,8 @@
+out/
+dependencies/
+
+*.config
+*.creator
+*.files
+*.includes
+*.user

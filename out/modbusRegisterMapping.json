@@ -1,0 +1,34 @@
+{
+   "modbusRegisterMapping":[
+      {
+         "name":"mappingName",
+         "reference": "mappingReference",
+
+         "address": 0,
+         "registerType": "INPUT_REGISTER",
+         "dataType": "INT16"
+      },
+      {
+         "name":"mappingName2",
+         "reference": "mappingReference2",
+
+         "address": 1,
+         "registerType": "HOLDING_REGISTER",
+         "dataType": "REAL32"
+      },
+      {
+         "name":"mappingName3",
+         "reference": "mappingReference3",
+
+         "address": 2,
+         "registerType": "INPUT_BIT"
+      },
+      {
+         "name":"mappingName4",
+         "reference": "mappingReference4",
+
+         "address": 3,
+         "registerType": "COIL"
+      }
+   ]
+}
