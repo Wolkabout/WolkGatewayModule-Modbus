@@ -30,7 +30,6 @@
 #include <algorithm>
 #include <chrono>
 #include <iostream>
-#include <limits>
 #include <map>
 #include <memory>
 #include <random>
@@ -107,79 +106,37 @@ int main(int argc, char** argv)
         {
         case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER:
         {
-            double minimum = 0.0;
-            double maximum = 0.0;
-            int precision = 0;
-
-            if (modbusRegisterMapping.getDataType() == wolkabout::ModbusRegisterMapping::DataType::INT16)
-            {
-                minimum = -32768.0;
-                maximum = 32767.0;
-                precision = 5;
-            }
-            else if (modbusRegisterMapping.getDataType() == wolkabout::ModbusRegisterMapping::DataType::UINT16)
-            {
-                minimum = 0.0;
-                maximum = 65535.0;
-                precision = 5;
-            }
-            else if (modbusRegisterMapping.getDataType() == wolkabout::ModbusRegisterMapping::DataType::REAL32)
-            {
-                minimum = std::numeric_limits<float>::min();
-                maximum = std::numeric_limits<float>::max();
-                precision = std::numeric_limits<float>::max_digits10;
-            }
-
-            actuatorManifests->emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                            "description", "unit", "SL", wolkabout::ActuatorManifest::DataType::NUMERIC,
-                                            precision, minimum, maximum);
+            actuatorManifests->emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), "",
+                                            modbusRegisterMapping.getUnit(), "SL",
+                                            wolkabout::ActuatorManifest::DataType::NUMERIC, 1024,
+                                            modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
             break;
         }
 
         case wolkabout::ModbusRegisterMapping::RegisterType::COIL:
         {
-            actuatorManifests->emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                            "description", "unit", "SW", wolkabout::ActuatorManifest::DataType::BOOLEAN,
-                                            1, 0, 1);
+            actuatorManifests->emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), "",
+                                            modbusRegisterMapping.getUnit(), "SW",
+                                            wolkabout::ActuatorManifest::DataType::BOOLEAN, 1024,
+                                            modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
             break;
         }
 
         case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_REGISTER:
         {
-            double minimum = 0.0;
-            double maximum = 0.0;
-            int precision = 0;
-
-            if (modbusRegisterMapping.getDataType() == wolkabout::ModbusRegisterMapping::DataType::INT16)
-            {
-                minimum = -32768.0;
-                maximum = 32767.0;
-                precision = 5;
-            }
-            else if (modbusRegisterMapping.getDataType() == wolkabout::ModbusRegisterMapping::DataType::UINT16)
-            {
-                minimum = 0.0;
-                maximum = 65535.0;
-                precision = 5;
-            }
-            else if (modbusRegisterMapping.getDataType() == wolkabout::ModbusRegisterMapping::DataType::REAL32)
-            {
-                minimum = std::numeric_limits<float>::min();
-                maximum = std::numeric_limits<float>::max();
-                precision = std::numeric_limits<float>::max_digits10 + std::numeric_limits<float>::max_exponent10;
-            }
-
-            sensorManifests->emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                          "description", "unit", "SL", wolkabout::SensorManifest::DataType::NUMERIC,
-                                          precision, minimum, maximum);
+            sensorManifests->emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), "",
+                                          modbusRegisterMapping.getUnit(), "GENERIC",
+                                          wolkabout::SensorManifest::DataType::NUMERIC, 1024,
+                                          modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
             break;
         }
 
         case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_BIT:
         {
             sensorManifests->emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                          "description", "unit", "SW", wolkabout::SensorManifest::DataType::BOOLEAN, 1,
-                                          0, 1);
+                                          "modbusRegisterMapping.getUnit()", modbusRegisterMapping.getUnit(), "GENERIC",
+                                          wolkabout::SensorManifest::DataType::BOOLEAN, 1024,
+                                          modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
             break;
         }
 

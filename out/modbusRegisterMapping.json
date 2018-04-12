@@ -3,6 +3,10 @@
       {
          "name":"mappingName",
          "reference": "mappingReference",
+         "unit": "mappingReferenceUnit",
+
+         "minimum": -32768,
+         "maximum": 32767,
 
          "address": 0,
          "registerType": "INPUT_REGISTER",
@@ -11,6 +15,10 @@
       {
          "name":"mappingName2",
          "reference": "mappingReference2",
+         "unit": "mappingReferenceUniti2",
+
+         "minimum": -4000,
+         "maximum": 4000,
 
          "address": 1,
          "registerType": "HOLDING_REGISTER",
@@ -19,15 +27,16 @@
       {
          "name":"mappingName3",
          "reference": "mappingReference3",
+         "unit": "mappingReferenceUnit3",
 
          "address": 2,
          "registerType": "INPUT_BIT",
          "dataType": "BOOL"
-
       },
       {
          "name":"mappingName4",
          "reference": "mappingReference4",
+         "unit": "mappingReferenceUnit4",
 
          "address": 3,
          "registerType": "COIL",

@@ -28,11 +28,15 @@ namespace wolkabout
 {
 using nlohmann::json;
 
-ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string reference, int address,
+ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string reference, std::string unit, double minimum,
+                                             double maximum, int address,
                                              wolkabout::ModbusRegisterMapping::RegisterType registerType,
                                              wolkabout::ModbusRegisterMapping::DataType dataType)
 : m_name(std::move(name))
 , m_reference(std::move(reference))
+, m_unit(std::move(unit))
+, m_minimum(minimum)
+, m_maximum(maximum)
 , m_address(address)
 , m_registerType(registerType)
 , m_dataType(dataType)
@@ -42,6 +46,26 @@ ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string refer
 const std::string& ModbusRegisterMapping::getName() const
 {
     return m_name;
+}
+
+const std::string& ModbusRegisterMapping::getReference() const
+{
+    return m_reference;
+}
+
+const std::string& ModbusRegisterMapping::getUnit() const
+{
+    return m_unit;
+}
+
+double ModbusRegisterMapping::getMinimum() const
+{
+    return m_minimum;
+}
+
+double ModbusRegisterMapping::getMaximum() const
+{
+    return m_maximum;
 }
 
 int ModbusRegisterMapping::getAddress() const
@@ -57,11 +81,6 @@ ModbusRegisterMapping::RegisterType ModbusRegisterMapping::getRegisterType() con
 ModbusRegisterMapping::DataType ModbusRegisterMapping::getDataType() const
 {
     return m_dataType;
-}
-
-const std::string& ModbusRegisterMapping::getReference() const
-{
-    return m_reference;
 }
 
 std::unique_ptr<std::vector<wolkabout::ModbusRegisterMapping>> ModbusRegisterMappingFactory::fromJson(
@@ -87,6 +106,8 @@ std::unique_ptr<std::vector<wolkabout::ModbusRegisterMapping>> ModbusRegisterMap
         const auto name = modbusRegisterMappingJson.at("name").get<std::string>();
         const auto reference = modbusRegisterMappingJson.at("reference").get<std::string>();
 
+        const auto unit = modbusRegisterMappingJson.at("unit").get<std::string>();
+
         const auto address = modbusRegisterMappingJson.at("address").get<int>();
 
         const auto registerTypeStr = modbusRegisterMappingJson.at("registerType").get<std::string>();
@@ -95,7 +116,18 @@ std::unique_ptr<std::vector<wolkabout::ModbusRegisterMapping>> ModbusRegisterMap
         const auto dataTypeStr = modbusRegisterMappingJson.at("dataType").get<std::string>();
         const auto dataType = deserializeDataType(dataTypeStr);
 
-        modbusRegisterMappingVector->emplace_back(name, reference, address, registerType, dataType);
+        double minimum = 0.0;
+        double maximum = 1.0;
+
+        if (dataType == ModbusRegisterMapping::DataType::INT16 || dataType == ModbusRegisterMapping::DataType::UINT16 ||
+            dataType == ModbusRegisterMapping::DataType::REAL32)
+        {
+            minimum = modbusRegisterMappingJson.at("minimum").get<double>();
+            maximum = modbusRegisterMappingJson.at("maximum").get<double>();
+        }
+
+        modbusRegisterMappingVector->emplace_back(name, reference, unit, minimum, maximum, address, registerType,
+                                                  dataType);
     }
 
     return modbusRegisterMappingVector;
