@@ -131,6 +131,7 @@ void ModbusBridge::start()
         return;
     }
 
+    m_modbusClient.connect();
     m_readerShouldRun = true;
     m_reader = std::unique_ptr<std::thread>(new std::thread(&ModbusBridge::run, this));
 }
@@ -268,16 +269,24 @@ void ModbusBridge::readAndReportModbusRegistersValues()
             modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::COIL)
         {
             LOG(INFO) << "ModbusBridge: Actuator value changed - Reference: '" << modbusRegisterMapping.getReference()
-                      << "' Value: '" << modbusRegisterWatcher.getValue() << ";";
-            m_onActuatorStatusChange(modbusRegisterMapping.getReference());
+                      << "' Value: '" << modbusRegisterWatcher.getValue() << "'";
+
+            if (m_onActuatorStatusChange)
+            {
+                m_onActuatorStatusChange(modbusRegisterMapping.getReference());
+            }
         }
 
         if (modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::INPUT_REGISTER ||
             modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::INPUT_BIT)
         {
             LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << modbusRegisterMapping.getReference()
-                      << "' Value: '" << modbusRegisterWatcher.getValue() << ";";
-            m_onSensorReading(modbusRegisterMapping.getReference(), modbusRegisterWatcher.getValue());
+                      << "' Value: '" << modbusRegisterWatcher.getValue() << "'";
+
+            if (m_onSensorReading)
+            {
+                m_onSensorReading(modbusRegisterMapping.getReference(), modbusRegisterWatcher.getValue());
+            }
         }
     }
 }

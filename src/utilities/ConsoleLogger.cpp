@@ -29,33 +29,31 @@ void ConsoleLogger::logEntry(Log& log)
         {
         case LogLevel::TRACE:
         {
-            std::cout << "[T] " << log.getMessage();
+            std::cout << "[T] " << log.getMessage() << "\n";
             break;
         }
         case LogLevel::DEBUG:
         {
-            std::cout << "[D] " << log.getMessage();
+            std::cout << "[D] " << log.getMessage() << "\n";
             break;
         }
         case LogLevel::INFO:
         {
-            std::cout << "[I] " << log.getMessage();
+            std::cout << "[I] " << log.getMessage() << "\n";
             break;
         }
         case LogLevel::WARN:
         {
-            std::cout << "[W] " << log.getMessage();
+            std::cout << "[W] " << log.getMessage() << "\n";
             break;
         }
         case LogLevel::ERROR:
         {
-            std::cout << "[E] " << log.getMessage();
+            std::cout << "[E] " << log.getMessage() << "\n";
             break;
         }
         }
     }
-
-    std::cout << "\n";
 }
 
 void ConsoleLogger::setLogLevel(wolkabout::LogLevel level)

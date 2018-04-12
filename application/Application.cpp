@@ -40,7 +40,7 @@
 int main(int argc, char** argv)
 {
     auto logger = std::unique_ptr<wolkabout::ConsoleLogger>(new wolkabout::ConsoleLogger());
-    logger->setLogLevel(wolkabout::LogLevel::DEBUG);
+    logger->setLogLevel(wolkabout::LogLevel::INFO);
     wolkabout::Logger::setInstance(std::move(logger));
 
     if (argc < 4)
@@ -131,7 +131,7 @@ int main(int argc, char** argv)
             }
 
             actuatorManifests->emplace_back(
-              modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), "description", "unit", "GENERIC",
+              modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), "description", "unit", "SL",
               wolkabout::ActuatorManifest::DataType::NUMERIC, precision, minimum, maximum);
             break;
         }
@@ -139,7 +139,7 @@ int main(int argc, char** argv)
         case wolkabout::ModbusRegisterMapping::RegisterType::COIL:
         {
             actuatorManifests->emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                            "description", "unit", "GENERIC",
+                                            "description", "unit", "SW",
                                             wolkabout::ActuatorManifest::DataType::BOOLEAN, 1, 0, 1);
             break;
         }
@@ -170,7 +170,7 @@ int main(int argc, char** argv)
             }
 
             sensorManifests->emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                          "description", "unit", "GENERIC",
+                                          "description", "unit", "SL",
                                           wolkabout::SensorManifest::DataType::NUMERIC, precision, minimum, maximum);
             break;
         }
@@ -178,7 +178,7 @@ int main(int argc, char** argv)
         case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_BIT:
         {
             sensorManifests->emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                          "description", "unit", "GENERIC",
+                                          "description", "unit", "SW",
                                           wolkabout::SensorManifest::DataType::BOOLEAN, 1, 0, 1);
             break;
         }
@@ -212,6 +212,14 @@ int main(int argc, char** argv)
                                               .actuationHandler(modbusBridge)
                                               .host(deviceConfiguration.getLocalMqttUri())
                                               .build();
+
+    modbusBridge->onSensorReading([&](const std::string& reference, const std::string& value) -> void {
+        wolk->addSensorReading(deviceConfiguration.getKey(), reference, value);
+    });
+
+    modbusBridge->onActuatorStatusChange([&](const std::string& reference) -> void {
+        wolk->publishActuatorStatus(deviceConfiguration.getKey(), reference);
+    });
 
     wolk->addDevice(*modbusBridgeDevice);
     wolk->connect();

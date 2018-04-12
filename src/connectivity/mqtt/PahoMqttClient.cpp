@@ -147,8 +147,6 @@ bool PahoMqttClient::publish(const std::string& topic, const std::string& messag
 
     try
     {
-        std::cout << "sending message: " << message << ", to: " << topic << std::endl;
-
         mqtt::message_ptr pubmsg = mqtt::make_message(topic, message.c_str(), strlen(message.c_str()));
         pubmsg->set_qos(MQTT_QOS);
         pubmsg->set_retained(retained);

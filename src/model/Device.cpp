@@ -56,7 +56,7 @@ const DeviceManifest& Device::getManifest() const
 
 std::vector<std::string> Device::getActuatorReferences() const
 {
-    std::vector<std::string> actuatorReferences(m_deviceManifest.getActuators().size());
+    std::vector<std::string> actuatorReferences;
     for (const ActuatorManifest& actuatorManifest : m_deviceManifest.getActuators())
     {
         actuatorReferences.push_back(actuatorManifest.getReference());

@@ -42,7 +42,7 @@ const std::string& DeviceConfiguration::getName() const
 
 const std::string& DeviceConfiguration::getKey() const
 {
-    return m_protocol;
+    return m_key;
 }
 
 const std::string& DeviceConfiguration::getProtocol() const
