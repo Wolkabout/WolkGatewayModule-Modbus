@@ -130,17 +130,17 @@ int main(int argc, char** argv)
                 precision = std::numeric_limits<float>::max_digits10;
             }
 
-            actuatorManifests->emplace_back(
-              modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), "description", "unit", "SL",
-              wolkabout::ActuatorManifest::DataType::NUMERIC, precision, minimum, maximum);
+            actuatorManifests->emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
+                                            "description", "unit", "SL", wolkabout::ActuatorManifest::DataType::NUMERIC,
+                                            precision, minimum, maximum);
             break;
         }
 
         case wolkabout::ModbusRegisterMapping::RegisterType::COIL:
         {
             actuatorManifests->emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                            "description", "unit", "SW",
-                                            wolkabout::ActuatorManifest::DataType::BOOLEAN, 1, 0, 1);
+                                            "description", "unit", "SW", wolkabout::ActuatorManifest::DataType::BOOLEAN,
+                                            1, 0, 1);
             break;
         }
 
@@ -170,16 +170,16 @@ int main(int argc, char** argv)
             }
 
             sensorManifests->emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                          "description", "unit", "SL",
-                                          wolkabout::SensorManifest::DataType::NUMERIC, precision, minimum, maximum);
+                                          "description", "unit", "SL", wolkabout::SensorManifest::DataType::NUMERIC,
+                                          precision, minimum, maximum);
             break;
         }
 
         case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_BIT:
         {
             sensorManifests->emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                          "description", "unit", "SW",
-                                          wolkabout::SensorManifest::DataType::BOOLEAN, 1, 0, 1);
+                                          "description", "unit", "SW", wolkabout::SensorManifest::DataType::BOOLEAN, 1,
+                                          0, 1);
             break;
         }
 
