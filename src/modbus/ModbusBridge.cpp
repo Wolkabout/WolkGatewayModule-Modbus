@@ -69,7 +69,7 @@ void ModbusBridge::onActuatorStatusChange(std::function<void(const std::string& 
 void ModbusBridge::handleActuation(const std::string& /* deviceKey */, const std::string& reference,
                                    const std::string& value)
 {
-    LOG(INFO) << "ModbusBridge: Handling actuation for reference '" << reference << "'";
+    LOG(INFO) << "ModbusBridge: Handling actuation for reference '" << reference << "' - Value: '" << value << "'";
     if (m_referenceToModbusRegisterMapping.find(reference) == m_referenceToModbusRegisterMapping.end())
     {
         LOG(ERROR) << "ModbusBridge: No modbus register mapped to reference '" << reference << "'";
