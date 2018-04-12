@@ -22,3 +22,12 @@ if [ ! -d "libssl" ]; then
     mv openssl-OpenSSL_1_1_0f libssl
     rm openssl.tar.gz
 fi
+
+# libmodbus
+if [ ! -d "libmodbus" ]; then
+	echo "Downloading libmodbus"
+	wget -O libmodbus.tar.gz https://github.com/stephane/libmodbus/archive/v3.1.4.tar.gz
+	tar -xvzf libmodbus.tar.gz
+	mv libmodbus-3.1.4 libmodbus
+	rm libmodbus.tar.gz
+fi
