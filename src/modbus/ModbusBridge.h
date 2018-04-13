@@ -68,6 +68,8 @@ private:
     void run();
 
     void readAndReportModbusRegistersValues();
+    void readAndReportModbusRegisterValue(
+      const std::pair<std::string, ModbusRegisterMapping>& referenceToModbusRegisterMapping);
 
     bool isRegisterValueUpdated(const ModbusRegisterMapping& modbusRegisterMapping,
                                 ModbusRegisterWatcher& modbusRegisterWatcher);

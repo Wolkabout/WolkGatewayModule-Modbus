@@ -70,7 +70,7 @@ void ModbusBridge::handleActuation(const std::string& /* deviceKey */, const std
                                    const std::string& value)
 {
     LOG(INFO) << "ModbusBridge: Handling actuation for reference '" << reference << "' - Value: '" << value << "'";
-    if (m_referenceToModbusRegisterMapping.find(reference) == m_referenceToModbusRegisterMapping.end())
+    if (m_referenceToModbusRegisterMapping.find(reference) == m_referenceToModbusRegisterMapping.cend())
     {
         LOG(ERROR) << "ModbusBridge: No modbus register mapped to reference '" << reference << "'";
         return;
@@ -141,7 +141,7 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatus(const std::string& /* 
                                                           const std::string& reference)
 {
     LOG(INFO) << "ModbusBridge: Getting actuator status for reference '" << reference << "'";
-    if (m_referenceToModbusRegisterMapping.find(reference) == m_referenceToModbusRegisterMapping.end())
+    if (m_referenceToModbusRegisterMapping.find(reference) == m_referenceToModbusRegisterMapping.cend())
     {
         LOG(ERROR) << "ModbusBridge: No modbus register mapped to reference '" << reference << "'";
         return ActuatorStatus("", ActuatorStatus::State::ERROR);
@@ -248,45 +248,51 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 {
     LOG(DEBUG) << "ModbusBridge: Reading and reporting register values";
 
-    for (const auto& it : m_referenceToModbusRegisterMapping)
+    for (const std::pair<std::string, ModbusRegisterMapping>& referenceToModbusRegisterMapping :
+         m_referenceToModbusRegisterMapping)
     {
-        const std::string& reference = it.first;
-        if (m_referenceToModbusRegisterWatcherMapping.find(reference) ==
-            m_referenceToModbusRegisterWatcherMapping.cend())
+        readAndReportModbusRegisterValue(referenceToModbusRegisterMapping);
+    }
+}
+
+void ModbusBridge::readAndReportModbusRegisterValue(
+  const std::pair<std::string, ModbusRegisterMapping>& referenceToModbusRegisterMapping)
+{
+    const std::string& reference = referenceToModbusRegisterMapping.first;
+    if (m_referenceToModbusRegisterWatcherMapping.find(reference) == m_referenceToModbusRegisterWatcherMapping.cend())
+    {
+        m_referenceToModbusRegisterWatcherMapping.emplace(reference, ModbusRegisterWatcher{});
+    }
+
+    const ModbusRegisterMapping& modbusRegisterMapping = referenceToModbusRegisterMapping.second;
+    ModbusRegisterWatcher& modbusRegisterWatcher = m_referenceToModbusRegisterWatcherMapping.at(reference);
+
+    if (!isRegisterValueUpdated(modbusRegisterMapping, modbusRegisterWatcher))
+    {
+        return;
+    }
+
+    if (modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::HOLDING_REGISTER ||
+        modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::COIL)
+    {
+        LOG(INFO) << "ModbusBridge: Actuator value changed - Reference: '" << modbusRegisterMapping.getReference()
+                  << "' Value: '" << modbusRegisterWatcher.getValue() << "'";
+
+        if (m_onActuatorStatusChange)
         {
-            m_referenceToModbusRegisterWatcherMapping.emplace(reference, ModbusRegisterWatcher{});
+            m_onActuatorStatusChange(modbusRegisterMapping.getReference());
         }
+    }
 
-        const ModbusRegisterMapping& modbusRegisterMapping = it.second;
-        ModbusRegisterWatcher& modbusRegisterWatcher = m_referenceToModbusRegisterWatcherMapping.at(reference);
+    if (modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::INPUT_REGISTER ||
+        modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::INPUT_BIT)
+    {
+        LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << modbusRegisterMapping.getReference() << "' Value: '"
+                  << modbusRegisterWatcher.getValue() << "'";
 
-        if (!isRegisterValueUpdated(modbusRegisterMapping, modbusRegisterWatcher))
+        if (m_onSensorReading)
         {
-            continue;
-        }
-
-        if (modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::HOLDING_REGISTER ||
-            modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::COIL)
-        {
-            LOG(INFO) << "ModbusBridge: Actuator value changed - Reference: '" << modbusRegisterMapping.getReference()
-                      << "' Value: '" << modbusRegisterWatcher.getValue() << "'";
-
-            if (m_onActuatorStatusChange)
-            {
-                m_onActuatorStatusChange(modbusRegisterMapping.getReference());
-            }
-        }
-
-        if (modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::INPUT_REGISTER ||
-            modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::INPUT_BIT)
-        {
-            LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << modbusRegisterMapping.getReference()
-                      << "' Value: '" << modbusRegisterWatcher.getValue() << "'";
-
-            if (m_onSensorReading)
-            {
-                m_onSensorReading(modbusRegisterMapping.getReference(), modbusRegisterWatcher.getValue());
-            }
+            m_onSensorReading(modbusRegisterMapping.getReference(), modbusRegisterWatcher.getValue());
         }
     }
 }
