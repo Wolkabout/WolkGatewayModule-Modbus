@@ -22,6 +22,7 @@
 #include <cerrno>
 #include <chrono>
 #include <cstdint>
+#include <mutex>
 #include <string>
 #include <utility>
 
@@ -42,6 +43,7 @@ bool LibModbusClient::connect()
 {
     LOG(INFO) << "LibModbusClient: Connecting to " << m_ipAddress << ":" << m_port;
 
+    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     m_modbus = modbus_new_tcp(m_ipAddress.c_str(), m_port);
     if (m_modbus == NULL)
     {
@@ -84,6 +86,7 @@ bool LibModbusClient::disconnect()
     {
         LOG(INFO) << "LibModbusClient: Disconnecting from " << m_ipAddress << ":" << m_port;
 
+        std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
         modbus_flush(m_modbus);
         modbus_close(m_modbus);
         modbus_free(m_modbus);
@@ -95,6 +98,7 @@ bool LibModbusClient::disconnect()
 
 bool LibModbusClient::isConnected()
 {
+    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     return m_modbus != nullptr;
 }
 
@@ -103,6 +107,7 @@ bool LibModbusClient::writeHoldingRegister(int address, signed short value)
     ModbusValue modbusValue;
     modbusValue.signedShortValue = value;
 
+    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     if (modbus_write_register(m_modbus, address, modbusValue.unsignedShortValue) == -1)
     {
         LOG(DEBUG) << "LibModbusClient: Unable to write holding register - " << modbus_strerror(errno);
@@ -114,6 +119,7 @@ bool LibModbusClient::writeHoldingRegister(int address, signed short value)
 
 bool LibModbusClient::writeHoldingRegister(int address, unsigned short value)
 {
+    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     if (modbus_write_register(m_modbus, address, value) == -1)
     {
         LOG(DEBUG) << "LibModbusClient: Unable to write holding register - " << modbus_strerror(errno);
@@ -128,6 +134,7 @@ bool LibModbusClient::writeHoldingRegister(int address, float value)
     ModbusValue modbusValue;
     modbusValue.floatValue = value;
 
+    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     if (modbus_write_registers(m_modbus, address, 2, modbusValue.unsignedShortValues) == -1)
     {
         LOG(DEBUG) << "LibModbusClient: Unable to write holding register - " << modbus_strerror(errno);
@@ -139,6 +146,7 @@ bool LibModbusClient::writeHoldingRegister(int address, float value)
 
 bool LibModbusClient::writeCoil(int address, bool value)
 {
+    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     if (modbus_write_bit(m_modbus, address, value ? TRUE : FALSE))
     {
         LOG(DEBUG) << "LibModbusClient: Unable to write coil - " << modbus_strerror(errno);
@@ -151,6 +159,8 @@ bool LibModbusClient::writeCoil(int address, bool value)
 bool LibModbusClient::readInputRegister(int address, signed short& value)
 {
     ModbusValue modbusValue;
+    
+    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     if (modbus_read_input_registers(m_modbus, address, 1, &modbusValue.unsignedShortValue) == -1)
     {
         LOG(DEBUG) << "LibModbusClient: Unable to read input register - " << modbus_strerror(errno);
@@ -163,6 +173,7 @@ bool LibModbusClient::readInputRegister(int address, signed short& value)
 
 bool LibModbusClient::readInputRegister(int address, unsigned short& value)
 {
+    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     if (modbus_read_input_registers(m_modbus, address, 1, &value) == -1)
     {
         LOG(DEBUG) << "LibModbusClient: Unable to read input register - " << modbus_strerror(errno);
@@ -175,6 +186,8 @@ bool LibModbusClient::readInputRegister(int address, unsigned short& value)
 bool LibModbusClient::readInputRegister(int address, float& value)
 {
     ModbusValue modbusValue;
+    
+    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     if (modbus_read_input_registers(m_modbus, address, 2, modbusValue.unsignedShortValues) == -1)
     {
         LOG(DEBUG) << "LibModbusClient: Unable to read input register - " << modbus_strerror(errno);
@@ -188,6 +201,8 @@ bool LibModbusClient::readInputRegister(int address, float& value)
 bool LibModbusClient::readInputBit(int address, bool& value)
 {
     uint8_t tmpValue = 0;
+    
+    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     if (modbus_read_input_bits(m_modbus, address, 1, &tmpValue) == -1)
     {
         LOG(DEBUG) << "LibModbusClient: Unable to read input bit - " << modbus_strerror(errno);
@@ -201,6 +216,8 @@ bool LibModbusClient::readInputBit(int address, bool& value)
 bool LibModbusClient::readHoldingRegister(int address, short& value)
 {
     ModbusValue modbusValue;
+    
+    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     if (modbus_read_registers(m_modbus, address, 1, &modbusValue.unsignedShortValue) == -1)
     {
         LOG(DEBUG) << "LibModbusClient: Unable to read holding register - " << modbus_strerror(errno);
@@ -213,6 +230,7 @@ bool LibModbusClient::readHoldingRegister(int address, short& value)
 
 bool LibModbusClient::readHoldingRegister(int address, unsigned short& value)
 {
+    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     if (modbus_read_registers(m_modbus, address, 1, &value) == -1)
     {
         LOG(DEBUG) << "LibModbusClient: Unable to read holding register - " << modbus_strerror(errno);
@@ -225,6 +243,8 @@ bool LibModbusClient::readHoldingRegister(int address, unsigned short& value)
 bool LibModbusClient::readHoldingRegister(int address, float& value)
 {
     ModbusValue modbusValue;
+    
+    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     if (modbus_read_registers(m_modbus, address, 2, modbusValue.unsignedShortValues) == -1)
     {
         LOG(DEBUG) << "LibModbusClient: Unable to read holding register - " << modbus_strerror(errno);
@@ -238,6 +258,8 @@ bool LibModbusClient::readHoldingRegister(int address, float& value)
 bool LibModbusClient::readCoil(int address, bool& value)
 {
     uint8_t tmpValue = 0;
+    
+    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     if (modbus_read_bits(m_modbus, address, 1, &tmpValue) == -1)
     {
         LOG(DEBUG) << "LibModbusClient: Unable to read coil - " << modbus_strerror(errno);

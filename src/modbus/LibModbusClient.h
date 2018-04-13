@@ -21,6 +21,7 @@
 #include "modbus/libmodbus/modbus.h"
 
 #include <chrono>
+#include <mutex>
 #include <string>
 
 namespace wolkabout
@@ -78,6 +79,7 @@ private:
 
     std::chrono::duration<long long, std::milli> m_responseTimeout;
 
+    std::mutex m_modbusMutex;
     modbus_t* m_modbus;
 };
 }    // namespace wolkabout
