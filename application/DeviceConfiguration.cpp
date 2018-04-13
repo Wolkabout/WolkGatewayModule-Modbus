@@ -55,7 +55,7 @@ const std::string& DeviceConfiguration::getLocalMqttUri() const
     return m_localMqttUri;
 }
 
-wolkabout::DeviceConfiguration DeviceConfiguration::fromJson(const std::string& deviceConfigurationFile)
+wolkabout::DeviceConfiguration DeviceConfiguration::fromJsonFile(const std::string& deviceConfigurationFile)
 {
     if (!FileSystemUtils::isFilePresent(deviceConfigurationFile))
     {

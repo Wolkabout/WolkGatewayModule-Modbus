@@ -54,7 +54,7 @@ const std::chrono::duration<long long, std::milli>& ModbusConfiguration::getRead
     return m_readPeriod;
 }
 
-wolkabout::ModbusConfiguration ModbusConfiguration::fromJson(const std::string& modbusConfigurationFile)
+wolkabout::ModbusConfiguration ModbusConfiguration::fromJsonFile(const std::string& modbusConfigurationFile)
 {
     if (!FileSystemUtils::isFilePresent(modbusConfigurationFile))
     {

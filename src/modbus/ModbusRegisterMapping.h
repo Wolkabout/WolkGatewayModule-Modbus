@@ -17,7 +17,6 @@
 #ifndef MODBUSREGISTERMAPPING_H
 #define MODBUSREGISTERMAPPING_H
 
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -77,8 +76,7 @@ private:
 class ModbusRegisterMappingFactory
 {
 public:
-    static std::unique_ptr<std::vector<wolkabout::ModbusRegisterMapping>> fromJson(
-      const std::string& modbusRegisterMappingFile);
+    static std::vector<wolkabout::ModbusRegisterMapping> fromJsonFile(const std::string& modbusRegisterMappingFile);
 
 private:
     static ModbusRegisterMapping::RegisterType deserializeRegisterType(const std::string& registerType);

@@ -36,7 +36,7 @@ public:
 
     const std::string& getLocalMqttUri() const;
 
-    static wolkabout::DeviceConfiguration fromJson(const std::string& deviceConfigurationFile);
+    static wolkabout::DeviceConfiguration fromJsonFile(const std::string& deviceConfigurationFile);
 
 private:
     std::string m_name;

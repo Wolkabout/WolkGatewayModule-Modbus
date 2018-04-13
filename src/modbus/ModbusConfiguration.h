@@ -37,7 +37,7 @@ public:
 
     const std::chrono::duration<long long, std::milli>& getReadPeriod() const;
 
-    static wolkabout::ModbusConfiguration fromJson(const std::string& modbusConfigurationFile);
+    static wolkabout::ModbusConfiguration fromJsonFile(const std::string& modbusConfigurationFile);
 
 private:
     std::string m_ip;

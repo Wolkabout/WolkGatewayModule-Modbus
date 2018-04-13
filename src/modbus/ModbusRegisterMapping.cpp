@@ -18,7 +18,6 @@
 #include "utilities/FileSystemUtils.h"
 #include "utilities/json.hpp"
 
-#include <memory>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -83,7 +82,7 @@ ModbusRegisterMapping::DataType ModbusRegisterMapping::getDataType() const
     return m_dataType;
 }
 
-std::unique_ptr<std::vector<wolkabout::ModbusRegisterMapping>> ModbusRegisterMappingFactory::fromJson(
+std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::fromJsonFile(
   const std::string& modbusRegisterMappingFile)
 {
     if (!FileSystemUtils::isFilePresent(modbusRegisterMappingFile))
@@ -97,8 +96,7 @@ std::unique_ptr<std::vector<wolkabout::ModbusRegisterMapping>> ModbusRegisterMap
         throw std::logic_error("Unable to read modbus configuration file.");
     }
 
-    auto modbusRegisterMappingVector =
-      std::unique_ptr<std::vector<wolkabout::ModbusRegisterMapping>>(new std::vector<ModbusRegisterMapping>());
+    std::vector<wolkabout::ModbusRegisterMapping> modbusRegisterMappingVector;
 
     auto j = json::parse(modbusRegisterMappingJsonStr);
     for (const auto& modbusRegisterMappingJson : j["modbusRegisterMapping"].get<json::array_t>())
@@ -126,8 +124,8 @@ std::unique_ptr<std::vector<wolkabout::ModbusRegisterMapping>> ModbusRegisterMap
             maximum = modbusRegisterMappingJson.at("maximum").get<double>();
         }
 
-        modbusRegisterMappingVector->emplace_back(name, reference, unit, minimum, maximum, address, registerType,
-                                                  dataType);
+        modbusRegisterMappingVector.emplace_back(name, reference, unit, minimum, maximum, address, registerType,
+                                                 dataType);
     }
 
     return modbusRegisterMappingVector;

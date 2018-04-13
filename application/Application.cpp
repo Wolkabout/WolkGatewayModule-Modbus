@@ -36,6 +36,113 @@
 #include <string>
 #include <thread>
 
+namespace
+{
+bool loadDeviceConfigurationFromFile(const std::string& file, wolkabout::DeviceConfiguration& deviceConfiguration)
+{
+    try
+    {
+        deviceConfiguration = wolkabout::DeviceConfiguration::fromJsonFile(file);
+        LOG(INFO) << "WolkGatewayModbusModule Application: Loaded device configuration from '" << file << "'";
+        return true;
+    }
+    catch (std::logic_error& e)
+    {
+        LOG(ERROR) << "WolkGatewayModbusModule Application: Unable to parse device configuration file."
+                   << "Reason: " << e.what();
+        return false;
+    }
+}
+
+bool loadModbusConfigurationFromFile(const std::string& file, wolkabout::ModbusConfiguration& modbusConfiguration)
+{
+    try
+    {
+        modbusConfiguration = wolkabout::ModbusConfiguration::fromJsonFile(file);
+        LOG(INFO) << "WolkGatewayModbusModule Application: Loaded modbus configuration from '" << file << "'";
+        return true;
+    }
+    catch (std::logic_error& e)
+    {
+        LOG(ERROR) << "WolkGatewayModbusModule Application: Unable to parse modbus configuration file."
+                   << "Reason: " << e.what();
+        return false;
+    }
+}
+
+bool loadModbusRegisterMappingFromFile(const std::string& file,
+                                       std::vector<wolkabout::ModbusRegisterMapping>& modbusRegisterMappings)
+{
+    try
+    {
+        modbusRegisterMappings = wolkabout::ModbusRegisterMappingFactory::fromJsonFile(file);
+        LOG(INFO) << "WolkGatewayModbusModule Application: Loaded modbus register mapping from '" << file << "'";
+        return true;
+    }
+    catch (std::logic_error& e)
+    {
+        LOG(ERROR) << "WolkGatewayModbusModule Application: Unable to parse modbus register mapping file."
+                   << "Reason: " << e.what();
+        return false;
+    }
+}
+
+void makeSensorAndActuatorManifestsFromModbusRegisterMappings(
+  const std::vector<wolkabout::ModbusRegisterMapping>& modbusRegisterMappings,
+  std::vector<wolkabout::SensorManifest>& sensorManifests, std::vector<wolkabout::ActuatorManifest>& actuatorManifests)
+{
+    for (const wolkabout::ModbusRegisterMapping& modbusRegisterMapping : modbusRegisterMappings)
+    {
+        switch (modbusRegisterMapping.getRegisterType())
+        {
+        case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER:
+        {
+            actuatorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), "",
+                                           modbusRegisterMapping.getUnit(), "SL",
+                                           wolkabout::ActuatorManifest::DataType::NUMERIC, 1,
+                                           modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
+            break;
+        }
+
+        case wolkabout::ModbusRegisterMapping::RegisterType::COIL:
+        {
+            actuatorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), "",
+                                           modbusRegisterMapping.getUnit(), "SW",
+                                           wolkabout::ActuatorManifest::DataType::BOOLEAN, 1,
+                                           modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
+            break;
+        }
+
+        case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_REGISTER:
+        {
+            sensorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), "",
+                                         modbusRegisterMapping.getUnit(), "GENERIC",
+                                         wolkabout::SensorManifest::DataType::NUMERIC, 1,
+                                         modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
+            break;
+        }
+
+        case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_BIT:
+        {
+            sensorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
+                                         "modbusRegisterMapping.getUnit()", modbusRegisterMapping.getUnit(), "GENERIC",
+                                         wolkabout::SensorManifest::DataType::BOOLEAN, 1,
+                                         modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
+            break;
+        }
+
+        default:
+        {
+            LOG(WARN) << "WolkGatewayModbusModule Application: Mapping with reference '"
+                      << modbusRegisterMapping.getReference()
+                      << "' not added to device manifest - Unknown register type";
+            break;
+        }
+        }
+    }
+}
+}    // namespace
+
 int main(int argc, char** argv)
 {
     auto logger = std::unique_ptr<wolkabout::ConsoleLogger>(new wolkabout::ConsoleLogger());
@@ -50,115 +157,43 @@ int main(int argc, char** argv)
     }
 
     wolkabout::DeviceConfiguration deviceConfiguration;
-    try
+    if (!loadDeviceConfigurationFromFile(argv[1], deviceConfiguration))
     {
-        deviceConfiguration = wolkabout::DeviceConfiguration::fromJson(argv[1]);
-        LOG(INFO) << "WolkGatewayModbusModule Application: Loaded device configuration from '" << argv[1] << "'";
-    }
-    catch (std::logic_error& e)
-    {
-        LOG(ERROR) << "WolkGatewayModbusModule Application: Unable to parse device configuration file. Reason: "
-                   << e.what();
         return -1;
     }
 
     wolkabout::ModbusConfiguration modbusConfiguration;
-    try
+    if (!loadModbusConfigurationFromFile(argv[2], modbusConfiguration))
     {
-        modbusConfiguration = wolkabout::ModbusConfiguration::fromJson(argv[2]);
-        LOG(INFO) << "WolkGatewayModbusModule Application: Loaded modbus configuration from '" << argv[2] << "'";
-    }
-    catch (std::logic_error& e)
-    {
-        LOG(ERROR) << "WolkGatewayModbusModule Application: Unable to parse modbus configuration file. Reason: "
-                   << e.what();
         return -1;
     }
 
-    std::unique_ptr<std::vector<wolkabout::ModbusRegisterMapping>> modbusRegisterMappings;
-    try
+    std::vector<wolkabout::ModbusRegisterMapping> modbusRegisterMappings;
+    if (!loadModbusRegisterMappingFromFile(argv[3], modbusRegisterMappings))
     {
-        modbusRegisterMappings = wolkabout::ModbusRegisterMappingFactory::fromJson(argv[3]);
-        LOG(INFO) << "WolkGatewayModbusModule Application: Loaded modbus register mapping from '" << argv[3] << "'";
-    }
-    catch (std::logic_error& e)
-    {
-        LOG(ERROR) << "WolkGatewayModbusModule Application: Unable to parse modbus register mapping file. Reason: "
-                   << e.what();
         return -1;
     }
 
-    if (modbusRegisterMappings->empty())
+    if (modbusRegisterMappings.empty())
     {
         LOG(ERROR) << "WolkGatewayModbusModule Application: Register mapping file is empty";
         return -1;
     }
 
-    auto sensorManifests =
-      std::unique_ptr<std::vector<wolkabout::SensorManifest>>(new std::vector<wolkabout::SensorManifest>());
-    auto actuatorManifests =
-      std::unique_ptr<std::vector<wolkabout::ActuatorManifest>>(new std::vector<wolkabout::ActuatorManifest>());
-
-    // TODO: Extract to function
-    for (const wolkabout::ModbusRegisterMapping& modbusRegisterMapping : *modbusRegisterMappings)
-    {
-        switch (modbusRegisterMapping.getRegisterType())
-        {
-        case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER:
-        {
-            actuatorManifests->emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), "",
-                                            modbusRegisterMapping.getUnit(), "SL",
-                                            wolkabout::ActuatorManifest::DataType::NUMERIC, 1024,
-                                            modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
-            break;
-        }
-
-        case wolkabout::ModbusRegisterMapping::RegisterType::COIL:
-        {
-            actuatorManifests->emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), "",
-                                            modbusRegisterMapping.getUnit(), "SW",
-                                            wolkabout::ActuatorManifest::DataType::BOOLEAN, 1024,
-                                            modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
-            break;
-        }
-
-        case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_REGISTER:
-        {
-            sensorManifests->emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), "",
-                                          modbusRegisterMapping.getUnit(), "GENERIC",
-                                          wolkabout::SensorManifest::DataType::NUMERIC, 1024,
-                                          modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
-            break;
-        }
-
-        case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_BIT:
-        {
-            sensorManifests->emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                          "modbusRegisterMapping.getUnit()", modbusRegisterMapping.getUnit(), "GENERIC",
-                                          wolkabout::SensorManifest::DataType::BOOLEAN, 1024,
-                                          modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
-            break;
-        }
-
-        default:
-        {
-            LOG(WARN) << "WolkGatewayModbusModule Application: Mapping with reference '"
-                      << modbusRegisterMapping.getReference()
-                      << "' not added to device manifest - Unknown register type";
-            break;
-        }
-        }
-    }
+    std::vector<wolkabout::SensorManifest> sensorManifests;
+    std::vector<wolkabout::ActuatorManifest> actuatorManifests;
+    makeSensorAndActuatorManifestsFromModbusRegisterMappings(modbusRegisterMappings, sensorManifests,
+                                                             actuatorManifests);
 
     auto libModbusClient = std::unique_ptr<wolkabout::LibModbusClient>(new wolkabout::LibModbusClient(
       modbusConfiguration.getIp(), modbusConfiguration.getPort(), modbusConfiguration.getResponseTimeout()));
 
-    auto modbusBridge = std::make_shared<wolkabout::ModbusBridge>(*libModbusClient, *modbusRegisterMappings,
+    auto modbusBridge = std::make_shared<wolkabout::ModbusBridge>(*libModbusClient, modbusRegisterMappings,
                                                                   modbusConfiguration.getReadPeriod());
 
     auto modbusBridgeManifest = std::unique_ptr<wolkabout::DeviceManifest>(new wolkabout::DeviceManifest(
       deviceConfiguration.getName() + "_Manifest", "WolkGateway Modbus Module", deviceConfiguration.getProtocol(), "",
-      {}, {*sensorManifests}, {}, {*actuatorManifests}));
+      {}, {sensorManifests}, {}, {actuatorManifests}));
 
     auto modbusBridgeDevice = std::make_shared<wolkabout::Device>(deviceConfiguration.getName(),
                                                                   deviceConfiguration.getKey(), *modbusBridgeManifest);
@@ -172,6 +207,7 @@ int main(int argc, char** argv)
 
     modbusBridge->onSensorReading([&](const std::string& reference, const std::string& value) -> void {
         wolk->addSensorReading(deviceConfiguration.getKey(), reference, value);
+        wolk->publish();
     });
 
     modbusBridge->onActuatorStatusChange([&](const std::string& reference) -> void {
