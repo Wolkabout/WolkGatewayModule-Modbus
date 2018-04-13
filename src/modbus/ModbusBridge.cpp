@@ -213,7 +213,7 @@ void ModbusBridge::handleActuationForHoldingRegister(const wolkabout::ModbusRegi
                        << modbusRegisterMapping.getAddress() << " Value: " << value;
         }
     }
-    else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
+    else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
     {
         float typedValue = std::stof(value.c_str());
         if (!m_modbusClient.writeHoldingRegister(modbusRegisterMapping.getAddress(), typedValue))
