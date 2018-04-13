@@ -159,7 +159,7 @@ bool LibModbusClient::writeCoil(int address, bool value)
 bool LibModbusClient::readInputRegister(int address, signed short& value)
 {
     ModbusValue modbusValue;
-    
+
     std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     if (modbus_read_input_registers(m_modbus, address, 1, &modbusValue.unsignedShortValue) == -1)
     {
@@ -186,7 +186,7 @@ bool LibModbusClient::readInputRegister(int address, unsigned short& value)
 bool LibModbusClient::readInputRegister(int address, float& value)
 {
     ModbusValue modbusValue;
-    
+
     std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     if (modbus_read_input_registers(m_modbus, address, 2, modbusValue.unsignedShortValues) == -1)
     {
@@ -201,7 +201,7 @@ bool LibModbusClient::readInputRegister(int address, float& value)
 bool LibModbusClient::readInputBit(int address, bool& value)
 {
     uint8_t tmpValue = 0;
-    
+
     std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     if (modbus_read_input_bits(m_modbus, address, 1, &tmpValue) == -1)
     {
@@ -216,7 +216,7 @@ bool LibModbusClient::readInputBit(int address, bool& value)
 bool LibModbusClient::readHoldingRegister(int address, short& value)
 {
     ModbusValue modbusValue;
-    
+
     std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     if (modbus_read_registers(m_modbus, address, 1, &modbusValue.unsignedShortValue) == -1)
     {
@@ -243,7 +243,7 @@ bool LibModbusClient::readHoldingRegister(int address, unsigned short& value)
 bool LibModbusClient::readHoldingRegister(int address, float& value)
 {
     ModbusValue modbusValue;
-    
+
     std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     if (modbus_read_registers(m_modbus, address, 2, modbusValue.unsignedShortValues) == -1)
     {
@@ -258,7 +258,7 @@ bool LibModbusClient::readHoldingRegister(int address, float& value)
 bool LibModbusClient::readCoil(int address, bool& value)
 {
     uint8_t tmpValue = 0;
-    
+
     std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     if (modbus_read_bits(m_modbus, address, 1, &tmpValue) == -1)
     {

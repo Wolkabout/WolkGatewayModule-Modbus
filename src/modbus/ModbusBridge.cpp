@@ -95,6 +95,48 @@ void ModbusBridge::handleActuation(const std::string& /* deviceKey */, const std
     }
 }
 
+void ModbusBridge::handleActuationForHoldingRegister(const wolkabout::ModbusRegisterMapping& modbusRegisterMapping,
+                                                     const std::string& value) const
+{
+    if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::INT16)
+    {
+        signed short typedValue = static_cast<signed short>(std::atol(value.c_str()));
+        if (!m_modbusClient.writeHoldingRegister(modbusRegisterMapping.getAddress(), typedValue))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
+                       << modbusRegisterMapping.getAddress() << " Value: " << value;
+        }
+    }
+    else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
+    {
+        unsigned short typedValue = static_cast<unsigned short>(std::stoul(value.c_str()));
+        if (!m_modbusClient.writeHoldingRegister(modbusRegisterMapping.getAddress(), typedValue))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
+                       << modbusRegisterMapping.getAddress() << " Value: " << value;
+        }
+    }
+    else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
+    {
+        float typedValue = std::stof(value.c_str());
+        if (!m_modbusClient.writeHoldingRegister(modbusRegisterMapping.getAddress(), typedValue))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
+                       << modbusRegisterMapping.getAddress() << " Value: " << value;
+        }
+    }
+}
+
+void ModbusBridge::handleActuationForCoil(const wolkabout::ModbusRegisterMapping& modbusRegisterMapping,
+                                          const std::string& value) const
+{
+    if (!m_modbusClient.writeCoil(modbusRegisterMapping.getAddress(), value == "true" ? true : false))
+    {
+        LOG(ERROR) << "ModbusBridge: Unable to write coil value - Register address: "
+                   << modbusRegisterMapping.getAddress() << " Value: " << value;
+    }
+}
+
 wolkabout::ActuatorStatus ModbusBridge::getActuatorStatus(const std::string& /* deviceKey */,
                                                           const std::string& reference)
 {
@@ -117,29 +159,6 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatus(const std::string& /* 
     return modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::HOLDING_REGISTER ?
              getActuatorStatusFromHoldingRegister(modbusRegisterMapping) :
              getActuatorStatusFromCoil(modbusRegisterMapping);
-}
-
-wolkabout::DeviceStatus ModbusBridge::getStatus(const std::string& /* deviceKey */)
-{
-    return m_modbusClient.isConnected() ? DeviceStatus::CONNECTED : DeviceStatus::OFFLINE;
-}
-
-void ModbusBridge::start()
-{
-    if (m_readerShouldRun)
-    {
-        return;
-    }
-
-    m_modbusClient.connect();
-    m_readerShouldRun = true;
-    m_reader = std::unique_ptr<std::thread>(new std::thread(&ModbusBridge::run, this));
-}
-
-void ModbusBridge::stop()
-{
-    m_readerShouldRun = false;
-    m_reader->join();
 }
 
 wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromHoldingRegister(
@@ -192,46 +211,27 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromCoil(
     return ActuatorStatus(value ? "true" : "false", ActuatorStatus::State::READY);
 }
 
-void ModbusBridge::handleActuationForHoldingRegister(const wolkabout::ModbusRegisterMapping& modbusRegisterMapping,
-                                                     const std::string& value) const
+wolkabout::DeviceStatus ModbusBridge::getStatus(const std::string& /* deviceKey */)
 {
-    if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::INT16)
-    {
-        signed short typedValue = static_cast<signed short>(std::atol(value.c_str()));
-        if (!m_modbusClient.writeHoldingRegister(modbusRegisterMapping.getAddress(), typedValue))
-        {
-            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
-                       << modbusRegisterMapping.getAddress() << " Value: " << value;
-        }
-    }
-    else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
-    {
-        unsigned short typedValue = static_cast<unsigned short>(std::stoul(value.c_str()));
-        if (!m_modbusClient.writeHoldingRegister(modbusRegisterMapping.getAddress(), typedValue))
-        {
-            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
-                       << modbusRegisterMapping.getAddress() << " Value: " << value;
-        }
-    }
-    else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
-    {
-        float typedValue = std::stof(value.c_str());
-        if (!m_modbusClient.writeHoldingRegister(modbusRegisterMapping.getAddress(), typedValue))
-        {
-            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
-                       << modbusRegisterMapping.getAddress() << " Value: " << value;
-        }
-    }
+    return m_modbusClient.isConnected() ? DeviceStatus::CONNECTED : DeviceStatus::OFFLINE;
 }
 
-void ModbusBridge::handleActuationForCoil(const wolkabout::ModbusRegisterMapping& modbusRegisterMapping,
-                                          const std::string& value) const
+void ModbusBridge::start()
 {
-    if (!m_modbusClient.writeCoil(modbusRegisterMapping.getAddress(), value == "true" ? true : false))
+    if (m_readerShouldRun)
     {
-        LOG(ERROR) << "ModbusBridge: Unable to write coil value - Register address: "
-                   << modbusRegisterMapping.getAddress() << " Value: " << value;
+        return;
     }
+
+    m_modbusClient.connect();
+    m_readerShouldRun = true;
+    m_reader = std::unique_ptr<std::thread>(new std::thread(&ModbusBridge::run, this));
+}
+
+void ModbusBridge::stop()
+{
+    m_readerShouldRun = false;
+    m_reader->join();
 }
 
 void ModbusBridge::run()
