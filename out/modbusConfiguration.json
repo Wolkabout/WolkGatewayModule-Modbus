@@ -2,6 +2,14 @@
     "ip": "192.168.100.1",
     "port": 502,
 
-    "responseTimeoutMs": 10,
-    "registerReadPeriodMs": 10
+    "serialPort": "/dev/ttyS",
+    "baudRate": 115200,
+    "dataBits": 8,
+    "stopBits": 1,
+    "bitParity": "NONE",
+
+    "connectionType": "SERIAL/RTU",
+
+    "responseTimeoutMs": 200,
+    "registerReadPeriodMs": 500
 }

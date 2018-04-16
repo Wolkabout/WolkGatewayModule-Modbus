@@ -16,7 +16,8 @@
 
 #include "DeviceConfiguration.h"
 #include "Wolk.h"
-#include "modbus/LibModbusClient.h"
+#include "modbus/LibModbusSerialRtuClient.h"
+#include "modbus/LibModbusTcpIpClient.h"
 #include "modbus/ModbusBridge.h"
 #include "modbus/ModbusClient.h"
 #include "modbus/ModbusConfiguration.h"
@@ -185,8 +186,22 @@ int main(int argc, char** argv)
     makeSensorAndActuatorManifestsFromModbusRegisterMappings(modbusRegisterMappings, sensorManifests,
                                                              actuatorManifests);
 
-    auto libModbusClient = std::unique_ptr<wolkabout::LibModbusClient>(new wolkabout::LibModbusClient(
-      modbusConfiguration.getIp(), modbusConfiguration.getPort(), modbusConfiguration.getResponseTimeout()));
+    auto libModbusClient = [&]() -> std::unique_ptr<wolkabout::ModbusClient> {
+        if (modbusConfiguration.getConnectionType() == wolkabout::ModbusConfiguration::ConnectionType::TCP_IP)
+        {
+            return std::unique_ptr<wolkabout::LibModbusTcpIpClient>(new wolkabout::LibModbusTcpIpClient(
+              modbusConfiguration.getIp(), modbusConfiguration.getPort(), modbusConfiguration.getResponseTimeout()));
+        }
+        else if (modbusConfiguration.getConnectionType() == wolkabout::ModbusConfiguration::ConnectionType::SERIAL_RTU)
+        {
+            return std::unique_ptr<wolkabout::LibModbusSerialRtuClient>(new wolkabout::LibModbusSerialRtuClient(
+              modbusConfiguration.getSerialPort(), modbusConfiguration.getBaudRate(), modbusConfiguration.getDataBits(),
+              modbusConfiguration.getStopBits(), modbusConfiguration.getBitParity(),
+              modbusConfiguration.getResponseTimeout()));
+        }
+
+        throw std::logic_error("Unsupported Modbus implementation specified in modbus configuration file");
+    }();
 
     auto modbusBridge = std::make_shared<wolkabout::ModbusBridge>(*libModbusClient, modbusRegisterMappings,
                                                                   modbusConfiguration.getReadPeriod());
