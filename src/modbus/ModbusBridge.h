@@ -40,7 +40,7 @@ class ModbusBridge : public ActuationHandler, public ActuatorStatusProvider, pub
 {
 public:
     ModbusBridge(ModbusClient& modbusClient, const std::vector<ModbusRegisterMapping>& modbusRegisterMappings,
-                 std::chrono::duration<long long, std::milli> registerReadPeriod);
+                 std::chrono::milliseconds registerReadPeriod);
 
     virtual ~ModbusBridge();
 
@@ -88,7 +88,7 @@ private:
     std::map<std::string, ModbusRegisterMapping> m_referenceToModbusRegisterMapping;
     std::map<std::string, ModbusRegisterWatcher> m_referenceToModbusRegisterWatcherMapping;
 
-    std::chrono::duration<long long, std::milli> m_registerReadPeriod;
+    std::chrono::milliseconds m_registerReadPeriod;
 
     std::atomic_bool m_readerShouldRun;
     std::unique_ptr<std::thread> m_reader;

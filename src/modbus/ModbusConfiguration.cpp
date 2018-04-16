@@ -27,9 +27,8 @@ namespace wolkabout
 {
 using nlohmann::json;
 
-ModbusConfiguration::ModbusConfiguration(std::string ip, int port,
-                                         std::chrono::duration<long long, std::milli> responseTimeout,
-                                         std::chrono::duration<long long, std::milli> readPeriod)
+ModbusConfiguration::ModbusConfiguration(std::string ip, int port, std::chrono::milliseconds responseTimeout,
+                                         std::chrono::milliseconds readPeriod)
 : m_ip(std::move(ip)), m_port(port), m_responseTimeout(std::move(responseTimeout)), m_readPeriod(std::move(readPeriod))
 {
 }
@@ -44,12 +43,12 @@ int ModbusConfiguration::getPort() const
     return m_port;
 }
 
-const std::chrono::duration<long long, std::milli>& ModbusConfiguration::getResponseTimeout() const
+const std::chrono::milliseconds& ModbusConfiguration::getResponseTimeout() const
 {
     return m_responseTimeout;
 }
 
-const std::chrono::duration<long long, std::milli>& ModbusConfiguration::getReadPeriod() const
+const std::chrono::milliseconds& ModbusConfiguration::getReadPeriod() const
 {
     return m_readPeriod;
 }
@@ -73,7 +72,7 @@ wolkabout::ModbusConfiguration ModbusConfiguration::fromJsonFile(const std::stri
     const auto responseTimeout = j.at("responseTimeoutMs").get<long long>();
     const auto readPeriod = j.at("registerReadPeriodMs").get<long long>();
 
-    return ModbusConfiguration(ip, port, std::chrono::duration<long long, std::milli>(responseTimeout),
-                               std::chrono::duration<long long, std::milli>(readPeriod));
+    return ModbusConfiguration(ip, port, std::chrono::milliseconds(responseTimeout),
+                               std::chrono::milliseconds(readPeriod));
 }
 }    // namespace wolkabout

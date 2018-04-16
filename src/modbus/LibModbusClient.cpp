@@ -28,9 +28,8 @@
 
 namespace wolkabout
 {
-LibModbusClient::LibModbusClient(std::string ipAddress, int port,
-                                 std::chrono::duration<long long, std::milli> responseTimeout)
-: m_ipAddress(std::move(ipAddress)), m_port(port), m_responseTimeout(responseTimeout), m_modbus(nullptr)
+LibModbusClient::LibModbusClient(std::string ipAddress, int port, std::chrono::milliseconds responseTimeout)
+: m_ipAddress(std::move(ipAddress)), m_port(port), m_responseTimeout(std::move(responseTimeout)), m_modbus(nullptr)
 {
 }
 

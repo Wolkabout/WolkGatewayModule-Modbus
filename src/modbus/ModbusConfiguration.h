@@ -27,15 +27,15 @@ class ModbusConfiguration
 public:
     ModbusConfiguration() = default;
 
-    ModbusConfiguration(std::string ip, int port, std::chrono::duration<long long, std::milli> responseTimeout,
-                        std::chrono::duration<long long, std::milli> readPeriod);
+    ModbusConfiguration(std::string ip, int port, std::chrono::milliseconds responseTimeout,
+                        std::chrono::milliseconds readPeriod);
 
     const std::string& getIp() const;
     int getPort() const;
 
-    const std::chrono::duration<long long, std::milli>& getResponseTimeout() const;
+    const std::chrono::milliseconds& getResponseTimeout() const;
 
-    const std::chrono::duration<long long, std::milli>& getReadPeriod() const;
+    const std::chrono::milliseconds& getReadPeriod() const;
 
     static wolkabout::ModbusConfiguration fromJsonFile(const std::string& modbusConfigurationFile);
 
@@ -43,8 +43,8 @@ private:
     std::string m_ip;
     int m_port;
 
-    std::chrono::duration<long long, std::milli> m_responseTimeout;
-    std::chrono::duration<long long, std::milli> m_readPeriod;
+    std::chrono::milliseconds m_responseTimeout;
+    std::chrono::milliseconds m_readPeriod;
 };
 }    // namespace wolkabout
 

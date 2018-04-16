@@ -29,7 +29,7 @@ namespace wolkabout
 class LibModbusClient : public ModbusClient
 {
 public:
-    LibModbusClient(std::string ipAddress, int port, std::chrono::duration<long long, std::milli> responseTimeout);
+    LibModbusClient(std::string ipAddress, int port, std::chrono::milliseconds responseTimeout);
 
     virtual ~LibModbusClient();
 
@@ -77,7 +77,7 @@ private:
     std::string m_ipAddress;
     int m_port;
 
-    std::chrono::duration<long long, std::milli> m_responseTimeout;
+    std::chrono::milliseconds m_responseTimeout;
 
     std::mutex m_modbusMutex;
     modbus_t* m_modbus;

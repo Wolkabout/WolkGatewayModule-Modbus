@@ -36,7 +36,7 @@
 namespace wolkabout
 {
 ModbusBridge::ModbusBridge(ModbusClient& modbusClient, const std::vector<ModbusRegisterMapping>& modbusRegisterMappings,
-                           std::chrono::duration<long long, std::milli> registerReadPeriod)
+                           std::chrono::milliseconds registerReadPeriod)
 : m_modbusClient(modbusClient), m_registerReadPeriod(std::move(registerReadPeriod)), m_readerShouldRun(false)
 {
     for (const ModbusRegisterMapping& modbusRegisterMapping : modbusRegisterMappings)
