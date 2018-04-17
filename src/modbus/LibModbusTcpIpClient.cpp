@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "LibModbusClient.h"
+#include "modbus/LibModbusTcpIpClient.h"
 #include "modbus/ModbusClient.h"
 #include "modbus/libmodbus/modbus.h"
 #include "utilities/Logger.h"
@@ -28,17 +28,17 @@
 
 namespace wolkabout
 {
-LibModbusClient::LibModbusClient(std::string ipAddress, int port, std::chrono::milliseconds responseTimeout)
+LibModbusTcpIpClient::LibModbusTcpIpClient(std::string ipAddress, int port, std::chrono::milliseconds responseTimeout)
 : m_ipAddress(std::move(ipAddress)), m_port(port), m_responseTimeout(std::move(responseTimeout)), m_modbus(nullptr)
 {
 }
 
-LibModbusClient::~LibModbusClient()
+LibModbusTcpIpClient::~LibModbusTcpIpClient()
 {
     disconnect();
 }
 
-bool LibModbusClient::connect()
+bool LibModbusTcpIpClient::connect()
 {
     LOG(INFO) << "LibModbusClient: Connecting to " << m_ipAddress << ":" << m_port;
 
@@ -79,7 +79,7 @@ bool LibModbusClient::connect()
     return true;
 }
 
-bool LibModbusClient::disconnect()
+bool LibModbusTcpIpClient::disconnect()
 {
     if (m_modbus)
     {
@@ -95,13 +95,13 @@ bool LibModbusClient::disconnect()
     return true;
 }
 
-bool LibModbusClient::isConnected()
+bool LibModbusTcpIpClient::isConnected()
 {
     std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     return m_modbus != nullptr;
 }
 
-bool LibModbusClient::writeHoldingRegister(int address, signed short value)
+bool LibModbusTcpIpClient::writeHoldingRegister(int address, signed short value)
 {
     ModbusValue modbusValue;
     modbusValue.signedShortValue = value;
@@ -116,7 +116,7 @@ bool LibModbusClient::writeHoldingRegister(int address, signed short value)
     return true;
 }
 
-bool LibModbusClient::writeHoldingRegister(int address, unsigned short value)
+bool LibModbusTcpIpClient::writeHoldingRegister(int address, unsigned short value)
 {
     std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     if (modbus_write_register(m_modbus, address, value) == -1)
@@ -128,7 +128,7 @@ bool LibModbusClient::writeHoldingRegister(int address, unsigned short value)
     return true;
 }
 
-bool LibModbusClient::writeHoldingRegister(int address, float value)
+bool LibModbusTcpIpClient::writeHoldingRegister(int address, float value)
 {
     ModbusValue modbusValue;
     modbusValue.floatValue = value;
@@ -143,7 +143,7 @@ bool LibModbusClient::writeHoldingRegister(int address, float value)
     return true;
 }
 
-bool LibModbusClient::writeCoil(int address, bool value)
+bool LibModbusTcpIpClient::writeCoil(int address, bool value)
 {
     std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     if (modbus_write_bit(m_modbus, address, value ? TRUE : FALSE))
@@ -155,7 +155,7 @@ bool LibModbusClient::writeCoil(int address, bool value)
     return true;
 }
 
-bool LibModbusClient::readInputRegister(int address, signed short& value)
+bool LibModbusTcpIpClient::readInputRegister(int address, signed short& value)
 {
     ModbusValue modbusValue;
 
@@ -170,7 +170,7 @@ bool LibModbusClient::readInputRegister(int address, signed short& value)
     return true;
 }
 
-bool LibModbusClient::readInputRegister(int address, unsigned short& value)
+bool LibModbusTcpIpClient::readInputRegister(int address, unsigned short& value)
 {
     std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     if (modbus_read_input_registers(m_modbus, address, 1, &value) == -1)
@@ -182,7 +182,7 @@ bool LibModbusClient::readInputRegister(int address, unsigned short& value)
     return true;
 }
 
-bool LibModbusClient::readInputRegister(int address, float& value)
+bool LibModbusTcpIpClient::readInputRegister(int address, float& value)
 {
     ModbusValue modbusValue;
 
@@ -197,7 +197,7 @@ bool LibModbusClient::readInputRegister(int address, float& value)
     return true;
 }
 
-bool LibModbusClient::readInputBit(int address, bool& value)
+bool LibModbusTcpIpClient::readInputBit(int address, bool& value)
 {
     uint8_t tmpValue = 0;
 
@@ -212,7 +212,7 @@ bool LibModbusClient::readInputBit(int address, bool& value)
     return true;
 }
 
-bool LibModbusClient::readHoldingRegister(int address, short& value)
+bool LibModbusTcpIpClient::readHoldingRegister(int address, short& value)
 {
     ModbusValue modbusValue;
 
@@ -227,7 +227,7 @@ bool LibModbusClient::readHoldingRegister(int address, short& value)
     return true;
 }
 
-bool LibModbusClient::readHoldingRegister(int address, unsigned short& value)
+bool LibModbusTcpIpClient::readHoldingRegister(int address, unsigned short& value)
 {
     std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     if (modbus_read_registers(m_modbus, address, 1, &value) == -1)
@@ -239,7 +239,7 @@ bool LibModbusClient::readHoldingRegister(int address, unsigned short& value)
     return true;
 }
 
-bool LibModbusClient::readHoldingRegister(int address, float& value)
+bool LibModbusTcpIpClient::readHoldingRegister(int address, float& value)
 {
     ModbusValue modbusValue;
 
@@ -254,7 +254,7 @@ bool LibModbusClient::readHoldingRegister(int address, float& value)
     return true;
 }
 
-bool LibModbusClient::readCoil(int address, bool& value)
+bool LibModbusTcpIpClient::readCoil(int address, bool& value)
 {
     uint8_t tmpValue = 0;
 

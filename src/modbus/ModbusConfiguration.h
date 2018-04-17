@@ -25,13 +25,35 @@ namespace wolkabout
 class ModbusConfiguration
 {
 public:
+    enum class ConnectionType
+    {
+        TCP_IP,
+        SERIAL_RTU
+    };
+
+    enum class BitParity
+    {
+        NONE,
+        EVEN,
+        ODD
+    };
+
     ModbusConfiguration() = default;
 
-    ModbusConfiguration(std::string ip, int port, std::chrono::milliseconds responseTimeout,
-                        std::chrono::milliseconds readPeriod);
+    ModbusConfiguration(std::string ip, int port, std::string serialPort, int baudRate, char dataBits, char stopBits,
+                        ModbusConfiguration::BitParity bitParity, ModbusConfiguration::ConnectionType connectionType,
+                        std::chrono::milliseconds responseTimeout, std::chrono::milliseconds readPeriod);
 
     const std::string& getIp() const;
     int getPort() const;
+
+    const std::string& getSerialPort() const;
+    int getBaudRate() const;
+    char getDataBits() const;
+    char getStopBits() const;
+    ModbusConfiguration::BitParity getBitParity() const;
+
+    ModbusConfiguration::ConnectionType getConnectionType() const;
 
     const std::chrono::milliseconds& getResponseTimeout() const;
 
@@ -42,6 +64,14 @@ public:
 private:
     std::string m_ip;
     int m_port;
+
+    std::string m_serialPort;
+    int m_baudRate;
+    char m_dataBits;
+    char m_stopBits;
+    BitParity m_bitParity;
+
+    ConnectionType m_connectionType;
 
     std::chrono::milliseconds m_responseTimeout;
     std::chrono::milliseconds m_readPeriod;
