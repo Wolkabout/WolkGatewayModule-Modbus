@@ -29,12 +29,13 @@
 namespace wolkabout
 {
 LibModbusSerialRtuClient::LibModbusSerialRtuClient(std::string serialPort, int baudRate, char dataBits, char stopBits,
-                                                   ModbusConfiguration::BitParity bitParity,
+                                                   ModbusConfiguration::BitParity bitParity, int slaveAddress,
                                                    std::chrono::milliseconds responseTimeout)
 : m_serialPort(std::move(serialPort))
 , m_baudRate(baudRate)
 , m_dataBits(dataBits)
 , m_stopBits(stopBits)
+, m_slaveAddress(slaveAddress)
 , m_responseTimeout(std::move(responseTimeout))
 , m_modbus(nullptr)
 {
@@ -93,6 +94,13 @@ bool LibModbusSerialRtuClient::connect()
                                     static_cast<uint32_t>(responseTimeOutMicrosecondsResidue.count())) == -1)
     {
         LOG(ERROR) << "LibModbusClient: Unable to set response timeout - " << modbus_strerror(errno);
+        disconnect();
+        return false;
+    }
+
+    if (modbus_set_slave(m_modbus, m_slaveAddress) == -1)
+    {
+        LOG(ERROR) << "LibModbusClient: Unable to set slave address - " << modbus_strerror(errno);
         disconnect();
         return false;
     }

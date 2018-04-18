@@ -31,7 +31,8 @@ class LibModbusSerialRtuClient : public ModbusClient
 {
 public:
     LibModbusSerialRtuClient(std::string serialPort, int baudRate, char dataBits, char stopBits,
-                             ModbusConfiguration::BitParity bitParity, std::chrono::milliseconds responseTimeout);
+                             ModbusConfiguration::BitParity bitParity, int slaveAddress,
+                             std::chrono::milliseconds responseTimeout);
 
     virtual ~LibModbusSerialRtuClient();
 
@@ -81,6 +82,7 @@ private:
     char m_dataBits;
     char m_stopBits;
     char m_bitParity;
+    int m_slaveAddress;
 
     std::chrono::milliseconds m_responseTimeout;
 

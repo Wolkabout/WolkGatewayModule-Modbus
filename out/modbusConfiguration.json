@@ -7,6 +7,7 @@
     "dataBits": 8,
     "stopBits": 1,
     "bitParity": "NONE",
+    "slaveAddress": 1,
 
     "connectionType": "SERIAL/RTU",
 

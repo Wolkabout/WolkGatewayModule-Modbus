@@ -28,7 +28,7 @@ namespace wolkabout
 using nlohmann::json;
 
 ModbusConfiguration::ModbusConfiguration(std::string ip, int port, std::string serialPort, int baudRate, char dataBits,
-                                         char stopBits, ModbusConfiguration::BitParity bitParity,
+                                         char stopBits, ModbusConfiguration::BitParity bitParity, int slaveAddress,
                                          ModbusConfiguration::ConnectionType connectionType,
                                          std::chrono::milliseconds responseTimeout,
                                          std::chrono::milliseconds readPeriod)
@@ -39,6 +39,7 @@ ModbusConfiguration::ModbusConfiguration(std::string ip, int port, std::string s
 , m_dataBits(dataBits)
 , m_stopBits(stopBits)
 , m_bitParity(bitParity)
+, m_slaveAddress(slaveAddress)
 , m_connectionType(connectionType)
 , m_responseTimeout(std::move(responseTimeout))
 , m_readPeriod(std::move(readPeriod))
@@ -78,6 +79,11 @@ char ModbusConfiguration::getStopBits() const
 ModbusConfiguration::BitParity ModbusConfiguration::getBitParity() const
 {
     return m_bitParity;
+}
+
+int ModbusConfiguration::getSlaveAddress() const
+{
+    return m_slaveAddress;
 }
 
 ModbusConfiguration::ConnectionType ModbusConfiguration::getConnectionType() const
@@ -134,6 +140,8 @@ wolkabout::ModbusConfiguration ModbusConfiguration::fromJsonFile(const std::stri
         throw std::logic_error("Unknown bit parity: " + bitParityStr);
     }();
 
+    const auto slaveAddress = j.at("slaveAddress").get<int>();
+
     const auto connectionTypeStr = j.at("connectionType").get<std::string>();
     const auto connectionType = [&]() -> ConnectionType {
         if (connectionTypeStr == "TCP/IP")
@@ -151,7 +159,8 @@ wolkabout::ModbusConfiguration ModbusConfiguration::fromJsonFile(const std::stri
     const auto responseTimeout = j.at("responseTimeoutMs").get<long long>();
     const auto readPeriod = j.at("registerReadPeriodMs").get<long long>();
 
-    return ModbusConfiguration(ip, port, serialPort, baudRate, dataBits, stopBits, bitParity, connectionType,
-                               std::chrono::milliseconds(responseTimeout), std::chrono::milliseconds(readPeriod));
+    return ModbusConfiguration(ip, port, serialPort, baudRate, dataBits, stopBits, bitParity, slaveAddress,
+                               connectionType, std::chrono::milliseconds(responseTimeout),
+                               std::chrono::milliseconds(readPeriod));
 }
 }    // namespace wolkabout

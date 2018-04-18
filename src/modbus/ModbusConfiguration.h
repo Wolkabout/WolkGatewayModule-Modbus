@@ -41,8 +41,9 @@ public:
     ModbusConfiguration() = default;
 
     ModbusConfiguration(std::string ip, int port, std::string serialPort, int baudRate, char dataBits, char stopBits,
-                        ModbusConfiguration::BitParity bitParity, ModbusConfiguration::ConnectionType connectionType,
-                        std::chrono::milliseconds responseTimeout, std::chrono::milliseconds readPeriod);
+                        ModbusConfiguration::BitParity bitParity, int slaveAddress,
+                        ModbusConfiguration::ConnectionType connectionType, std::chrono::milliseconds responseTimeout,
+                        std::chrono::milliseconds readPeriod);
 
     const std::string& getIp() const;
     int getPort() const;
@@ -52,6 +53,7 @@ public:
     char getDataBits() const;
     char getStopBits() const;
     ModbusConfiguration::BitParity getBitParity() const;
+    int getSlaveAddress() const;
 
     ModbusConfiguration::ConnectionType getConnectionType() const;
 
@@ -70,6 +72,7 @@ private:
     char m_dataBits;
     char m_stopBits;
     BitParity m_bitParity;
+    int m_slaveAddress;
 
     ConnectionType m_connectionType;
 

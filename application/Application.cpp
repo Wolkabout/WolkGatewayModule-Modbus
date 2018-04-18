@@ -197,7 +197,7 @@ int main(int argc, char** argv)
             return std::unique_ptr<wolkabout::LibModbusSerialRtuClient>(new wolkabout::LibModbusSerialRtuClient(
               modbusConfiguration.getSerialPort(), modbusConfiguration.getBaudRate(), modbusConfiguration.getDataBits(),
               modbusConfiguration.getStopBits(), modbusConfiguration.getBitParity(),
-              modbusConfiguration.getResponseTimeout()));
+              modbusConfiguration.getSlaveAddress(), modbusConfiguration.getResponseTimeout()));
         }
 
         throw std::logic_error("Unsupported Modbus implementation specified in modbus configuration file");
