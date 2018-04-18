@@ -175,7 +175,7 @@ bool LibModbusSerialRtuClient::writeHoldingRegister(int address, float value)
 bool LibModbusSerialRtuClient::writeCoil(int address, bool value)
 {
     std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
-    if (modbus_write_bit(m_modbus, address, value ? TRUE : FALSE))
+    if (modbus_write_bit(m_modbus, address, value ? TRUE : FALSE) == -1)
     {
         LOG(DEBUG) << "LibModbusClient: Unable to write coil - " << modbus_strerror(errno);
         return false;

@@ -395,7 +395,7 @@ bool ModbusBridge::isInputRegisterValueUpdated(const ModbusRegisterMapping& modb
         signed short valueShort;
         if (!m_modbusClient.readInputRegister(modbusRegisterMapping.getAddress(), valueShort))
         {
-            LOG(ERROR) << "ModbusBridge: Unable to read holding register with address '"
+            LOG(ERROR) << "ModbusBridge: Unable to read input register with address '"
                        << modbusRegisterMapping.getAddress() << "'";
             return false;
         }
@@ -408,7 +408,7 @@ bool ModbusBridge::isInputRegisterValueUpdated(const ModbusRegisterMapping& modb
         unsigned short valueUnsignedShort;
         if (!m_modbusClient.readInputRegister(modbusRegisterMapping.getAddress(), valueUnsignedShort))
         {
-            LOG(ERROR) << "ModbusBridge: Unable to read holding register with address '"
+            LOG(ERROR) << "ModbusBridge: Unable to read input register with address '"
                        << modbusRegisterMapping.getAddress() << "'";
             return false;
         }
@@ -421,7 +421,7 @@ bool ModbusBridge::isInputRegisterValueUpdated(const ModbusRegisterMapping& modb
         float valueFloat;
         if (!m_modbusClient.readInputRegister(modbusRegisterMapping.getAddress(), valueFloat))
         {
-            LOG(ERROR) << "ModbusBridge: Unable to read holding register with address '"
+            LOG(ERROR) << "ModbusBridge: Unable to read input register with address '"
                        << modbusRegisterMapping.getAddress() << "'";
             return false;
         }
