@@ -10,7 +10,8 @@
 
          "address": 0,
          "registerType": "INPUT_REGISTER",
-         "dataType": "INT16"
+         "dataType": "INT16",
+         "slaveAddress" : 1
       },
       {
          "name":"mappingName2",
@@ -22,7 +23,8 @@
 
          "address": 1,
          "registerType": "HOLDING_REGISTER",
-         "dataType": "REAL32"
+         "dataType": "REAL32",
+         "slaveAddress" : 1
       },
       {
          "name":"mappingName3",
@@ -31,7 +33,8 @@
 
          "address": 2,
          "registerType": "INPUT_BIT",
-         "dataType": "BOOL"
+         "dataType": "BOOL",
+         "slaveAddress" : 2
       },
       {
          "name":"mappingName4",
@@ -40,7 +43,8 @@
 
          "address": 3,
          "registerType": "COIL",
-         "dataType": "BOOL"
+         "dataType": "BOOL",
+         "slaveAddress" : 2
       }
    ]
 }
