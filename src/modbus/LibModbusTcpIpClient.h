@@ -56,6 +56,8 @@ public:
 
     bool readCoil(int address, bool& value) override;
 
+    bool changeSlaveAddress(int address) override;
+
 private:
     union ModbusValue {
         unsigned short unsignedShortValues[2];

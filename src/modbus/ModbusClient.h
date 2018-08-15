@@ -48,6 +48,8 @@ public:
     virtual bool readHoldingRegister(int address, float& value) = 0;
 
     virtual bool readCoil(int address, bool& value) = 0;
+
+    virtual bool changeSlaveAddress(int address) = 0;
 };
 }    // namespace wolkabout
 

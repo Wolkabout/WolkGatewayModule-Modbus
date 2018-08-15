@@ -17,8 +17,8 @@
 #ifndef MODBUSBRIDGE_H
 #define MODBUSBRIDGE_H
 
-#include "ActuationHandler.h"
-#include "ActuatorStatusProvider.h"
+#include "ActuationHandlerPerDevice.h"
+#include "ActuatorStatusProviderPerDevice.h"
 #include "DeviceStatusProvider.h"
 #include "modbus/ModbusRegisterWatcher.h"
 
@@ -36,7 +36,7 @@ namespace wolkabout
 class ModbusRegisterMapping;
 class ModbusClient;
 
-class ModbusBridge : public ActuationHandler, public ActuatorStatusProvider, public DeviceStatusProvider
+class ModbusBridge : public ActuationHandlerPerDevice, public ActuatorStatusProviderPerDevice, public DeviceStatusProvider
 {
 public:
     ModbusBridge(ModbusClient& modbusClient, const std::vector<ModbusRegisterMapping>& modbusRegisterMappings,
@@ -55,7 +55,7 @@ protected:
 
     ActuatorStatus getActuatorStatus(const std::string& deviceKey, const std::string& reference) override;
 
-    DeviceStatus getStatus(const std::string& deviceKey) override;
+    DeviceStatus getDeviceStatus(const std::string& deviceKey) override;
 
 private:
     ActuatorStatus getActuatorStatusFromHoldingRegister(const ModbusRegisterMapping& modbusRegisterMapping) const;
