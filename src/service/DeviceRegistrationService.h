@@ -20,11 +20,13 @@
 #include "InboundMessageHandler.h"
 #include "model/DeviceRegistrationResponse.h"
 
+#include <functional>
+
 namespace wolkabout
 {
 class ConnectivityService;
 class RegistrationProtocol;
-class Device;
+class DetailedDevice;
 
 typedef std::function<void(const std::string&, DeviceRegistrationResponse::Result)> RegistrationResponseHandler;
 
@@ -37,7 +39,7 @@ public:
     void messageReceived(std::shared_ptr<Message> message) override;
     const Protocol& getProtocol() override;
 
-    void publishRegistrationRequest(const Device& device);
+    void publishRegistrationRequest(const DetailedDevice& device);
 
 private:
     RegistrationProtocol& m_protocol;

@@ -20,6 +20,7 @@
 #include "InboundMessageHandler.h"
 #include "model/DeviceStatus.h"
 
+#include <functional>
 #include <string>
 
 namespace wolkabout

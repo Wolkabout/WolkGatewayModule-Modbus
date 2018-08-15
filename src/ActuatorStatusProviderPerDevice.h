@@ -13,29 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef DEVICESTATUSPROVIDER_H
-#define DEVICESTATUSPROVIDER_H
+#ifndef ACTUATORSTATUSPROVIDERPERDEVICE_H
+#define ACTUATORSTATUSPROVIDERPERDEVICE_H
 
-#include "model/DeviceStatus.h"
+#include "model/ActuatorStatus.h"
 
 #include <string>
 
 namespace wolkabout
 {
-class DeviceStatusProvider
+class ActuatorStatusProviderPerDevice
 {
 public:
     /**
-     * @brief Device status provider callback<br>
+     * @brief Actuator status provider callback<br>
      *        Must be implemented as non blocking<br>
      *        Must be implemented as thread safe
      * @param deviceKey Device key
-     * @return DeviceStatus of specified device
+     * @param reference Actuator reference
+     * @return ActuatorStatus of requested actuator
      */
-    virtual DeviceStatus getDeviceStatus(const std::string& deviceKey) = 0;
+    virtual ActuatorStatus getActuatorStatus(const std::string& deviceKey, const std::string& reference) = 0;
 
-    virtual ~DeviceStatusProvider() = default;
+    virtual ~ActuatorStatusProviderPerDevice() = default;
 };
 }    // namespace wolkabout
 
-#endif    // DEVICESTATUSPROVIDER_H
+#endif    // ACTUATORSTATUSPROVIDERPERDEVICE_H

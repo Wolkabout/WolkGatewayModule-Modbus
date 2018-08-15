@@ -17,8 +17,11 @@
 #include "service/DeviceRegistrationService.h"
 #include "connectivity/ConnectivityService.h"
 #include "model/DeviceRegistrationRequest.h"
+#include "model/Message.h"
 #include "protocol/RegistrationProtocol.h"
 #include "utilities/Logger.h"
+
+#include <functional>
 
 namespace wolkabout
 {
@@ -38,7 +41,7 @@ const Protocol& DeviceRegistrationService::getProtocol()
     return m_protocol;
 }
 
-void DeviceRegistrationService::publishRegistrationRequest(const Device& device)
+void DeviceRegistrationService::publishRegistrationRequest(const DetailedDevice& device)
 {
     DeviceRegistrationRequest request{device};
 

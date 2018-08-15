@@ -17,8 +17,10 @@
 #ifndef WOLK_H
 #define WOLK_H
 
-#include "ActuationHandler.h"
-#include "ActuatorStatusProvider.h"
+#include "ActuationHandlerPerDevice.h"
+#include "ActuatorStatusProviderPerDevice.h"
+#include "ConfigurationHandlerPerDevice.h"
+#include "ConfigurationProviderPerDevice.h"
 #include "InboundGatewayMessageHandler.h"
 #include "WolkBuilder.h"
 #include "model/ActuatorStatus.h"
@@ -65,6 +67,7 @@ public:
      * @brief Publishes sensor reading to WolkAbout IoT Cloud<br>
      *        This method is thread safe, and can be called from multiple thread
      * simultaneously
+     * @param deviceKey key of the device that holds the sensor
      * @param reference Sensor reference
      * @param value Sensor value<br>
      *              Supported types:<br>
@@ -88,21 +91,73 @@ public:
                           unsigned long long int rtc = 0);
 
     /**
+     * @brief Publishes multi-value sensor reading to WolkAbout IoT Cloud<br>
+     *        This method is thread safe, and can be called from multiple thread simultaneously
+     * @param reference Sensor reference
+     * @param values Multi-value sensor values<br>
+     *              Supported types:<br>
+     *               - bool<br>
+     *               - float<br>
+     *               - double<br>
+     *               - signed int<br>
+     *               - signed long int<br>
+     *               - signed long long int<br>
+     *               - unsigned int<br>
+     *               - unsigned long int<br>
+     *               - unsigned long long int<br>
+     *               - string<br>
+     *               - char*<br>
+     *               - const char*<br>
+     * @param rtc Reading POSIX time - Number of seconds since 01/01/1970<br>
+     *            If omitted current POSIX time is adopted
+     */
+    template <typename T>
+    void addSensorReading(const std::string& deviceKey, const std::string& reference, std::initializer_list<T> values,
+                          unsigned long long int rtc = 0);
+
+    /**
+     * @brief Publishes multi-value sensor reading to WolkAbout IoT Cloud<br>
+     *        This method is thread safe, and can be called from multiple thread simultaneously
+     * @param reference Sensor reference
+     * @param values Multi-value sensor values<br>
+     *              Supported types:<br>
+     *               - bool<br>
+     *               - float<br>
+     *               - double<br>
+     *               - signed int<br>
+     *               - signed long int<br>
+     *               - signed long long int<br>
+     *               - unsigned int<br>
+     *               - unsigned long int<br>
+     *               - unsigned long long int<br>
+     *               - string<br>
+     *               - char*<br>
+     *               - const char*<br>
+     * @param rtc Reading POSIX time - Number of seconds since 01/01/1970<br>
+     *            If omitted current POSIX time is adopted
+     */
+    template <typename T>
+    void addSensorReading(const std::string& deviceKey, const std::string& reference, const std::vector<T> values,
+                          unsigned long long int rtc = 0);
+
+    /**
      * @brief Publishes alarm to WolkAbout IoT Cloud<br>
      *        This method is thread safe, and can be called from multiple thread
      * simultaneously
+     * @param deviceKey key of the device that holds the alarm
      * @param reference Alarm reference
-     * @param value Alarm value
+     * @param active Is alarm active or not
      * @param rtc POSIX time at which event occurred - Number of seconds since
      * 01/01/1970<br> If omitted current POSIX time is adopted
      */
-    void addAlarm(const std::string& deviceKey, const std::string& reference, const std::string& value,
+    void addAlarm(const std::string& deviceKey, const std::string& reference, bool active,
                   unsigned long long int rtc = 0);
 
     /**
      * @brief Invokes ActuatorStatusProvider callback to obtain actuator
      * status<br> This method is thread safe, and can be called from multiple
      * thread simultaneously
+     * @param deviceKey key of the device that holds the actuator
      * @param Actuator reference
      */
     void publishActuatorStatus(const std::string& deviceKey, const std::string& reference);
@@ -112,6 +167,13 @@ public:
      * @param status
      */
     void addDeviceStatus(const std::string& deviceKey, DeviceStatus status);
+
+    /**
+     * @brief Invokes ConfigurationProvider to obtain device configuration, and the publishes it.<br>
+     *        This method is thread safe, and can be called from multiple thread simultaneously
+     * * @param deviceKey key of the device that holds the configuration
+     */
+    void publishConfiguration(const std::string& deviceKey);
 
     /**
      * @brief connect Establishes connection with WolkAbout IoT platform
@@ -157,6 +219,8 @@ private:
     void handleActuatorSetCommand(const std::string& key, const std::string& reference, const std::string& value);
     void handleActuatorGetCommand(const std::string& key, const std::string& reference);
     void handleDeviceStatusRequest(const std::string& key);
+    void handleConfigurationSetCommand(const std::string& key, const std::vector<ConfigurationItem>& configuration);
+    void handleConfigurationGetCommand(const std::string& key);
 
     void registerDevices();
     void registerDevice(const Device& device);
@@ -164,8 +228,11 @@ private:
     std::vector<std::string> getDeviceKeys();
     bool deviceExists(const std::string& deviceKey);
     bool sensorDefinedForDevice(const std::string& deviceKey, const std::string& reference);
+    std::string getSensorDelimiter(const std::string& deviceKey, const std::string& reference);
+    std::map<std::string, std::string> getConfigurationDelimiters(const std::string& deviceKey);
     bool alarmDefinedForDevice(const std::string& deviceKey, const std::string& reference);
     bool actuatorDefinedForDevice(const std::string& deviceKey, const std::string& reference);
+    bool configurationItemDefinedForDevice(const std::string& deviceKey, const std::string& reference);
 
     void handleRegistrationResponse(const std::string& deviceKey, DeviceRegistrationResponse::Result result);
 
@@ -182,13 +249,20 @@ private:
     std::shared_ptr<ConnectivityFacade> m_connectivityManager;
 
     std::function<void(const std::string&, const std::string&, const std::string&)> m_actuationHandlerLambda;
-    std::shared_ptr<ActuationHandler> m_actuationHandler;
+    std::shared_ptr<ActuationHandlerPerDevice> m_actuationHandler;
 
     std::function<ActuatorStatus(const std::string&, const std::string&)> m_actuatorStatusProviderLambda;
-    std::shared_ptr<ActuatorStatusProvider> m_actuatorStatusProvider;
+    std::shared_ptr<ActuatorStatusProviderPerDevice> m_actuatorStatusProvider;
 
     std::function<DeviceStatus(const std::string&)> m_deviceStatusProviderLambda;
     std::shared_ptr<DeviceStatusProvider> m_deviceStatusProvider;
+
+    std::function<void(const std::string&, const std::vector<ConfigurationItem>& configuration)>
+      m_configurationHandlerLambda;
+    std::shared_ptr<ConfigurationHandlerPerDevice> m_configurationHandler;
+
+    std::function<std::vector<ConfigurationItem>(const std::string&)> m_configurationProviderLambda;
+    std::shared_ptr<ConfigurationProviderPerDevice> m_configurationProvider;
 
     std::shared_ptr<DataService> m_dataService;
     std::shared_ptr<DeviceStatusService> m_deviceStatusService;
