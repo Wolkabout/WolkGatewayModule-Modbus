@@ -20,12 +20,11 @@ pushd dependencies
 ./make.sh
 popd
 
+
 cp tools/git/pre-commit .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 
-# Note
-# OPENSSL_INCLUDE_DIR is absoulte path or relative path to project source directory
-
 pushd out
-cmake -G "Unix Makefiles" -DOPENSSL_INCLUDE_DIR=dependencies/build/include -DCMAKE_BUILD_TYPE=Release ..
+conan install -s compiler.libcxx=libstdc++11 --build=missing ..
+cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
 popd

@@ -30,19 +30,6 @@ fi
 
 mkdir -pv "$BUILD_DIR"
 
-# libssl
-if [ ! -f "$LIB_DIR/libssl.$LIB_EXTENSION" ]; then
-    echo "Building libssl"
-    pushd libssl
-
-    ./config enable-egd enable-heartbeats enable-ssl3                          \
-             enable-ssl3-method enable-md2 enable-rc5 enable-rfc3779           \
-             enable-shared enable-ssl2 enable-weak-ssl-ciphers enable-zlib     \
-             enable-zlib-dynamic --prefix=$BUILD_DIR                           \
-
-    make -j8 && make install
-    popd
-fi
 
 # libmodbus
 if [ ! -f "$LIB_DIR/libmodbus.$LIB_EXTENSION" ]; then
@@ -60,9 +47,6 @@ fi
 # Copy shared libraries
 mkdir -p $LIB_DEPLOY_DIR
 
-# libssl
-cp $BUILD_DIR/lib/libcrypto.*$LIB_EXTENSION* $LIB_DEPLOY_DIR
-cp $BUILD_DIR/lib/libssl.*$LIB_EXTENSION* $LIB_DEPLOY_DIR
 
 # libmodbus
 cp $BASE_DIR/libmodbus/src/*.h $INCLUDE_DEPLOY_DIR/modbus/libmodbus

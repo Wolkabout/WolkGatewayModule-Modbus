@@ -14,15 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# libssl
-if [ ! -d "libssl" ]; then
-    echo "Downloading libssl"
-    wget -O openssl.tar.gz https://github.com/openssl/openssl/archive/OpenSSL_1_1_0f.tar.gz
-    tar -xzf openssl.tar.gz
-    mv openssl-OpenSSL_1_1_0f libssl
-    rm openssl.tar.gz
-fi
-
 # libmodbus
 if [ ! -d "libmodbus" ]; then
 	echo "Downloading libmodbus"
