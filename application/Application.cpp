@@ -98,37 +98,33 @@ void makeSensorAndActuatorManifestsFromModbusRegisterMappings(
         {
         case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER:
         {
-            actuatorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), "",
-                                           modbusRegisterMapping.getUnit(), "SL",
-                                           wolkabout::ActuatorManifest::DataType::NUMERIC, 1,
+            actuatorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
+                                           wolkabout::DataType::NUMERIC, "",
                                            modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
             break;
         }
 
         case wolkabout::ModbusRegisterMapping::RegisterType::COIL:
         {
-            actuatorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), "",
-                                           modbusRegisterMapping.getUnit(), "SW",
-                                           wolkabout::ActuatorManifest::DataType::BOOLEAN, 1,
+            actuatorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
+                                           wolkabout::DataType::NUMERIC, "",
                                            modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
             break;
         }
 
         case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_REGISTER:
         {
-            sensorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), "",
-                                         modbusRegisterMapping.getUnit(), "GENERIC",
-                                         wolkabout::SensorManifest::DataType::NUMERIC, 1,
-                                         modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
+            sensorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
+                                         wolkabout::ReadingType::Name::GENERIC, wolkabout::ReadingType::MeasurmentUnit::COUNT,
+                                         "", modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
             break;
         }
 
         case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_BIT:
         {
             sensorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                         "modbusRegisterMapping.getUnit()", modbusRegisterMapping.getUnit(), "GENERIC",
-                                         wolkabout::SensorManifest::DataType::BOOLEAN, 1,
-                                         modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
+                                         wolkabout::ReadingType::Name::SWITCH, wolkabout::ReadingType::MeasurmentUnit::BOOLEAN,
+                                         "", modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
             break;
         }
 
