@@ -4,6 +4,14 @@ WolkGateway module for connecting Modbus devices to WolkAbout IoT Platform.
 Supported protocol(s):
 * JSON_PROTOCOL
 
+Installing from source
+----------------------
+
+This repository must be cloned from the command line using:
+```sh
+git clone --recurse-submodules https://github.com/Wolkabout/WolkGateway-ModbusModule.git
+```
+
 Prerequisite
 ------------
 Following tools/libraries are required in order to build WolkGateway Modbus Module
