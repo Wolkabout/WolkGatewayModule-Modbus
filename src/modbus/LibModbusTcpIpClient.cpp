@@ -273,8 +273,7 @@ bool LibModbusTcpIpClient::changeSlaveAddress(int address)
 {
     if (modbus_set_slave(m_modbus, address) == -1)
     {
-        LOG(ERROR) << "LibModbusClient: Unable to set slave address - " << modbus_strerror(errno);
-        disconnect();
+        LOG(DEBUG) << "LibModbusClient: Unable to set slave address - " << modbus_strerror(errno);
         return false;
     }
 
