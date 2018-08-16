@@ -15,10 +15,11 @@
  */
 
 #include "ModbusBridge.h"
-#include "ActuationHandler.h"
-#include "ActuatorStatusProvider.h"
+#include "ActuationHandlerPerDevice.h"
+#include "ActuatorStatusProviderPerDevice.h"
 #include "DeviceStatusProvider.h"
 #include "modbus/ModbusClient.h"
+#include "modbus/libmodbus/modbus.h"
 #include "modbus/ModbusConfiguration.h"
 #include "modbus/ModbusRegisterMapping.h"
 #include "utilities/Logger.h"
@@ -101,6 +102,12 @@ void ModbusBridge::handleActuationForHoldingRegister(const wolkabout::ModbusRegi
     if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::INT16)
     {
         signed short typedValue = static_cast<signed short>(std::atol(value.c_str()));
+        if (!m_modbusClient.changeSlaveAddress(modbusRegisterMapping.getSlaveAddress()))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to change to slave address: "
+                       << modbusRegisterMapping.getSlaveAddress();
+           return;
+        }
         if (!m_modbusClient.writeHoldingRegister(modbusRegisterMapping.getAddress(), typedValue))
         {
             LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
@@ -110,6 +117,12 @@ void ModbusBridge::handleActuationForHoldingRegister(const wolkabout::ModbusRegi
     else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
     {
         unsigned short typedValue = static_cast<unsigned short>(std::stoul(value.c_str()));
+        if (!m_modbusClient.changeSlaveAddress(modbusRegisterMapping.getSlaveAddress()))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to change to slave address: "
+                       << modbusRegisterMapping.getSlaveAddress();
+           return;
+        }
         if (!m_modbusClient.writeHoldingRegister(modbusRegisterMapping.getAddress(), typedValue))
         {
             LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
@@ -119,6 +132,12 @@ void ModbusBridge::handleActuationForHoldingRegister(const wolkabout::ModbusRegi
     else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
     {
         float typedValue = std::stof(value.c_str());
+        if (!m_modbusClient.changeSlaveAddress(modbusRegisterMapping.getSlaveAddress()))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to change to slave address: "
+                       << modbusRegisterMapping.getSlaveAddress();
+           return;
+        }
         if (!m_modbusClient.writeHoldingRegister(modbusRegisterMapping.getAddress(), typedValue))
         {
             LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
@@ -167,6 +186,12 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromHoldingRegister(
     if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::INT16)
     {
         signed short value;
+        if (!m_modbusClient.changeSlaveAddress(modbusRegisterMapping.getSlaveAddress()))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to change to slave address: "
+                       << modbusRegisterMapping.getSlaveAddress();
+           return ActuatorStatus("", ActuatorStatus::State::ERROR);
+        }
         if (!m_modbusClient.readHoldingRegister(modbusRegisterMapping.getAddress(), value))
         {
             return ActuatorStatus("", ActuatorStatus::State::ERROR);
@@ -177,6 +202,12 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromHoldingRegister(
     else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
     {
         unsigned short value;
+        if (!m_modbusClient.changeSlaveAddress(modbusRegisterMapping.getSlaveAddress()))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to change to slave address: "
+                       << modbusRegisterMapping.getSlaveAddress();
+           return ActuatorStatus("", ActuatorStatus::State::ERROR);
+        }
         if (!m_modbusClient.readHoldingRegister(modbusRegisterMapping.getAddress(), value))
         {
             return ActuatorStatus("", ActuatorStatus::State::ERROR);
@@ -187,6 +218,12 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromHoldingRegister(
     else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
     {
         float value;
+        if (!m_modbusClient.changeSlaveAddress(modbusRegisterMapping.getSlaveAddress()))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to change to slave address: "
+                       << modbusRegisterMapping.getSlaveAddress();
+           return ActuatorStatus("", ActuatorStatus::State::ERROR);
+        }
         if (!m_modbusClient.readHoldingRegister(modbusRegisterMapping.getAddress(), value))
         {
             return ActuatorStatus("", ActuatorStatus::State::ERROR);
@@ -203,6 +240,12 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromCoil(
   const wolkabout::ModbusRegisterMapping& modbusRegisterMapping) const
 {
     bool value;
+    if (!m_modbusClient.changeSlaveAddress(modbusRegisterMapping.getSlaveAddress()))
+    {
+        LOG(ERROR) << "ModbusBridge: Unable to change to slave address: "
+                   << modbusRegisterMapping.getSlaveAddress();
+       return ActuatorStatus("", ActuatorStatus::State::ERROR);
+    }
     if (!m_modbusClient.readCoil(modbusRegisterMapping.getAddress(), value))
     {
         return ActuatorStatus("", ActuatorStatus::State::ERROR);
@@ -211,7 +254,7 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromCoil(
     return ActuatorStatus(value ? "true" : "false", ActuatorStatus::State::READY);
 }
 
-wolkabout::DeviceStatus ModbusBridge::getStatus(const std::string& /* deviceKey */)
+wolkabout::DeviceStatus ModbusBridge::getDeviceStatus(const std::string& /* deviceKey */)
 {
     return m_modbusClient.isConnected() ? DeviceStatus::CONNECTED : DeviceStatus::OFFLINE;
 }
@@ -324,6 +367,12 @@ bool ModbusBridge::isRegisterValueUpdated(const ModbusRegisterMapping& modbusReg
 bool ModbusBridge::isHoldingRegisterValueUpdated(const ModbusRegisterMapping& modbusRegisterMapping,
                                                  ModbusRegisterWatcher& modbusRegisterWatcher)
 {
+    if (!m_modbusClient.changeSlaveAddress(modbusRegisterMapping.getSlaveAddress()))
+    {
+        LOG(ERROR) << "ModbusBridge: Unable to change to slave address: "
+                   << modbusRegisterMapping.getSlaveAddress();
+       return false;
+    }
     switch (modbusRegisterMapping.getDataType())
     {
     case ModbusRegisterMapping::DataType::INT16:
@@ -388,6 +437,12 @@ bool ModbusBridge::isHoldingRegisterValueUpdated(const ModbusRegisterMapping& mo
 bool ModbusBridge::isInputRegisterValueUpdated(const ModbusRegisterMapping& modbusRegisterMapping,
                                                ModbusRegisterWatcher& modbusRegisterWatcher)
 {
+    if (!m_modbusClient.changeSlaveAddress(modbusRegisterMapping.getSlaveAddress()))
+    {
+        LOG(ERROR) << "ModbusBridge: Unable to change to slave address: "
+                   << modbusRegisterMapping.getSlaveAddress();
+       return false;
+    }
     switch (modbusRegisterMapping.getDataType())
     {
     case ModbusRegisterMapping::DataType::INT16:
@@ -452,6 +507,12 @@ bool ModbusBridge::isInputRegisterValueUpdated(const ModbusRegisterMapping& modb
 bool ModbusBridge::isCoilValueUpdated(const ModbusRegisterMapping& modbusRegisterMapping,
                                       ModbusRegisterWatcher& modbusRegisterWatcher)
 {
+    if (!m_modbusClient.changeSlaveAddress(modbusRegisterMapping.getSlaveAddress()))
+    {
+        LOG(ERROR) << "ModbusBridge: Unable to change to slave address: "
+                   << modbusRegisterMapping.getSlaveAddress();
+       return false;
+    }
     bool value;
     if (!m_modbusClient.readCoil(modbusRegisterMapping.getAddress(), value))
     {
@@ -465,6 +526,12 @@ bool ModbusBridge::isCoilValueUpdated(const ModbusRegisterMapping& modbusRegiste
 bool ModbusBridge::isInputBitValueUpdated(const ModbusRegisterMapping& modbusRegisterMapping,
                                           ModbusRegisterWatcher& modbusRegisterWatcher)
 {
+    if (!m_modbusClient.changeSlaveAddress(modbusRegisterMapping.getSlaveAddress()))
+    {
+        LOG(ERROR) << "ModbusBridge: Unable to change to slave address: "
+                   << modbusRegisterMapping.getSlaveAddress();
+       return false;
+    }
     bool value;
     if (!m_modbusClient.readInputBit(modbusRegisterMapping.getAddress(), value))
     {

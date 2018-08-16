@@ -268,4 +268,15 @@ bool LibModbusTcpIpClient::readCoil(int address, bool& value)
     value = tmpValue != 0 ? true : false;
     return true;
 }
+
+bool LibModbusTcpIpClient::changeSlaveAddress(int address)
+{
+    if (modbus_set_slave(m_modbus, address) == -1)
+    {
+        LOG(DEBUG) << "LibModbusClient: Unable to set slave address - " << modbus_strerror(errno);
+        return false;
+    }
+
+    return true;
+}
 }    // namespace wolkabout

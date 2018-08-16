@@ -13,29 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef DEVICESTATUSPROVIDER_H
-#define DEVICESTATUSPROVIDER_H
+#ifndef CONFIGURATIONPROVIDERPERDEVICE_H
+#define CONFIGURATIONPROVIDERPERDEVICE_H
 
-#include "model/DeviceStatus.h"
+#include "model/ConfigurationItem.h"
 
 #include <string>
+#include <vector>
 
 namespace wolkabout
 {
-class DeviceStatusProvider
+class ConfigurationProviderPerDevice
 {
 public:
     /**
-     * @brief Device status provider callback<br>
+     * @brief Device configuration provider callback
+     *        Reads device configuration and returns it as
+     *        vector of wolkabout::ConfigurationItem.<br>
+     *
      *        Must be implemented as non blocking<br>
      *        Must be implemented as thread safe
      * @param deviceKey Device key
-     * @return DeviceStatus of specified device
+     * @return Device configuration as std::vector<ConfigurationItem>
      */
-    virtual DeviceStatus getDeviceStatus(const std::string& deviceKey) = 0;
+    virtual std::vector<ConfigurationItem> getConfiguration(const std::string& deviceKey) = 0;
 
-    virtual ~DeviceStatusProvider() = default;
+    virtual ~ConfigurationProviderPerDevice() = default;
 };
 }    // namespace wolkabout
 
-#endif    // DEVICESTATUSPROVIDER_H
+#endif    // CONFIGURATIONPROVIDERPERDEVICE_H

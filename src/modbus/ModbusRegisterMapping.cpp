@@ -30,7 +30,7 @@ using nlohmann::json;
 ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string reference, std::string unit, double minimum,
                                              double maximum, int address,
                                              wolkabout::ModbusRegisterMapping::RegisterType registerType,
-                                             wolkabout::ModbusRegisterMapping::DataType dataType)
+                                             wolkabout::ModbusRegisterMapping::DataType dataType, int slaveAddress)
 : m_name(std::move(name))
 , m_reference(std::move(reference))
 , m_unit(std::move(unit))
@@ -39,6 +39,7 @@ ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string refer
 , m_address(address)
 , m_registerType(registerType)
 , m_dataType(dataType)
+, m_slaveAddress(slaveAddress)
 {
 }
 
@@ -82,6 +83,11 @@ ModbusRegisterMapping::DataType ModbusRegisterMapping::getDataType() const
     return m_dataType;
 }
 
+int ModbusRegisterMapping::getSlaveAddress() const
+{
+    return m_slaveAddress;
+}
+
 std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::fromJsonFile(
   const std::string& modbusRegisterMappingFile)
 {
@@ -114,6 +120,8 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
         const auto dataTypeStr = modbusRegisterMappingJson.at("dataType").get<std::string>();
         const auto dataType = deserializeDataType(dataTypeStr);
 
+        const auto slaveAddress = modbusRegisterMappingJson.at("slaveAddress").get<int>();
+
         double minimum = 0.0;
         double maximum = 1.0;
 
@@ -125,7 +133,7 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
         }
 
         modbusRegisterMappingVector.emplace_back(name, reference, unit, minimum, maximum, address, registerType,
-                                                 dataType);
+                                                 dataType, slaveAddress);
     }
 
     return modbusRegisterMappingVector;
