@@ -190,7 +190,7 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromHoldingRegister(
         {
             LOG(ERROR) << "ModbusBridge: Unable to change to slave address: "
                        << modbusRegisterMapping.getSlaveAddress();
-           return;
+           return ActuatorStatus("", ActuatorStatus::State::ERROR);
         }
         if (!m_modbusClient.readHoldingRegister(modbusRegisterMapping.getAddress(), value))
         {
@@ -206,7 +206,7 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromHoldingRegister(
         {
             LOG(ERROR) << "ModbusBridge: Unable to change to slave address: "
                        << modbusRegisterMapping.getSlaveAddress();
-           return;
+           return ActuatorStatus("", ActuatorStatus::State::ERROR);
         }
         if (!m_modbusClient.readHoldingRegister(modbusRegisterMapping.getAddress(), value))
         {
@@ -222,7 +222,7 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromHoldingRegister(
         {
             LOG(ERROR) << "ModbusBridge: Unable to change to slave address: "
                        << modbusRegisterMapping.getSlaveAddress();
-           return;
+           return ActuatorStatus("", ActuatorStatus::State::ERROR);
         }
         if (!m_modbusClient.readHoldingRegister(modbusRegisterMapping.getAddress(), value))
         {
@@ -244,7 +244,7 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromCoil(
     {
         LOG(ERROR) << "ModbusBridge: Unable to change to slave address: "
                    << modbusRegisterMapping.getSlaveAddress();
-       return;
+       return ActuatorStatus("", ActuatorStatus::State::ERROR);
     }
     if (!m_modbusClient.readCoil(modbusRegisterMapping.getAddress(), value))
     {
