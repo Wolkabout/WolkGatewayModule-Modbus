@@ -107,7 +107,7 @@ void makeSensorAndActuatorManifestsFromModbusRegisterMappings(
         case wolkabout::ModbusRegisterMapping::RegisterType::COIL:
         {
             actuatorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                           wolkabout::DataType::NUMERIC, "",
+                                           wolkabout::DataType::BOOLEAN, "",
                                            modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
             break;
         }
