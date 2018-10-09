@@ -117,8 +117,9 @@ Modbus register mapping file contains settings that map modbus registers to Wolk
 
 * Actuators (read & write):
     - `COIL`
-    - `HOLDING_REGISTER`
+    - `HOLDING_REGISTER_ACTUATOR`
 * Sensors (read only):
+    - `HOLDING_REGISTER_SENSOR`
     - `INPUT_REGISTER`
     - `INPUT_BIT`
 
@@ -128,33 +129,30 @@ Modbus register mapping file contains settings that map modbus registers to Wolk
       {
          "name":"mappingName",              // Register name
          "reference": "mappingReference",   // Unique reference used to differ register on WolkAbout IoT Platform
-         "unit": "mappingReferenceUnit",    // Unit of type stored in register
 
          "minimum": -32768,                 // Minimum value that can be held in register. Required for visualization on WolkAbout IoT Platform
          "maximum": 32767,                  // Maximum value that can be held in register. Required for visualization on WolkAbout IoT Platform
 
          "address": 0,                      // Register address
-         "registerType": "INPUT_REGISTER",  // Register type - "INPUT_REGISTER" or "HOLDING_REGISTER" or "INPUT_BIT" or "COIL"
-         "dataType": "INT16",               // Data type stored in register - "INT16" or "UINT16" or "REAL32" for "INPUT_REGISTER"/"HOLDING_REGISTER" register type, and "BOOL" for "COIL"/"INPUT_BIT"
+         "registerType": "INPUT_REGISTER",  // Register type - "INPUT_REGISTER" or "HOLDING_REGISTER_ACTUATOR" or "HOLDING_REGISTER_SENSOR" or "INPUT_BIT" or "COIL"
+         "dataType": "INT16",               // Data type stored in register - "INT16" or "UINT16" or "REAL32" for "INPUT_REGISTER"/"HOLDING_REGISTER_ACTUATOR"/"HOLDING_REGISTER_SENSOR" register type, and "BOOL" for "COIL"/"INPUT_BIT"
          "slaveAddress": 1                  // Slave address where the register is located - Ignored for TCP/IP
       },
       {
          "name":"mappingName2",
          "reference": "mappingReference2",
-         "unit": "mappingReferenceUniti2",
 
          "minimum": -4000,
          "maximum": 4000,
 
          "address": 1,
-         "registerType": "HOLDING_REGISTER",
+         "registerType": "HOLDING_REGISTER_ACTUATOR",
          "dataType": "REAL32",
          "slaveAddress" : 1
       },
       {
          "name":"mappingName3",
          "reference": "mappingReference3",
-         "unit": "mappingReferenceUnit3",
 
          "address": 2,
          "registerType": "INPUT_BIT",
@@ -164,7 +162,6 @@ Modbus register mapping file contains settings that map modbus registers to Wolk
       {
          "name":"mappingName4",
          "reference": "mappingReference4",
-         "unit": "mappingReferenceUnit4",
 
          "address": 3,
          "registerType": "COIL",
@@ -173,6 +170,4 @@ Modbus register mapping file contains settings that map modbus registers to Wolk
       }
    ]
 }
-
-
 ```

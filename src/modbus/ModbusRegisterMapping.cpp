@@ -27,13 +27,12 @@ namespace wolkabout
 {
 using nlohmann::json;
 
-ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string reference, std::string unit, double minimum,
+ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string reference, double minimum,
                                              double maximum, int address,
                                              wolkabout::ModbusRegisterMapping::RegisterType registerType,
                                              wolkabout::ModbusRegisterMapping::DataType dataType, int slaveAddress)
 : m_name(std::move(name))
 , m_reference(std::move(reference))
-, m_unit(std::move(unit))
 , m_minimum(minimum)
 , m_maximum(maximum)
 , m_address(address)
@@ -51,11 +50,6 @@ const std::string& ModbusRegisterMapping::getName() const
 const std::string& ModbusRegisterMapping::getReference() const
 {
     return m_reference;
-}
-
-const std::string& ModbusRegisterMapping::getUnit() const
-{
-    return m_unit;
 }
 
 double ModbusRegisterMapping::getMinimum() const
@@ -110,8 +104,6 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
         const auto name = modbusRegisterMappingJson.at("name").get<std::string>();
         const auto reference = modbusRegisterMappingJson.at("reference").get<std::string>();
 
-        const auto unit = modbusRegisterMappingJson.at("unit").get<std::string>();
-
         const auto address = modbusRegisterMappingJson.at("address").get<int>();
 
         const auto registerTypeStr = modbusRegisterMappingJson.at("registerType").get<std::string>();
@@ -132,7 +124,7 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
             maximum = modbusRegisterMappingJson.at("maximum").get<double>();
         }
 
-        modbusRegisterMappingVector.emplace_back(name, reference, unit, minimum, maximum, address, registerType,
+        modbusRegisterMappingVector.emplace_back(name, reference, minimum, maximum, address, registerType,
                                                  dataType, slaveAddress);
     }
 
@@ -146,9 +138,13 @@ ModbusRegisterMapping::RegisterType ModbusRegisterMappingFactory::deserializeReg
     {
         return ModbusRegisterMapping::RegisterType::INPUT_REGISTER;
     }
-    else if (registerType == "HOLDING_REGISTER")
+    else if (registerType == "HOLDING_REGISTER_SENSOR")
     {
-        return ModbusRegisterMapping::RegisterType::HOLDING_REGISTER;
+        return ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR;
+    }
+    else if (registerType == "HOLDING_REGISTER_ACTUATOR")
+    {
+        return ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR;
     }
     else if (registerType == "INPUT_BIT")
     {
