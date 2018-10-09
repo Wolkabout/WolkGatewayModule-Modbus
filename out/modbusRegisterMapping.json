@@ -20,7 +20,7 @@
          "maximum": 4000,
 
          "address": 1,
-         "registerType": "HOLDING_REGISTER",
+         "registerType": "HOLDING_REGISTER_ACTUATOR",
          "dataType": "REAL32",
          "slaveAddress" : 1
       },
