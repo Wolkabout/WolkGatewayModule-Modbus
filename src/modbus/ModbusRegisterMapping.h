@@ -28,7 +28,8 @@ public:
     enum class RegisterType
     {
         INPUT_REGISTER,
-        HOLDING_REGISTER,
+        HOLDING_REGISTER_SENSOR,
+        HOLDING_REGISTER_ACTUATOR,
 
         INPUT_BIT,
         COIL
@@ -44,12 +45,11 @@ public:
         BOOL
     };
 
-    ModbusRegisterMapping(std::string name, std::string reference, std::string unit, double minimum, double maximum,
+    ModbusRegisterMapping(std::string name, std::string reference, double minimum, double maximum,
                           int address, RegisterType registerType, DataType dataType, int slaveAddress);
 
     const std::string& getName() const;
     const std::string& getReference() const;
-    const std::string& getUnit() const;
 
     double getMinimum() const;
     double getMaximum() const;
@@ -63,7 +63,6 @@ public:
 private:
     std::string m_name;
     std::string m_reference;
-    std::string m_unit;
 
     double m_minimum;
     double m_maximum;

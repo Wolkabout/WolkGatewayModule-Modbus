@@ -78,15 +78,15 @@ void ModbusBridge::handleActuation(const std::string& /* deviceKey */, const std
     }
 
     const ModbusRegisterMapping& modbusRegisterMapping = m_referenceToModbusRegisterMapping.at(reference);
-    if (modbusRegisterMapping.getRegisterType() != ModbusRegisterMapping::RegisterType::HOLDING_REGISTER &&
+    if (modbusRegisterMapping.getRegisterType() != ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR &&
         modbusRegisterMapping.getRegisterType() != ModbusRegisterMapping::RegisterType::COIL)
     {
         LOG(ERROR) << "ModbusBridge: Modbus register mapped to reference '" << reference
-                   << "' can not be treated as actuator - Modbus register must be of type 'HOLDING_REGISTER' or 'COIL'";
+                   << "' can not be treated as actuator - Modbus register must be of type 'HOLDING_REGISTER_ACTUATOR' or 'COIL'";
         return;
     }
 
-    if (modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::HOLDING_REGISTER)
+    if (modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR)
     {
         handleActuationForHoldingRegister(modbusRegisterMapping, value);
     }
@@ -167,15 +167,15 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatus(const std::string& /* 
     }
 
     const ModbusRegisterMapping& modbusRegisterMapping = m_referenceToModbusRegisterMapping.at(reference);
-    if (modbusRegisterMapping.getRegisterType() != ModbusRegisterMapping::RegisterType::HOLDING_REGISTER &&
+    if (modbusRegisterMapping.getRegisterType() != ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR &&
         modbusRegisterMapping.getRegisterType() != ModbusRegisterMapping::RegisterType::COIL)
     {
         LOG(ERROR) << "ModbusBridge: Modbus register mapped to reference '" << reference
-                   << "' can not be treated as actuator - Modbus register must be of type 'HOLDING_REGISTER' or 'COIL'";
+                   << "' can not be treated as actuator - Modbus register must be of type 'HOLDING_REGISTER_ACTUATOR' or 'COIL'";
         return ActuatorStatus("", ActuatorStatus::State::ERROR);
     }
 
-    return modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::HOLDING_REGISTER ?
+    return modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR ?
              getActuatorStatusFromHoldingRegister(modbusRegisterMapping) :
              getActuatorStatusFromCoil(modbusRegisterMapping);
 }
@@ -315,7 +315,7 @@ void ModbusBridge::readAndReportModbusRegisterValue(
         return;
     }
 
-    if (modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::HOLDING_REGISTER ||
+    if (modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR ||
         modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::COIL)
     {
         LOG(INFO) << "ModbusBridge: Actuator value changed - Reference: '" << modbusRegisterMapping.getReference()
@@ -328,6 +328,7 @@ void ModbusBridge::readAndReportModbusRegisterValue(
     }
 
     if (modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::INPUT_REGISTER ||
+        modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR ||
         modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::INPUT_BIT)
     {
         LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << modbusRegisterMapping.getReference() << "' Value: '"
@@ -345,7 +346,10 @@ bool ModbusBridge::isRegisterValueUpdated(const ModbusRegisterMapping& modbusReg
 {
     switch (modbusRegisterMapping.getRegisterType())
     {
-    case ModbusRegisterMapping::RegisterType::HOLDING_REGISTER:
+    case ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
+        return isHoldingRegisterValueUpdated(modbusRegisterMapping, modbusRegisterWatcher);
+
+    case ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR:
         return isHoldingRegisterValueUpdated(modbusRegisterMapping, modbusRegisterWatcher);
 
     case ModbusRegisterMapping::RegisterType::INPUT_REGISTER:

@@ -96,7 +96,7 @@ void makeSensorAndActuatorManifestsFromModbusRegisterMappings(
     {
         switch (modbusRegisterMapping.getRegisterType())
         {
-        case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER:
+        case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
         {
             actuatorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
                                            wolkabout::DataType::NUMERIC, "",
@@ -107,8 +107,16 @@ void makeSensorAndActuatorManifestsFromModbusRegisterMappings(
         case wolkabout::ModbusRegisterMapping::RegisterType::COIL:
         {
             actuatorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                           wolkabout::DataType::NUMERIC, "",
+                                           wolkabout::DataType::BOOLEAN, "",
                                            modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
+            break;
+        }
+
+        case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR:
+        {
+            sensorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
+                                         wolkabout::ReadingType::Name::GENERIC, wolkabout::ReadingType::MeasurmentUnit::COUNT,
+                                         "", modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
             break;
         }
 
