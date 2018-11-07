@@ -79,6 +79,8 @@ private:
         }
     };
 
+    void sleepBetweenModbusMessages() const;
+
     std::string m_serialPort;
     int m_baudRate;
     char m_dataBits;

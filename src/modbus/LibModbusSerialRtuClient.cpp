@@ -24,6 +24,7 @@
 #include <cstdint>
 #include <mutex>
 #include <string>
+#include <thread>
 #include <utility>
 
 namespace wolkabout
@@ -110,11 +111,12 @@ bool LibModbusSerialRtuClient::connect()
 
 bool LibModbusSerialRtuClient::disconnect()
 {
+    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
+
     if (m_modbus)
     {
         LOG(INFO) << "LibModbusClient: Closing serial port '" << m_serialPort << "'";
 
-        std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
         modbus_flush(m_modbus);
         modbus_close(m_modbus);
         modbus_free(m_modbus);
@@ -142,6 +144,7 @@ bool LibModbusSerialRtuClient::writeHoldingRegister(int address, signed short va
         return false;
     }
 
+    sleepBetweenModbusMessages();
     return true;
 }
 
@@ -154,6 +157,7 @@ bool LibModbusSerialRtuClient::writeHoldingRegister(int address, unsigned short 
         return false;
     }
 
+    sleepBetweenModbusMessages();
     return true;
 }
 
@@ -169,6 +173,7 @@ bool LibModbusSerialRtuClient::writeHoldingRegister(int address, float value)
         return false;
     }
 
+    sleepBetweenModbusMessages();
     return true;
 }
 
@@ -181,6 +186,7 @@ bool LibModbusSerialRtuClient::writeCoil(int address, bool value)
         return false;
     }
 
+    sleepBetweenModbusMessages();
     return true;
 }
 
@@ -196,6 +202,8 @@ bool LibModbusSerialRtuClient::readInputRegister(int address, signed short& valu
     }
 
     value = modbusValue.signedShortValue;
+
+    sleepBetweenModbusMessages();
     return true;
 }
 
@@ -208,6 +216,7 @@ bool LibModbusSerialRtuClient::readInputRegister(int address, unsigned short& va
         return false;
     }
 
+    sleepBetweenModbusMessages();
     return true;
 }
 
@@ -223,6 +232,8 @@ bool LibModbusSerialRtuClient::readInputRegister(int address, float& value)
     }
 
     value = modbusValue.floatValue;
+
+    sleepBetweenModbusMessages();
     return true;
 }
 
@@ -238,6 +249,8 @@ bool LibModbusSerialRtuClient::readInputBit(int address, bool& value)
     }
 
     value = tmpValue != 0 ? true : false;
+
+    sleepBetweenModbusMessages();
     return true;
 }
 
@@ -253,6 +266,8 @@ bool LibModbusSerialRtuClient::readHoldingRegister(int address, short& value)
     }
 
     value = modbusValue.signedShortValue;
+
+    sleepBetweenModbusMessages();
     return true;
 }
 
@@ -265,6 +280,7 @@ bool LibModbusSerialRtuClient::readHoldingRegister(int address, unsigned short& 
         return false;
     }
 
+    sleepBetweenModbusMessages();
     return true;
 }
 
@@ -280,6 +296,8 @@ bool LibModbusSerialRtuClient::readHoldingRegister(int address, float& value)
     }
 
     value = modbusValue.floatValue;
+
+    sleepBetweenModbusMessages();
     return true;
 }
 
@@ -295,11 +313,14 @@ bool LibModbusSerialRtuClient::readCoil(int address, bool& value)
     }
 
     value = tmpValue != 0 ? true : false;
+
+    sleepBetweenModbusMessages();
     return true;
 }
 
 bool LibModbusSerialRtuClient::changeSlaveAddress(int address)
 {
+    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     if (modbus_set_slave(m_modbus, address) == -1)
     {
         LOG(DEBUG) << "LibModbusClient: Unable to set slave address - " << modbus_strerror(errno);
@@ -307,5 +328,10 @@ bool LibModbusSerialRtuClient::changeSlaveAddress(int address)
     }
 
     return true;
+}
+
+void LibModbusSerialRtuClient::sleepBetweenModbusMessages() const
+{
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 }    // namespace wolkabout
