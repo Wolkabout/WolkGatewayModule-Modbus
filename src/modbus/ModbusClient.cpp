@@ -28,7 +28,7 @@ ModbusClient::ModbusClient(std::chrono::milliseconds responseTimeout)
 bool ModbusClient::connect()
 {
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
-    if (createContext())
+    if (!createContext())
     {
         return false;
     }
