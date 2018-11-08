@@ -18,7 +18,6 @@
 #define LIBMODBUSTCPIPCLIENT_H
 
 #include "modbus/ModbusClient.h"
-#include "modbus/libmodbus/modbus.h"
 
 #include <chrono>
 #include <mutex>
@@ -33,56 +32,12 @@ public:
 
     virtual ~LibModbusTcpIpClient();
 
-    bool connect() override;
-    bool disconnect() override;
-
-    bool isConnected() override;
-
-    bool writeHoldingRegister(int address, signed short value) override;
-    bool writeHoldingRegister(int address, unsigned short value) override;
-    bool writeHoldingRegister(int address, float value) override;
-
-    bool writeCoil(int address, bool value) override;
-
-    bool readInputRegister(int address, signed short& value) override;
-    bool readInputRegister(int address, unsigned short& value) override;
-    bool readInputRegister(int address, float& value) override;
-
-    bool readInputBit(int address, bool& value) override;
-
-    bool readHoldingRegister(int address, signed short& value) override;
-    bool readHoldingRegister(int address, unsigned short& value) override;
-    bool readHoldingRegister(int address, float& value) override;
-
-    bool readCoil(int address, bool& value) override;
-
-    bool changeSlaveAddress(int address) override;
-
 private:
-    union ModbusValue {
-        unsigned short unsignedShortValues[2];
-        signed short signedShortValue;
-        unsigned short unsignedShortValue;
-        float floatValue;
-
-        ModbusValue()
-        {
-            unsignedShortValues[0] = 0u;
-            unsignedShortValues[1] = 0u;
-
-            signedShortValue = 0;
-            unsignedShortValue = 0u;
-            floatValue = 0.0f;
-        }
-    };
+    bool createContext() override;
+    bool destroyContext() override;
 
     std::string m_ipAddress;
     int m_port;
-
-    std::chrono::milliseconds m_responseTimeout;
-
-    std::mutex m_modbusMutex;
-    modbus_t* m_modbus;
 };
 }    // namespace wolkabout
 

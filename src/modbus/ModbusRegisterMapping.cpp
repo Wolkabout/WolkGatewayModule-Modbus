@@ -27,9 +27,8 @@ namespace wolkabout
 {
 using nlohmann::json;
 
-ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string reference, double minimum,
-                                             double maximum, int address,
-                                             wolkabout::ModbusRegisterMapping::RegisterType registerType,
+ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string reference, double minimum, double maximum,
+                                             int address, wolkabout::ModbusRegisterMapping::RegisterType registerType,
                                              wolkabout::ModbusRegisterMapping::DataType dataType, int slaveAddress)
 : m_name(std::move(name))
 , m_reference(std::move(reference))
@@ -124,8 +123,8 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
             maximum = modbusRegisterMappingJson.at("maximum").get<double>();
         }
 
-        modbusRegisterMappingVector.emplace_back(name, reference, minimum, maximum, address, registerType,
-                                                 dataType, slaveAddress);
+        modbusRegisterMappingVector.emplace_back(name, reference, minimum, maximum, address, registerType, dataType,
+                                                 slaveAddress);
     }
 
     return modbusRegisterMappingVector;
