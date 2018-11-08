@@ -17,6 +17,10 @@
 #ifndef MODBUSCLIENT_H
 #define MODBUSCLIENT_H
 
+#include "modbus/libmodbus/modbus.h"
+
+#include <chrono>
+#include <mutex>
 #include <string>
 
 namespace wolkabout
@@ -24,32 +28,77 @@ namespace wolkabout
 class ModbusClient
 {
 public:
+    ModbusClient(std::chrono::milliseconds responseTimeout);
     virtual ~ModbusClient() = default;
 
-    virtual bool connect() = 0;
-    virtual bool disconnect() = 0;
+    bool connect();
+    bool disconnect();
 
-    virtual bool isConnected() = 0;
+    bool isConnected();
 
-    virtual bool writeHoldingRegister(int address, signed short value) = 0;
-    virtual bool writeHoldingRegister(int address, unsigned short value) = 0;
-    virtual bool writeHoldingRegister(int address, float value) = 0;
+    bool writeHoldingRegister(int slaveAddress, int address, signed short value);
+    bool writeHoldingRegister(int slaveAddress, int address, unsigned short value);
+    bool writeHoldingRegister(int slaveAddress, int address, float value);
 
-    virtual bool writeCoil(int address, bool value) = 0;
+    bool writeCoil(int slaveAddress, int address, bool value);
 
-    virtual bool readInputRegister(int address, signed short& value) = 0;
-    virtual bool readInputRegister(int address, unsigned short& value) = 0;
-    virtual bool readInputRegister(int address, float& value) = 0;
+    bool readInputRegister(int slaveAddress, int address, signed short& value);
+    bool readInputRegister(int slaveAddress, int address, unsigned short& value);
+    bool readInputRegister(int slaveAddress, int address, float& value);
 
-    virtual bool readInputBit(int address, bool& value) = 0;
+    bool readInputBit(int slaveAddress, int address, bool& value);
 
-    virtual bool readHoldingRegister(int address, signed short& value) = 0;
-    virtual bool readHoldingRegister(int address, unsigned short& value) = 0;
-    virtual bool readHoldingRegister(int address, float& value) = 0;
+    bool readHoldingRegister(int slaveAddress, int address, signed short& value);
+    bool readHoldingRegister(int slaveAddress, int address, unsigned short& value);
+    bool readHoldingRegister(int slaveAddress, int address, float& value);
 
-    virtual bool readCoil(int address, bool& value) = 0;
+    bool readCoil(int slaveAddress, int address, bool& value);
 
-    virtual bool changeSlaveAddress(int address) = 0;
+protected:
+    virtual bool createContext() = 0;
+    virtual bool destroyContext() = 0;
+
+    virtual bool writeHoldingRegister(int address, signed short value);
+    virtual bool writeHoldingRegister(int address, unsigned short value);
+    virtual bool writeHoldingRegister(int address, float value);
+
+    virtual bool writeCoil(int address, bool value);
+
+    virtual bool readInputRegister(int address, signed short& value);
+    virtual bool readInputRegister(int address, unsigned short& value);
+    virtual bool readInputRegister(int address, float& value);
+
+    virtual bool readInputBit(int address, bool& value);
+
+    virtual bool readHoldingRegister(int address, signed short& value);
+    virtual bool readHoldingRegister(int address, unsigned short& value);
+    virtual bool readHoldingRegister(int address, float& value);
+
+    virtual bool readCoil(int address, bool& value);
+
+    virtual bool changeSlaveAddress(int address);
+
+    union ModbusValue {
+        unsigned short unsignedShortValues[2];
+        signed short signedShortValue;
+        unsigned short unsignedShortValue;
+        float floatValue;
+
+        ModbusValue()
+        {
+            unsignedShortValues[0] = 0u;
+            unsignedShortValues[1] = 0u;
+
+            signedShortValue = 0;
+            unsignedShortValue = 0u;
+            floatValue = 0.0f;
+        }
+    };
+
+    std::chrono::milliseconds m_responseTimeout;
+
+    std::mutex m_modbusMutex;
+    modbus_t* m_modbus;
 };
 }    // namespace wolkabout
 

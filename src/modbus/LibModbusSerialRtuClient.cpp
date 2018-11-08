@@ -30,15 +30,13 @@
 namespace wolkabout
 {
 LibModbusSerialRtuClient::LibModbusSerialRtuClient(std::string serialPort, int baudRate, char dataBits, char stopBits,
-                                                   ModbusConfiguration::BitParity bitParity, int slaveAddress,
+                                                   ModbusConfiguration::BitParity bitParity,
                                                    std::chrono::milliseconds responseTimeout)
-: m_serialPort(std::move(serialPort))
+: ModbusClient(std::move(responseTimeout))
+, m_serialPort(std::move(serialPort))
 , m_baudRate(baudRate)
 , m_dataBits(dataBits)
 , m_stopBits(stopBits)
-, m_slaveAddress(slaveAddress)
-, m_responseTimeout(std::move(responseTimeout))
-, m_modbus(nullptr)
 {
     switch (bitParity)
     {
@@ -58,61 +56,25 @@ LibModbusSerialRtuClient::LibModbusSerialRtuClient(std::string serialPort, int b
 
 LibModbusSerialRtuClient::~LibModbusSerialRtuClient()
 {
-    disconnect();
+    destroyContext();
 }
 
-bool LibModbusSerialRtuClient::connect()
+bool LibModbusSerialRtuClient::createContext()
 {
     LOG(INFO) << "LibModbusClient: Opening serial port '" << m_serialPort << "'  Baud: " << m_baudRate;
 
-    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
     m_modbus = modbus_new_rtu(m_serialPort.c_str(), m_baudRate, m_bitParity, m_dataBits, m_stopBits);
-    if (m_modbus == NULL)
+    if (m_modbus == nullptr)
     {
         LOG(ERROR) << "LibModbusClient: Unable to create modbus context - " << modbus_strerror(errno);
-        return false;
-    }
-
-    if (modbus_set_response_timeout(m_modbus, 2, 0) == -1)
-    {
-        LOG(ERROR) << "LibModbusClient: Unable to set response timeout - " << modbus_strerror(errno);
-        disconnect();
-        return false;
-    }
-
-    if (modbus_connect(m_modbus) == -1)
-    {
-        LOG(ERROR) << "LibModbusClient: Unable to connect - " << modbus_strerror(errno);
-        disconnect();
-        return false;
-    }
-
-    auto responseTimeOutSeconds = std::chrono::duration_cast<std::chrono::seconds>(m_responseTimeout);
-    auto responseTimeOutMicrosecondsResidue =
-      std::chrono::duration_cast<std::chrono::microseconds>(m_responseTimeout) - responseTimeOutSeconds;
-
-    if (modbus_set_response_timeout(m_modbus, static_cast<uint32_t>(responseTimeOutSeconds.count()),
-                                    static_cast<uint32_t>(responseTimeOutMicrosecondsResidue.count())) == -1)
-    {
-        LOG(ERROR) << "LibModbusClient: Unable to set response timeout - " << modbus_strerror(errno);
-        disconnect();
-        return false;
-    }
-
-    if (modbus_set_slave(m_modbus, m_slaveAddress) == -1)
-    {
-        LOG(ERROR) << "LibModbusClient: Unable to set slave address - " << modbus_strerror(errno);
-        disconnect();
         return false;
     }
 
     return true;
 }
 
-bool LibModbusSerialRtuClient::disconnect()
+bool LibModbusSerialRtuClient::destroyContext()
 {
-    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
-
     if (m_modbus)
     {
         LOG(INFO) << "LibModbusClient: Closing serial port '" << m_serialPort << "'";
@@ -126,208 +88,100 @@ bool LibModbusSerialRtuClient::disconnect()
     return true;
 }
 
-bool LibModbusSerialRtuClient::isConnected()
-{
-    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
-    return m_modbus != nullptr;
-}
-
 bool LibModbusSerialRtuClient::writeHoldingRegister(int address, signed short value)
 {
-    ModbusValue modbusValue;
-    modbusValue.signedShortValue = value;
-
-    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
-    if (modbus_write_register(m_modbus, address, modbusValue.unsignedShortValue) == -1)
-    {
-        LOG(DEBUG) << "LibModbusClient: Unable to write holding register - " << modbus_strerror(errno);
-        return false;
-    }
+    auto result = ModbusClient::writeHoldingRegister(address, value);
 
     sleepBetweenModbusMessages();
-    return true;
+    return result;
 }
 
 bool LibModbusSerialRtuClient::writeHoldingRegister(int address, unsigned short value)
 {
-    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
-    if (modbus_write_register(m_modbus, address, value) == -1)
-    {
-        LOG(DEBUG) << "LibModbusClient: Unable to write holding register - " << modbus_strerror(errno);
-        return false;
-    }
+    auto result = ModbusClient::writeHoldingRegister(address, value);
 
     sleepBetweenModbusMessages();
-    return true;
+    return result;
 }
 
 bool LibModbusSerialRtuClient::writeHoldingRegister(int address, float value)
 {
-    ModbusValue modbusValue;
-    modbusValue.floatValue = value;
-
-    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
-    if (modbus_write_registers(m_modbus, address, 2, modbusValue.unsignedShortValues) == -1)
-    {
-        LOG(DEBUG) << "LibModbusClient: Unable to write holding register - " << modbus_strerror(errno);
-        return false;
-    }
+    auto result = ModbusClient::writeHoldingRegister(address, value);
 
     sleepBetweenModbusMessages();
-    return true;
+    return result;
 }
 
 bool LibModbusSerialRtuClient::writeCoil(int address, bool value)
 {
-    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
-    if (modbus_write_bit(m_modbus, address, value ? TRUE : FALSE) == -1)
-    {
-        LOG(DEBUG) << "LibModbusClient: Unable to write coil - " << modbus_strerror(errno);
-        return false;
-    }
+    auto result = ModbusClient::writeCoil(address, value);
 
     sleepBetweenModbusMessages();
-    return true;
+    return result;
 }
 
 bool LibModbusSerialRtuClient::readInputRegister(int address, signed short& value)
 {
-    ModbusValue modbusValue;
-
-    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
-    if (modbus_read_input_registers(m_modbus, address, 1, &modbusValue.unsignedShortValue) == -1)
-    {
-        LOG(DEBUG) << "LibModbusClient: Unable to read input register - " << modbus_strerror(errno);
-        return false;
-    }
-
-    value = modbusValue.signedShortValue;
+    auto result = ModbusClient::readInputRegister(address, value);
 
     sleepBetweenModbusMessages();
-    return true;
+    return result;
 }
 
 bool LibModbusSerialRtuClient::readInputRegister(int address, unsigned short& value)
 {
-    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
-    if (modbus_read_input_registers(m_modbus, address, 1, &value) == -1)
-    {
-        LOG(DEBUG) << "LibModbusClient: Unable to read input register - " << modbus_strerror(errno);
-        return false;
-    }
+    auto result = ModbusClient::readInputRegister(address, value);
 
     sleepBetweenModbusMessages();
-    return true;
+    return result;
 }
 
 bool LibModbusSerialRtuClient::readInputRegister(int address, float& value)
 {
-    ModbusValue modbusValue;
-
-    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
-    if (modbus_read_input_registers(m_modbus, address, 2, modbusValue.unsignedShortValues) == -1)
-    {
-        LOG(DEBUG) << "LibModbusClient: Unable to read input register - " << modbus_strerror(errno);
-        return false;
-    }
-
-    value = modbusValue.floatValue;
+    auto result = ModbusClient::readInputRegister(address, value);
 
     sleepBetweenModbusMessages();
-    return true;
+    return result;
 }
 
 bool LibModbusSerialRtuClient::readInputBit(int address, bool& value)
 {
-    uint8_t tmpValue = 0;
-
-    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
-    if (modbus_read_input_bits(m_modbus, address, 1, &tmpValue) == -1)
-    {
-        LOG(DEBUG) << "LibModbusClient: Unable to read input bit - " << modbus_strerror(errno);
-        return false;
-    }
-
-    value = tmpValue != 0 ? true : false;
+    auto result = ModbusClient::readInputBit(address, value);
 
     sleepBetweenModbusMessages();
-    return true;
+    return result;
 }
 
 bool LibModbusSerialRtuClient::readHoldingRegister(int address, short& value)
 {
-    ModbusValue modbusValue;
-
-    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
-    if (modbus_read_registers(m_modbus, address, 1, &modbusValue.unsignedShortValue) == -1)
-    {
-        LOG(DEBUG) << "LibModbusClient: Unable to read holding register - " << modbus_strerror(errno);
-        return false;
-    }
-
-    value = modbusValue.signedShortValue;
+    auto result = ModbusClient::readHoldingRegister(address, value);
 
     sleepBetweenModbusMessages();
-    return true;
+    return result;
 }
 
 bool LibModbusSerialRtuClient::readHoldingRegister(int address, unsigned short& value)
 {
-    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
-    if (modbus_read_registers(m_modbus, address, 1, &value) == -1)
-    {
-        LOG(DEBUG) << "LibModbusClient: Unable to read holding register - " << modbus_strerror(errno);
-        return false;
-    }
+    auto result = ModbusClient::readHoldingRegister(address, value);
 
     sleepBetweenModbusMessages();
-    return true;
+    return result;
 }
 
 bool LibModbusSerialRtuClient::readHoldingRegister(int address, float& value)
 {
-    ModbusValue modbusValue;
-
-    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
-    if (modbus_read_registers(m_modbus, address, 2, modbusValue.unsignedShortValues) == -1)
-    {
-        LOG(DEBUG) << "LibModbusClient: Unable to read holding register - " << modbus_strerror(errno);
-        return false;
-    }
-
-    value = modbusValue.floatValue;
+    auto result = ModbusClient::readHoldingRegister(address, value);
 
     sleepBetweenModbusMessages();
-    return true;
+    return result;
 }
 
 bool LibModbusSerialRtuClient::readCoil(int address, bool& value)
 {
-    uint8_t tmpValue = 0;
-
-    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
-    if (modbus_read_bits(m_modbus, address, 1, &tmpValue) == -1)
-    {
-        LOG(DEBUG) << "LibModbusClient: Unable to read coil - " << modbus_strerror(errno);
-        return false;
-    }
-
-    value = tmpValue != 0 ? true : false;
+    auto result = ModbusClient::readCoil(address, value);
 
     sleepBetweenModbusMessages();
-    return true;
-}
-
-bool LibModbusSerialRtuClient::changeSlaveAddress(int address)
-{
-    std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
-    if (modbus_set_slave(m_modbus, address) == -1)
-    {
-        LOG(DEBUG) << "LibModbusClient: Unable to set slave address - " << modbus_strerror(errno);
-        return false;
-    }
-
-    return true;
+    return result;
 }
 
 void LibModbusSerialRtuClient::sleepBetweenModbusMessages() const

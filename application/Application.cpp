@@ -99,40 +99,43 @@ void makeSensorAndActuatorManifestsFromModbusRegisterMappings(
         case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
         {
             actuatorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                           wolkabout::DataType::NUMERIC, "",
-                                           modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
+                                           wolkabout::DataType::NUMERIC, "", modbusRegisterMapping.getMinimum(),
+                                           modbusRegisterMapping.getMaximum());
             break;
         }
 
         case wolkabout::ModbusRegisterMapping::RegisterType::COIL:
         {
             actuatorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                           wolkabout::DataType::BOOLEAN, "",
-                                           modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
+                                           wolkabout::DataType::BOOLEAN, "", modbusRegisterMapping.getMinimum(),
+                                           modbusRegisterMapping.getMaximum());
             break;
         }
 
         case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR:
         {
             sensorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                         wolkabout::ReadingType::Name::GENERIC, wolkabout::ReadingType::MeasurmentUnit::COUNT,
-                                         "", modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
+                                         wolkabout::ReadingType::Name::GENERIC,
+                                         wolkabout::ReadingType::MeasurmentUnit::COUNT, "",
+                                         modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
             break;
         }
 
         case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_REGISTER:
         {
             sensorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                         wolkabout::ReadingType::Name::GENERIC, wolkabout::ReadingType::MeasurmentUnit::COUNT,
-                                         "", modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
+                                         wolkabout::ReadingType::Name::GENERIC,
+                                         wolkabout::ReadingType::MeasurmentUnit::COUNT, "",
+                                         modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
             break;
         }
 
         case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_BIT:
         {
             sensorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                         wolkabout::ReadingType::Name::SWITCH, wolkabout::ReadingType::MeasurmentUnit::BOOLEAN,
-                                         "", modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
+                                         wolkabout::ReadingType::Name::SWITCH,
+                                         wolkabout::ReadingType::MeasurmentUnit::BOOLEAN, "",
+                                         modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
             break;
         }
 
@@ -201,7 +204,7 @@ int main(int argc, char** argv)
             return std::unique_ptr<wolkabout::LibModbusSerialRtuClient>(new wolkabout::LibModbusSerialRtuClient(
               modbusConfiguration.getSerialPort(), modbusConfiguration.getBaudRate(), modbusConfiguration.getDataBits(),
               modbusConfiguration.getStopBits(), modbusConfiguration.getBitParity(),
-              modbusConfiguration.getSlaveAddress(), modbusConfiguration.getResponseTimeout()));
+              modbusConfiguration.getResponseTimeout()));
         }
 
         throw std::logic_error("Unsupported Modbus implementation specified in modbus configuration file");

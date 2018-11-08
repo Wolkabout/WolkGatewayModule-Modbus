@@ -31,15 +31,13 @@ class LibModbusSerialRtuClient : public ModbusClient
 {
 public:
     LibModbusSerialRtuClient(std::string serialPort, int baudRate, char dataBits, char stopBits,
-                             ModbusConfiguration::BitParity bitParity, int slaveAddress,
-                             std::chrono::milliseconds responseTimeout);
+                             ModbusConfiguration::BitParity bitParity, std::chrono::milliseconds responseTimeout);
 
     virtual ~LibModbusSerialRtuClient();
 
-    bool connect() override;
-    bool disconnect() override;
-
-    bool isConnected() override;
+private:
+    bool createContext() override;
+    bool destroyContext() override;
 
     bool writeHoldingRegister(int address, signed short value) override;
     bool writeHoldingRegister(int address, unsigned short value) override;
@@ -59,26 +57,6 @@ public:
 
     bool readCoil(int address, bool& value) override;
 
-    bool changeSlaveAddress(int address) override;
-
-private:
-    union ModbusValue {
-        unsigned short unsignedShortValues[2];
-        signed short signedShortValue;
-        unsigned short unsignedShortValue;
-        float floatValue;
-
-        ModbusValue()
-        {
-            unsignedShortValues[0] = 0u;
-            unsignedShortValues[1] = 0u;
-
-            signedShortValue = 0;
-            unsignedShortValue = 0u;
-            floatValue = 0.0f;
-        }
-    };
-
     void sleepBetweenModbusMessages() const;
 
     std::string m_serialPort;
@@ -86,12 +64,6 @@ private:
     char m_dataBits;
     char m_stopBits;
     char m_bitParity;
-    int m_slaveAddress;
-
-    std::chrono::milliseconds m_responseTimeout;
-
-    std::mutex m_modbusMutex;
-    modbus_t* m_modbus;
 };
 }    // namespace wolkabout
 
