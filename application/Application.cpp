@@ -36,6 +36,7 @@
 #include <random>
 #include <string>
 #include <thread>
+#include <vector>
 
 namespace
 {
@@ -115,8 +116,8 @@ void makeSensorAndActuatorManifestsFromModbusRegisterMappings(
         case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR:
         {
             sensorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                         wolkabout::ReadingType::Name::GENERIC,
-                                         wolkabout::ReadingType::MeasurmentUnit::COUNT, "",
+                                         std::string("GENERIC"), std::string(""),
+                                         wolkabout::DataType::NUMERIC, 1, std::string(""), std::vector<std::string>{},
                                          modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
             break;
         }
@@ -124,8 +125,8 @@ void makeSensorAndActuatorManifestsFromModbusRegisterMappings(
         case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_REGISTER:
         {
             sensorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                         wolkabout::ReadingType::Name::GENERIC,
-                                         wolkabout::ReadingType::MeasurmentUnit::COUNT, "",
+                                         std::string("GENERIC"), std::string(""),
+                                         wolkabout::DataType::NUMERIC, 1, std::string(""), std::vector<std::string>{},
                                          modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
             break;
         }
