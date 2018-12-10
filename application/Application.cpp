@@ -115,8 +115,7 @@ void makeSensorAndActuatorManifestsFromModbusRegisterMappings(
         case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR:
         {
             sensorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                         std::string("GENERIC"), std::string(""),
-                                         wolkabout::DataType::NUMERIC, 1, std::string(""), std::vector<std::string>{},
+                                         wolkabout::DataType::NUMERIC, std::string(""),
                                          modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
             break;
         }
@@ -124,8 +123,7 @@ void makeSensorAndActuatorManifestsFromModbusRegisterMappings(
         case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_REGISTER:
         {
             sensorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                         std::string("GENERIC"), std::string(""),
-                                         wolkabout::DataType::NUMERIC, 1, std::string(""), std::vector<std::string>{},
+                                         wolkabout::DataType::NUMERIC, std::string(""),
                                          modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
             break;
         }
@@ -133,8 +131,7 @@ void makeSensorAndActuatorManifestsFromModbusRegisterMappings(
         case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_BIT:
         {
             sensorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                         wolkabout::ReadingType::Name::SWITCH,
-                                         wolkabout::ReadingType::MeasurmentUnit::BOOLEAN, "",
+                                         wolkabout::DataType::BOOLEAN, std::string(""),
                                          modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
             break;
         }
