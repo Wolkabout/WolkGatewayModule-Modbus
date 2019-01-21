@@ -1,5 +1,7 @@
 out/
 dependencies/
+.idea/
+cmake-build-debug/
 
 *.config
 *.creator
