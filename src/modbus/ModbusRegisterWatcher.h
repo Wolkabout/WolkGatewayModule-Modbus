@@ -37,8 +37,11 @@ public:
 
     const std::string& getValue() const;
 
+    void setValid(bool valid);
+
 private:
     bool m_isInitialized;
+    bool m_isValid;
 
     std::string m_value;
 };

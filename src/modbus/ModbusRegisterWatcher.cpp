@@ -20,7 +20,7 @@
 
 namespace wolkabout
 {
-ModbusRegisterWatcher::ModbusRegisterWatcher() : m_isInitialized(false) {}
+ModbusRegisterWatcher::ModbusRegisterWatcher() : m_isInitialized(false), m_isValid(true) {}
 
 bool ModbusRegisterWatcher::update(const std::string& newValue)
 {
@@ -28,17 +28,22 @@ bool ModbusRegisterWatcher::update(const std::string& newValue)
     m_value = newValue;
 
     bool isValueInitialized = m_isInitialized;
-    if (!m_isInitialized)
-    {
-        m_isInitialized = true;
-    }
+    m_isInitialized = true;
 
-    return !isValueInitialized || isValueUpdated;
+    bool isValid = m_isValid;
+    m_isValid = true;
+
+    return !isValueInitialized || isValueUpdated || !isValid;
 }
 
 const std::string& ModbusRegisterWatcher::getValue() const
 {
     return m_value;
+}
+
+void ModbusRegisterWatcher::setValid(bool valid)
+{
+    m_isValid = valid;
 }
 
 bool ModbusRegisterWatcher::update(signed short newRegisterValue)
