@@ -77,7 +77,14 @@ void ModbusBridge::handleActuation(const std::string& /* deviceKey */, const std
         return;
     }
 
+    if (m_referenceToModbusRegisterWatcherMapping.find(reference) == m_referenceToModbusRegisterWatcherMapping.cend())
+    {
+        m_referenceToModbusRegisterWatcherMapping.emplace(reference, ModbusRegisterWatcher{});
+    }
+
     const ModbusRegisterMapping& modbusRegisterMapping = m_referenceToModbusRegisterMapping.at(reference);
+    ModbusRegisterWatcher& modbusRegisterWatcher = m_referenceToModbusRegisterWatcherMapping.at(reference);
+
     if (modbusRegisterMapping.getRegisterType() != ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR &&
         modbusRegisterMapping.getRegisterType() != ModbusRegisterMapping::RegisterType::COIL)
     {
@@ -89,16 +96,17 @@ void ModbusBridge::handleActuation(const std::string& /* deviceKey */, const std
 
     if (modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR)
     {
-        handleActuationForHoldingRegister(modbusRegisterMapping, value);
+        handleActuationForHoldingRegister(modbusRegisterMapping, modbusRegisterWatcher, value);
     }
     else if (modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::COIL)
     {
-        handleActuationForCoil(modbusRegisterMapping, value);
+        handleActuationForCoil(modbusRegisterMapping, modbusRegisterWatcher, value);
     }
 }
 
 void ModbusBridge::handleActuationForHoldingRegister(const wolkabout::ModbusRegisterMapping& modbusRegisterMapping,
-                                                     const std::string& value) const
+                                                     ModbusRegisterWatcher& modbusRegisterWatcher,
+                                                     const std::string& value)
 {
     if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::INT16)
     {
@@ -108,6 +116,7 @@ void ModbusBridge::handleActuationForHoldingRegister(const wolkabout::ModbusRegi
         {
             LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
                        << modbusRegisterMapping.getAddress() << " Value: " << value;
+            modbusRegisterWatcher.setValid(false);
         }
     }
     else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
@@ -118,6 +127,7 @@ void ModbusBridge::handleActuationForHoldingRegister(const wolkabout::ModbusRegi
         {
             LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
                        << modbusRegisterMapping.getAddress() << " Value: " << value;
+            modbusRegisterWatcher.setValid(false);
         }
     }
     else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
@@ -128,18 +138,20 @@ void ModbusBridge::handleActuationForHoldingRegister(const wolkabout::ModbusRegi
         {
             LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
                        << modbusRegisterMapping.getAddress() << " Value: " << value;
+            modbusRegisterWatcher.setValid(false);
         }
     }
 }
 
 void ModbusBridge::handleActuationForCoil(const wolkabout::ModbusRegisterMapping& modbusRegisterMapping,
-                                          const std::string& value) const
+                                          ModbusRegisterWatcher& modbusRegisterWatcher, const std::string& value)
 {
     if (!m_modbusClient.writeCoil(modbusRegisterMapping.getSlaveAddress(), modbusRegisterMapping.getAddress(),
                                   value == "true" ? true : false))
     {
         LOG(ERROR) << "ModbusBridge: Unable to write coil value - Register address: "
                    << modbusRegisterMapping.getAddress() << " Value: " << value;
+        modbusRegisterWatcher.setValid(false);
     }
 }
 
@@ -153,7 +165,14 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatus(const std::string& /* 
         return ActuatorStatus("", ActuatorStatus::State::ERROR);
     }
 
+    if (m_referenceToModbusRegisterWatcherMapping.find(reference) == m_referenceToModbusRegisterWatcherMapping.cend())
+    {
+        m_referenceToModbusRegisterWatcherMapping.emplace(reference, ModbusRegisterWatcher{});
+    }
+
     const ModbusRegisterMapping& modbusRegisterMapping = m_referenceToModbusRegisterMapping.at(reference);
+    ModbusRegisterWatcher& modbusRegisterWatcher = m_referenceToModbusRegisterWatcherMapping.at(reference);
+
     if (modbusRegisterMapping.getRegisterType() != ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR &&
         modbusRegisterMapping.getRegisterType() != ModbusRegisterMapping::RegisterType::COIL)
     {
@@ -164,12 +183,12 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatus(const std::string& /* 
     }
 
     return modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR ?
-             getActuatorStatusFromHoldingRegister(modbusRegisterMapping) :
-             getActuatorStatusFromCoil(modbusRegisterMapping);
+             getActuatorStatusFromHoldingRegister(modbusRegisterMapping, modbusRegisterWatcher) :
+             getActuatorStatusFromCoil(modbusRegisterMapping, modbusRegisterWatcher);
 }
 
 wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromHoldingRegister(
-  const wolkabout::ModbusRegisterMapping& modbusRegisterMapping) const
+  const wolkabout::ModbusRegisterMapping& modbusRegisterMapping, ModbusRegisterWatcher& modbusRegisterWatcher)
 {
     if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::INT16)
     {
@@ -177,8 +196,14 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromHoldingRegister(
         if (!m_modbusClient.readHoldingRegister(modbusRegisterMapping.getSlaveAddress(),
                                                 modbusRegisterMapping.getAddress(), value))
         {
+            LOG(ERROR) << "ModbusBridge: Unable to read holding register with address '"
+                       << modbusRegisterMapping.getAddress() << "'";
+
+            modbusRegisterWatcher.setValid(false);
             return ActuatorStatus("", ActuatorStatus::State::ERROR);
         }
+
+        modbusRegisterWatcher.update(value);
 
         return ActuatorStatus(std::to_string(value), ActuatorStatus::State::READY);
     }
@@ -188,8 +213,14 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromHoldingRegister(
         if (!m_modbusClient.readHoldingRegister(modbusRegisterMapping.getSlaveAddress(),
                                                 modbusRegisterMapping.getAddress(), value))
         {
+            LOG(ERROR) << "ModbusBridge: Unable to read holding register with address '"
+                       << modbusRegisterMapping.getAddress() << "'";
+
+            modbusRegisterWatcher.setValid(false);
             return ActuatorStatus("", ActuatorStatus::State::ERROR);
         }
+
+        modbusRegisterWatcher.update(value);
 
         return ActuatorStatus(std::to_string(value), ActuatorStatus::State::READY);
     }
@@ -199,8 +230,14 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromHoldingRegister(
         if (!m_modbusClient.readHoldingRegister(modbusRegisterMapping.getSlaveAddress(),
                                                 modbusRegisterMapping.getAddress(), value))
         {
+            LOG(ERROR) << "ModbusBridge: Unable to read holding register with address '"
+                       << modbusRegisterMapping.getAddress() << "'";
+
+            modbusRegisterWatcher.setValid(false);
             return ActuatorStatus("", ActuatorStatus::State::ERROR);
         }
+
+        modbusRegisterWatcher.update(value);
 
         return ActuatorStatus(std::to_string(value), ActuatorStatus::State::READY);
     }
@@ -210,13 +247,18 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromHoldingRegister(
 }
 
 wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromCoil(
-  const wolkabout::ModbusRegisterMapping& modbusRegisterMapping) const
+  const wolkabout::ModbusRegisterMapping& modbusRegisterMapping, ModbusRegisterWatcher& modbusRegisterWatcher)
 {
     bool value;
     if (!m_modbusClient.readCoil(modbusRegisterMapping.getSlaveAddress(), modbusRegisterMapping.getAddress(), value))
     {
+        LOG(ERROR) << "ModbusBridge: Unable to read coil with address '" << modbusRegisterMapping.getAddress() << "'";
+
+        modbusRegisterWatcher.setValid(false);
         return ActuatorStatus("", ActuatorStatus::State::ERROR);
     }
+
+    modbusRegisterWatcher.update(value);
 
     return ActuatorStatus(value ? "true" : "false", ActuatorStatus::State::READY);
 }

@@ -36,7 +36,9 @@ namespace wolkabout
 class ModbusRegisterMapping;
 class ModbusClient;
 
-class ModbusBridge : public ActuationHandlerPerDevice, public ActuatorStatusProviderPerDevice, public DeviceStatusProvider
+class ModbusBridge : public ActuationHandlerPerDevice,
+                     public ActuatorStatusProviderPerDevice,
+                     public DeviceStatusProvider
 {
 public:
     ModbusBridge(ModbusClient& modbusClient, const std::vector<ModbusRegisterMapping>& modbusRegisterMappings,
@@ -58,12 +60,15 @@ protected:
     DeviceStatus getDeviceStatus(const std::string& deviceKey) override;
 
 private:
-    ActuatorStatus getActuatorStatusFromHoldingRegister(const ModbusRegisterMapping& modbusRegisterMapping) const;
-    ActuatorStatus getActuatorStatusFromCoil(const ModbusRegisterMapping& modbusRegisterMapping) const;
+    ActuatorStatus getActuatorStatusFromHoldingRegister(const ModbusRegisterMapping& modbusRegisterMapping,
+                                                        ModbusRegisterWatcher& modbusRegisterWatcher);
+    ActuatorStatus getActuatorStatusFromCoil(const ModbusRegisterMapping& modbusRegisterMapping,
+                                             ModbusRegisterWatcher& modbusRegisterWatcher);
 
     void handleActuationForHoldingRegister(const ModbusRegisterMapping& modbusRegisterMapping,
-                                           const std::string& value) const;
-    void handleActuationForCoil(const ModbusRegisterMapping& modbusRegisterMapping, const std::string& value) const;
+                                           ModbusRegisterWatcher& modbusRegisterWatcher, const std::string& value);
+    void handleActuationForCoil(const ModbusRegisterMapping& modbusRegisterMapping,
+                                ModbusRegisterWatcher& modbusRegisterWatcher, const std::string& value);
 
     void run();
 
