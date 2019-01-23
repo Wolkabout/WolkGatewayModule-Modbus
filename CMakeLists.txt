@@ -46,12 +46,10 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 link_directories(${CMAKE_BINARY_DIR}/lib)
 
 # WolkAbout c++ SDK
-add_subdirectory(WolkSDK-Cpp lib)
+add_subdirectory(WolkGatewayModule-Cpp lib)
 
 # WolkAbout Modbus Module
 include_directories("src")
-include_directories("WolkSDK-Cpp/mqtt")
-include_directories("WolkSDK-Cpp/core")
 
 file(GLOB_RECURSE HEADER_FILES "src/*.h" "src/*.hpp")
 file(GLOB_RECURSE SOURCE_FILES "src/*.cpp" "application/*.cpp")
@@ -59,7 +57,7 @@ file(GLOB_RECURSE SOURCE_FILES "src/*.cpp" "application/*.cpp")
 link_directories(${PROJECT_SOURCE_DIR}/out/lib)
 
 add_library(${PROJECT_NAME} SHARED ${HEADER_FILES} ${SOURCE_FILES})
-target_link_libraries(${PROJECT_NAME} WolkAboutCore modbus)
+target_link_libraries(${PROJECT_NAME} WolkGatewayModule modbus)
 set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-Wl,-rpath,./")
 
@@ -70,8 +68,8 @@ include_directories(SYSTEM "${CONAN_INCLUDE_DIRS_GTEST}")
 file(GLOB_RECURSE TESTS_HEADER_FILES "tests/*.h" "tests/*.hpp")
 file(GLOB_RECURSE TESTS_SOURCE_FILES "tests/*.cpp")
 
-add_executable(tests ${TESTS_SOURCE_FILES})
-target_link_libraries(tests gmock_main gmock gtest ${PROJECT_NAME})
+#add_executable(tests ${TESTS_SOURCE_FILES})
+#target_link_libraries(tests gmock_main gmock gtest ${PROJECT_NAME})
 set_target_properties(tests PROPERTIES LINK_FLAGS "-Wl,-rpath,./lib")
 
 # Example
