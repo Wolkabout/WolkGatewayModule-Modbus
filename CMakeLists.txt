@@ -68,9 +68,9 @@ include_directories(SYSTEM "${CONAN_INCLUDE_DIRS_GTEST}")
 file(GLOB_RECURSE TESTS_HEADER_FILES "tests/*.h" "tests/*.hpp")
 file(GLOB_RECURSE TESTS_SOURCE_FILES "tests/*.cpp")
 
-#add_executable(tests ${TESTS_SOURCE_FILES})
-#target_link_libraries(tests gmock_main gmock gtest ${PROJECT_NAME})
-set_target_properties(tests PROPERTIES LINK_FLAGS "-Wl,-rpath,./lib")
+add_executable(modbusTests ${TESTS_SOURCE_FILES})
+target_link_libraries(modbusTests gmock_main gmock gtest ${PROJECT_NAME})
+set_target_properties(modbusTests PROPERTIES LINK_FLAGS "-Wl,-rpath,./lib")
 
 # Example
 include_directories("application")
