@@ -48,6 +48,16 @@ public:
     ModbusRegisterMapping(std::string name, std::string reference, double minimum, double maximum, int address,
                           RegisterType registerType, DataType dataType, int slaveAddress);
 
+    bool operator<(RegisterType lhs, RegisterType rhs);
+    bool operator>(RegisterType lhs, RegisterType rhs);
+    bool operator==(RegisterType lhs, RegisterType rhs);
+    bool operator!=(RegisterType lhs, RegisterType rhs);
+
+    bool operator<(DataType lhs, DataType rhs);
+    bool operator>(DataType lhs, DataType rhs);
+    bool operator==(DataType lhs, DataType rhs);
+    bool operator!=(DataType lhs, DataType rhs);
+
     const std::string& getName() const;
     const std::string& getReference() const;
 
@@ -61,6 +71,8 @@ public:
     int getSlaveAddress() const;
 
 private:
+    int rankRegisterType(RegisterType type);
+    int rankDataType(DataType type);
     std::string m_name;
     std::string m_reference;
 

@@ -185,6 +185,33 @@ int main(int argc, char** argv)
         return -1;
     }
 
+    std::sort(modbusRegisterMappings.begin(), modbusRegisterMappings.end(),
+              [](const wolkabout::ModbusRegisterMapping& lhs, const wolkabout::ModbusRegisterMapping& rhs)
+              {
+                if (lhs.getSlaveAddress() != rhs.getSlaveAddress())
+                {
+                    return lhs.getSlaveAddress() < rhs.getSlaveAddress();
+                }
+                else
+                {
+                    if (lhs.getRegisterType() != rhs.getRegisterType())
+                    {
+                        return lhs.getRegisterType() < rhs.getRegisterType();
+                    }
+                    else
+                    {
+                        if (lhs.getDataType() != rhs.getDataType())
+                        {
+                            return lhs.getDataType() < rhs.getDataType();
+                        }
+                        else
+                        {
+                            return lhs.getAddress() < rhs.getAddress();
+                        }
+                    }
+                }
+              });
+
     std::vector<wolkabout::SensorManifest> sensorManifests;
     std::vector<wolkabout::ActuatorManifest> actuatorManifests;
     makeSensorAndActuatorManifestsFromModbusRegisterMappings(modbusRegisterMappings, sensorManifests,
