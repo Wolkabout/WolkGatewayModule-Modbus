@@ -28,9 +28,7 @@ ModbusRegisterGroup::ModbusRegisterGroup(int slaveAddress, ModbusRegisterMapping
 : m_slaveAddress(slaveAddress)
 , m_registerType(registerType)
 , m_dataType(dataType)
-{
-    std::vector<wolkabout::ModbusRegisterMapping> m_modbusRegisterMappings;
-}
+{}
 
 int ModbusRegisterGroup::getSlaveAddress()
 {
@@ -71,7 +69,7 @@ void ModbusRegisterGroup::addRegister(ModbusRegisterMapping modbusRegisterMappin
     }
     if (modbusRegisterMapping.getAddress() == m_modbusRegisterMappings.front().getAddress() - 1)
     {
-        m_modbusRegisterMappings.insert(m_modbusRegisterMappings.front(), modbusRegisterMapping);
+        auto iter = m_modbusRegisterMappings.insert(m_modbusRegisterMappings.begin(), 1, modbusRegisterMapping);
         return;
     }
     if (modbusRegisterMapping.getAddress() == m_modbusRegisterMappings.back().getAddress() + 1)
@@ -82,5 +80,3 @@ void ModbusRegisterGroup::addRegister(ModbusRegisterMapping modbusRegisterMappin
 }
 
 }    // namespace wolkabout
-
-#endif

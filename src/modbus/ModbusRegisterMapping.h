@@ -27,36 +27,23 @@ class ModbusRegisterMapping
 public:
     enum class RegisterType
     {
+        COIL = 0,
+        INPUT_BIT,
         INPUT_REGISTER,
         HOLDING_REGISTER_SENSOR,
-        HOLDING_REGISTER_ACTUATOR,
-
-        INPUT_BIT,
-        COIL
+        HOLDING_REGISTER_ACTUATOR
     };
 
     enum class DataType
     {
-        INT16,
+        INT16 = 0,
         UINT16,
-
         REAL32,
-
         BOOL
     };
 
     ModbusRegisterMapping(std::string name, std::string reference, double minimum, double maximum, int address,
                           RegisterType registerType, DataType dataType, int slaveAddress);
-
-    bool operator<(RegisterType lhs, RegisterType rhs);
-    bool operator>(RegisterType lhs, RegisterType rhs);
-    bool operator==(RegisterType lhs, RegisterType rhs);
-    bool operator!=(RegisterType lhs, RegisterType rhs);
-
-    bool operator<(DataType lhs, DataType rhs);
-    bool operator>(DataType lhs, DataType rhs);
-    bool operator==(DataType lhs, DataType rhs);
-    bool operator!=(DataType lhs, DataType rhs);
 
     const std::string& getName() const;
     const std::string& getReference() const;
@@ -71,8 +58,6 @@ public:
     int getSlaveAddress() const;
 
 private:
-    int rankRegisterType(RegisterType type);
-    int rankDataType(DataType type);
     std::string m_name;
     std::string m_reference;
 

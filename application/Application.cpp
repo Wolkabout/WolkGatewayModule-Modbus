@@ -194,15 +194,15 @@ int main(int argc, char** argv)
                 }
                 else
                 {
-                    if (lhs.getRegisterType() != rhs.getRegisterType())
+                    if (static_cast<int>(lhs.getRegisterType()) != static_cast<int>(rhs.getRegisterType()))
                     {
-                        return lhs.getRegisterType() < rhs.getRegisterType();
+                        return static_cast<int>(lhs.getRegisterType()) < static_cast<int>(rhs.getRegisterType());
                     }
                     else
                     {
-                        if (lhs.getDataType() != rhs.getDataType())
+                        if (static_cast<int>(lhs.getDataType()) != static_cast<int>(rhs.getDataType()))
                         {
-                            return lhs.getDataType() < rhs.getDataType();
+                            return static_cast<int>(lhs.getDataType()) < static_cast<int>(rhs.getDataType());
                         }
                         else
                         {

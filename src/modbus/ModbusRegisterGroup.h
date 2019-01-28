@@ -30,9 +30,9 @@ namespace wolkabout
         ModbusRegisterGroup(int slaveAddress, ModbusRegisterMapping::RegisterType registerType,
                             ModbusRegisterMapping::DataType dataType);
 
-        int getSlaveAddress() const;
-        ModbusRegisterMapping::RegisterType getRegisterType() const;
-        ModubsRegisterMapping::DataType getDataType() const;
+        int getSlaveAddress();
+        ModbusRegisterMapping::RegisterType getRegisterType();
+        ModbusRegisterMapping::DataType getDataType();
         bool getStartingRegisterAddress(int& address);
         int getRegisterCount();
         void addRegister(ModbusRegisterMapping modbusRegisterMapping);
