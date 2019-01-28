@@ -25,10 +25,9 @@ namespace wolkabout
 {
 ModbusRegisterGroup::ModbusRegisterGroup(int slaveAddress, ModbusRegisterMapping::RegisterType registerType,
                                          ModbusRegisterMapping::DataType dataType)
-: m_slaveAddress(slaveAddress)
-, m_registerType(registerType)
-, m_dataType(dataType)
-{}
+: m_slaveAddress(slaveAddress), m_registerType(registerType), m_dataType(dataType)
+{
+}
 
 int ModbusRegisterGroup::getSlaveAddress()
 {

@@ -24,25 +24,25 @@
 
 namespace wolkabout
 {
-    class ModbusRegisterGroup
-    {
-    public:
-        ModbusRegisterGroup(int slaveAddress, ModbusRegisterMapping::RegisterType registerType,
-                            ModbusRegisterMapping::DataType dataType);
+class ModbusRegisterGroup
+{
+public:
+    ModbusRegisterGroup(int slaveAddress, ModbusRegisterMapping::RegisterType registerType,
+                        ModbusRegisterMapping::DataType dataType);
 
-        int getSlaveAddress();
-        ModbusRegisterMapping::RegisterType getRegisterType();
-        ModbusRegisterMapping::DataType getDataType();
-        bool getStartingRegisterAddress(int& address);
-        int getRegisterCount();
-        void addRegister(ModbusRegisterMapping modbusRegisterMapping);
+    int getSlaveAddress();
+    ModbusRegisterMapping::RegisterType getRegisterType();
+    ModbusRegisterMapping::DataType getDataType();
+    bool getStartingRegisterAddress(int& address);
+    int getRegisterCount();
+    void addRegister(ModbusRegisterMapping modbusRegisterMapping);
 
-    private:
-        int m_slaveAddress;
-        ModbusRegisterMapping::RegisterType m_registerType;
-        ModbusRegisterMapping::DataType m_dataType;
-        std::vector<ModbusRegisterMapping> m_modbusRegisterMappings;
-    };
+private:
+    int m_slaveAddress;
+    ModbusRegisterMapping::RegisterType m_registerType;
+    ModbusRegisterMapping::DataType m_dataType;
+    std::vector<ModbusRegisterMapping> m_modbusRegisterMappings;
+};
 }    // namespace wolkabout
 
 #endif
