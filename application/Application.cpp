@@ -128,7 +128,7 @@ void makeSensorAndActuatorManifestsFromModbusRegisterMappings(
             break;
         }
 
-        case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_BIT:
+        case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_CONTACT:
         {
             sensorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
                                          wolkabout::DataType::BOOLEAN, std::string(""),

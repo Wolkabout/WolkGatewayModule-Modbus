@@ -28,7 +28,7 @@ public:
     enum class RegisterType
     {
         COIL = 0,
-        INPUT_BIT,
+        INPUT_CONTACT,
         INPUT_REGISTER,
         HOLDING_REGISTER_SENSOR,
         HOLDING_REGISTER_ACTUATOR

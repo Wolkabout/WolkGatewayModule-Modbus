@@ -338,7 +338,7 @@ void ModbusBridge::readAndReportModbusRegisterValue(
 
     if (modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::INPUT_REGISTER ||
         modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR ||
-        modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::INPUT_BIT)
+        modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::INPUT_CONTACT)
     {
         LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << modbusRegisterMapping.getReference() << "' Value: '"
                   << modbusRegisterWatcher.getValue() << "'";
@@ -367,7 +367,7 @@ bool ModbusBridge::isRegisterValueUpdated(const ModbusRegisterMapping& modbusReg
     case ModbusRegisterMapping::RegisterType::COIL:
         return isCoilValueUpdated(modbusRegisterMapping, modbusRegisterWatcher);
 
-    case ModbusRegisterMapping::RegisterType::INPUT_BIT:
+    case ModbusRegisterMapping::RegisterType::INPUT_CONTACT:
         return isInputBitValueUpdated(modbusRegisterMapping, modbusRegisterWatcher);
     }
 
