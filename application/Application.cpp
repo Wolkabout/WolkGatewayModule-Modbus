@@ -179,46 +179,9 @@ void makeModbusRegisterGroupsFromModbusRegisterMappings(
                         modbusRegisterGroups.back().addRegister(modbusRegisterMapping);
                         continue;
                     }
-                    // gap in registers
-                    previousSlaveAddress = modbusRegisterMapping.getSlaveAddress();
-                    previousRegisterType = modbusRegisterMapping.getRegisterType();
-                    previousDataType = modbusRegisterMapping.getDataType();
-                    previousAddress = modbusRegisterMapping.getAddress();
-
-                    wolkabout::ModbusRegisterGroup nextRegisterGroup(previousSlaveAddress, previousRegisterType,
-                                                                     previousDataType);
-                    modbusRegisterGroups.push_back(nextRegisterGroup);
-                    modbusRegisterGroups.back().addRegister(modbusRegisterMapping);
-                    continue;
                 }
-                // different data type
-
-                previousSlaveAddress = modbusRegisterMapping.getSlaveAddress();
-                previousRegisterType = modbusRegisterMapping.getRegisterType();
-                previousDataType = modbusRegisterMapping.getDataType();
-                previousAddress = modbusRegisterMapping.getAddress();
-
-                wolkabout::ModbusRegisterGroup nextRegisterGroup(previousSlaveAddress, previousRegisterType,
-                                                                 previousDataType);
-                modbusRegisterGroups.push_back(nextRegisterGroup);
-                modbusRegisterGroups.back().addRegister(modbusRegisterMapping);
-                continue;
             }
-            // different register type
-
-            previousSlaveAddress = modbusRegisterMapping.getSlaveAddress();
-            previousRegisterType = modbusRegisterMapping.getRegisterType();
-            previousDataType = modbusRegisterMapping.getDataType();
-            previousAddress = modbusRegisterMapping.getAddress();
-
-            wolkabout::ModbusRegisterGroup nextRegisterGroup(previousSlaveAddress, previousRegisterType,
-                                                             previousDataType);
-            modbusRegisterGroups.push_back(nextRegisterGroup);
-            modbusRegisterGroups.back().addRegister(modbusRegisterMapping);
-            continue;
         }
-        // different slave address
-
         previousSlaveAddress = modbusRegisterMapping.getSlaveAddress();
         previousRegisterType = modbusRegisterMapping.getRegisterType();
         previousDataType = modbusRegisterMapping.getDataType();
@@ -227,7 +190,6 @@ void makeModbusRegisterGroupsFromModbusRegisterMappings(
         wolkabout::ModbusRegisterGroup nextRegisterGroup(previousSlaveAddress, previousRegisterType, previousDataType);
         modbusRegisterGroups.push_back(nextRegisterGroup);
         modbusRegisterGroups.back().addRegister(modbusRegisterMapping);
-        continue;
     }
 }
 }    // namespace
