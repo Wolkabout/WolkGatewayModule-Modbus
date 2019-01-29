@@ -151,7 +151,7 @@ bool ModbusClient::readInputRegister(int slaveAddress, int address, float& value
     return readInputRegister(address, value);
 }
 
-bool ModbusClient::readInputBit(int slaveAddress, int address, bool& value)
+bool ModbusClient::readInputContact(int slaveAddress, int address, bool& value)
 {
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
     if (!changeSlaveAddress(slaveAddress))
@@ -159,7 +159,7 @@ bool ModbusClient::readInputBit(int slaveAddress, int address, bool& value)
         return false;
     }
 
-    return readInputBit(address, value);
+    return readInputContact(address, value);
 }
 
 bool ModbusClient::readHoldingRegister(int slaveAddress, int address, signed short& value)
@@ -297,7 +297,7 @@ bool ModbusClient::readInputRegister(int address, float& value)
     return true;
 }
 
-bool ModbusClient::readInputBit(int address, bool& value)
+bool ModbusClient::readInputContact(int address, bool& value)
 {
     uint8_t tmpValue = 0;
 

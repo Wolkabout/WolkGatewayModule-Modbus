@@ -144,9 +144,9 @@ bool LibModbusSerialRtuClient::readInputRegister(int address, float& value)
     return result;
 }
 
-bool LibModbusSerialRtuClient::readInputBit(int address, bool& value)
+bool LibModbusSerialRtuClient::readInputContact(int address, bool& value)
 {
-    auto result = ModbusClient::readInputBit(address, value);
+    auto result = ModbusClient::readInputContact(address, value);
 
     sleepBetweenModbusMessages();
     return result;

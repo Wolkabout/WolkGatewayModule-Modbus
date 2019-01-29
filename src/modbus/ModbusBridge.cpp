@@ -368,7 +368,7 @@ bool ModbusBridge::isRegisterValueUpdated(const ModbusRegisterMapping& modbusReg
         return isCoilValueUpdated(modbusRegisterMapping, modbusRegisterWatcher);
 
     case ModbusRegisterMapping::RegisterType::INPUT_CONTACT:
-        return isInputBitValueUpdated(modbusRegisterMapping, modbusRegisterWatcher);
+        return isInputContactValueUpdated(modbusRegisterMapping, modbusRegisterWatcher);
     }
 
     LOG(ERROR) << "ModbusBridge: isRegisterValueUpdated - Unhandled register type for reference'"
@@ -526,12 +526,12 @@ bool ModbusBridge::isCoilValueUpdated(const ModbusRegisterMapping& modbusRegiste
     return modbusRegisterWatcher.update(value);
 }
 
-bool ModbusBridge::isInputBitValueUpdated(const ModbusRegisterMapping& modbusRegisterMapping,
-                                          ModbusRegisterWatcher& modbusRegisterWatcher)
+bool ModbusBridge::isInputContactValueUpdated(const ModbusRegisterMapping& modbusRegisterMapping,
+                                              ModbusRegisterWatcher& modbusRegisterWatcher)
 {
     bool value;
-    if (!m_modbusClient.readInputBit(modbusRegisterMapping.getSlaveAddress(), modbusRegisterMapping.getAddress(),
-                                     value))
+    if (!m_modbusClient.readInputContact(modbusRegisterMapping.getSlaveAddress(), modbusRegisterMapping.getAddress(),
+                                         value))
     {
         LOG(ERROR) << "ModbusBridge: Unable to read input bit with address '" << modbusRegisterMapping.getAddress()
                    << "'";

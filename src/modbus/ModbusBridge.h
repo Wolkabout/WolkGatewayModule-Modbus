@@ -85,8 +85,8 @@ private:
                                      ModbusRegisterWatcher& modbusRegisterWatcher);
     bool isCoilValueUpdated(const ModbusRegisterMapping& modbusRegisterMapping,
                             ModbusRegisterWatcher& modbusRegisterWatcher);
-    bool isInputBitValueUpdated(const ModbusRegisterMapping& modbusRegisterMapping,
-                                ModbusRegisterWatcher& modbusRegisterWatcher);
+    bool isInputContactValueUpdated(const ModbusRegisterMapping& modbusRegisterMapping,
+                                    ModbusRegisterWatcher& modbusRegisterWatcher);
 
     ModbusClient& m_modbusClient;
 

@@ -46,7 +46,7 @@ public:
     bool readInputRegister(int slaveAddress, int address, unsigned short& value);
     bool readInputRegister(int slaveAddress, int address, float& value);
 
-    bool readInputBit(int slaveAddress, int address, bool& value);
+    bool readInputContact(int slaveAddress, int address, bool& value);
 
     bool readHoldingRegister(int slaveAddress, int address, signed short& value);
     bool readHoldingRegister(int slaveAddress, int address, unsigned short& value);
@@ -68,7 +68,7 @@ protected:
     virtual bool readInputRegister(int address, unsigned short& value);
     virtual bool readInputRegister(int address, float& value);
 
-    virtual bool readInputBit(int address, bool& value);
+    virtual bool readInputContact(int address, bool& value);
 
     virtual bool readHoldingRegister(int address, signed short& value);
     virtual bool readHoldingRegister(int address, unsigned short& value);
