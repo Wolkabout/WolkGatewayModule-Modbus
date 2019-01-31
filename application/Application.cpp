@@ -282,7 +282,7 @@ int main(int argc, char** argv)
         throw std::logic_error("Unsupported Modbus implementation specified in modbus configuration file");
     }();
 
-    auto modbusBridge = std::make_shared<wolkabout::ModbusBridge>(*libModbusClient, modbusRegisterMappings,
+    auto modbusBridge = std::make_shared<wolkabout::ModbusBridge>(*libModbusClient, modbusRegisterGroups,
                                                                   modbusConfiguration.getReadPeriod());
 
     auto modbusBridgeManifest = std::unique_ptr<wolkabout::DeviceManifest>(new wolkabout::DeviceManifest(

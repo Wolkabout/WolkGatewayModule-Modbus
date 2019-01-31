@@ -36,16 +36,22 @@
 
 namespace wolkabout
 {
-ModbusBridge::ModbusBridge(ModbusClient& modbusClient, const std::vector<ModbusRegisterMapping>& modbusRegisterMappings,
+ModbusBridge::ModbusBridge(ModbusClient& modbusClient, const std::vector<ModbusRegisterGroup>& modbusRegisterGroups,
                            std::chrono::milliseconds registerReadPeriod)
-: m_modbusClient(modbusClient), m_registerReadPeriod(std::move(registerReadPeriod)), m_readerShouldRun(false)
+: m_modbusClient(modbusClient)
+, m_modbusRegisterGroups(modbusRegisterGroups)
+, m_registerReadPeriod(std::move(registerReadPeriod))
+, m_readerShouldRun(false)
 {
-    for (const ModbusRegisterMapping& modbusRegisterMapping : modbusRegisterMappings)
+    for (const ModbusRegisterGroup& modbusRegisterGroup : modbusRegisterGroups)
     {
-        const std::string& reference = modbusRegisterMapping.getReference();
+        for (const ModbusRegisterMapping& modbusRegisterMapping : modbusRegisterGroup.getRegisters())
+        {
+            const std::string& reference = modbusRegisterMapping.getReference();
 
-        m_referenceToModbusRegisterMapping.emplace(reference, modbusRegisterMapping);
-        m_referenceToModbusRegisterWatcherMapping.emplace(reference, ModbusRegisterWatcher{});
+            m_referenceToModbusRegisterMapping.emplace(reference, modbusRegisterMapping);
+            m_referenceToModbusRegisterWatcherMapping.emplace(reference, ModbusRegisterWatcher{});
+        }
     }
 }
 
@@ -300,10 +306,64 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 {
     LOG(DEBUG) << "ModbusBridge: Reading and reporting register values";
 
-    for (const std::pair<std::string, ModbusRegisterMapping>& referenceToModbusRegisterMapping :
-         m_referenceToModbusRegisterMapping)
+    for (ModbusRegisterGroup& modbusRegisterGroup : m_modbusRegisterGroups)
     {
-        readAndReportModbusRegisterValue(referenceToModbusRegisterMapping);
+        int registerCount = modbusRegisterGroup.getRegisterCount();
+
+        if (registerCount == 1)
+        {
+            readAndReportModbusRegisterValue(
+              *m_referenceToModbusRegisterMapping.find(modbusRegisterGroup.getRegisters().front().getReference()));
+            continue;
+        }
+
+        switch (modbusRegisterGroup.getRegisterType())
+        {
+        case ModbusRegisterMapping::RegisterType::COIL:
+        {
+            std::vector<bool> values;
+            if (!m_modbusClient.readCoils(modbusRegisterGroup.getSlaveAddress(),
+                                          modbusRegisterGroup.getStartingRegisterAddress(), registerCount, values))
+            {
+                LOG(ERROR) << "ModbusBridge: Unable to read coils on slave " << modbusRegisterGroup.getSlaveAddress()
+                           << " from address '" << modbusRegisterGroup.getStartingRegisterAddress() << "'";
+
+                for (ModbusRegisterMapping modbusRegisterMapping : modbusRegisterGroup.getRegisters())
+                {
+                    ModbusRegisterWatcher modbusRegisterWatcher =
+                      m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
+                    modbusRegisterWatcher.setValid(false);
+                }
+                return;
+            }
+
+            for (int i = 0; i < registerCount; ++i)
+            {
+                bool value = values[i];
+                ModbusRegisterMapping modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
+                ModbusRegisterWatcher modbusRegisterWatcher =
+                  m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
+                modbusRegisterWatcher.update(value);
+            }
+            break;
+        }
+        case ModbusRegisterMapping::RegisterType::INPUT_CONTACT:
+        {
+            break;
+        }
+        case ModbusRegisterMapping::RegisterType::INPUT_REGISTER:
+        {
+            break;
+        }
+        case ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR:
+        {
+            break;
+        }
+        case ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
+        {
+            break;
+        }
+        }
     }
 }
 
@@ -533,7 +593,7 @@ bool ModbusBridge::isInputContactValueUpdated(const ModbusRegisterMapping& modbu
     if (!m_modbusClient.readInputContact(modbusRegisterMapping.getSlaveAddress(), modbusRegisterMapping.getAddress(),
                                          value))
     {
-        LOG(ERROR) << "ModbusBridge: Unable to read input bit with address '" << modbusRegisterMapping.getAddress()
+        LOG(ERROR) << "ModbusBridge: Unable to read input contact with address '" << modbusRegisterMapping.getAddress()
                    << "'";
         return false;
     }

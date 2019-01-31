@@ -18,6 +18,8 @@
 #include "modbus/libmodbus/modbus.h"
 #include "utilities/Logger.h"
 
+#include <cmath>
+
 namespace wolkabout
 {
 ModbusClient::ModbusClient(std::chrono::milliseconds responseTimeout)
@@ -206,6 +208,17 @@ bool ModbusClient::readCoil(int slaveAddress, int address, bool& value)
     return readCoil(address, value);
 }
 
+bool ModbusClient::readCoils(int slaveAddress, int address, int number, std::vector<bool> values)
+{
+    std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
+    if (!changeSlaveAddress(slaveAddress))
+    {
+        return false;
+    }
+
+    return readCoils(address, number, values);
+}
+
 //
 
 bool ModbusClient::writeHoldingRegister(int address, signed short value)
@@ -303,7 +316,7 @@ bool ModbusClient::readInputContact(int address, bool& value)
 
     if (modbus_read_input_bits(m_modbus, address, 1, &tmpValue) == -1)
     {
-        LOG(DEBUG) << "LibModbusClient: Unable to read input bit - " << modbus_strerror(errno);
+        LOG(DEBUG) << "LibModbusClient: Unable to read input contact - " << modbus_strerror(errno);
         return false;
     }
 
@@ -352,7 +365,7 @@ bool ModbusClient::readHoldingRegister(int address, float& value)
 
 bool ModbusClient::readCoil(int address, bool& value)
 {
-    uint8_t tmpValue = 0;
+    std::uint8_t tmpValue = 0;
 
     if (modbus_read_bits(m_modbus, address, 1, &tmpValue) == -1)
     {
@@ -361,6 +374,49 @@ bool ModbusClient::readCoil(int address, bool& value)
     }
 
     value = tmpValue != 0 ? true : false;
+    return true;
+}
+
+bool ModbusClient::readCoils(int address, int number, std::vector<bool> values)
+{
+    std::vector<std::uint8_t> tmpValues(number / 8 + (number % 8 != 0));
+
+    if (modbus_read_bits(m_modbus, address, number, &tmpValues[0]) == -1)
+    {
+        LOG(DEBUG) << "LibModbusClient: Unable to read coils - " << modbus_strerror(errno);
+        return false;
+    }
+
+    for (auto tmpValuesByte = tmpValues.begin(); tmpValuesByte != tmpValues.end(); ++tmpValuesByte)
+    {
+        std::uint8_t bitmask;
+        if (tmpValuesByte != tmpValues.end())
+        {
+            bitmask = 128;
+        }
+        else
+        {
+            int bits = number % 8;
+            if (bits == 0)
+            {
+                bitmask = 128;
+            }
+            else
+            {
+                bitmask = static_cast<unsigned char>(std::pow(2, bits - 1));
+            }
+        }
+        for (std::uint8_t mask = 1; mask < bitmask;)
+        {
+            std::uint8_t tmpValue = mask & *tmpValuesByte;
+            bool value = tmpValue != 0 ? true : false;
+            values.push_back(value);
+            if (mask == bitmask)
+                break;
+            else
+                mask << 1;
+        }
+    }
     return true;
 }
 

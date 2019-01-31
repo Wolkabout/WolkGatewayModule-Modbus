@@ -22,6 +22,7 @@
 #include <chrono>
 #include <mutex>
 #include <string>
+#include <vector>
 
 namespace wolkabout
 {
@@ -53,6 +54,7 @@ public:
     bool readHoldingRegister(int slaveAddress, int address, float& value);
 
     bool readCoil(int slaveAddress, int address, bool& value);
+    bool readCoils(int slaveAddress, int address, int number, std::vector<bool> values);
 
 protected:
     virtual bool createContext() = 0;
@@ -75,6 +77,7 @@ protected:
     virtual bool readHoldingRegister(int address, float& value);
 
     virtual bool readCoil(int address, bool& value);
+    virtual bool readCoils(int address, int number, std::vector<bool> values);
 
     virtual bool changeSlaveAddress(int address);
 

@@ -44,14 +44,9 @@ ModbusRegisterMapping::DataType ModbusRegisterGroup::getDataType()
     return m_dataType;
 }
 
-bool ModbusRegisterGroup::getStartingRegisterAddress(int& address)
+int ModbusRegisterGroup::getStartingRegisterAddress()
 {
-    if (m_modbusRegisterMappings.size() == 0)
-    {
-        return false;
-    }
-    address = m_modbusRegisterMappings.front().getAddress();
-    return true;
+    return m_modbusRegisterMappings.front().getAddress();
 }
 
 int ModbusRegisterGroup::getRegisterCount()
@@ -59,23 +54,13 @@ int ModbusRegisterGroup::getRegisterCount()
     return m_modbusRegisterMappings.size();
 }
 
-void ModbusRegisterGroup::addRegister(ModbusRegisterMapping modbusRegisterMapping)
+const std::vector<ModbusRegisterMapping> ModbusRegisterGroup::getRegisters() const
 {
-    if (m_modbusRegisterMappings.size() == 0)
-    {
-        m_modbusRegisterMappings.push_back(modbusRegisterMapping);
-        return;
-    }
-    if (modbusRegisterMapping.getAddress() == m_modbusRegisterMappings.front().getAddress() - 1)
-    {
-        auto iter = m_modbusRegisterMappings.insert(m_modbusRegisterMappings.begin(), 1, modbusRegisterMapping);
-        return;
-    }
-    if (modbusRegisterMapping.getAddress() == m_modbusRegisterMappings.back().getAddress() + 1)
-    {
-        m_modbusRegisterMappings.push_back(modbusRegisterMapping);
-        return;
-    }
+    return m_modbusRegisterMappings;
 }
 
+void ModbusRegisterGroup::addRegister(ModbusRegisterMapping modbusRegisterMapping)
+{
+    m_modbusRegisterMappings.push_back(modbusRegisterMapping);
+}
 }    // namespace wolkabout

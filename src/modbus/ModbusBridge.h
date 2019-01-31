@@ -20,6 +20,7 @@
 #include "ActuationHandlerPerDevice.h"
 #include "ActuatorStatusProviderPerDevice.h"
 #include "DeviceStatusProvider.h"
+#include "modbus/ModbusRegisterGroup.h"
 #include "modbus/ModbusRegisterWatcher.h"
 
 #include <atomic>
@@ -41,7 +42,7 @@ class ModbusBridge : public ActuationHandlerPerDevice,
                      public DeviceStatusProvider
 {
 public:
-    ModbusBridge(ModbusClient& modbusClient, const std::vector<ModbusRegisterMapping>& modbusRegisterMappings,
+    ModbusBridge(ModbusClient& modbusClient, const std::vector<ModbusRegisterGroup>& modbusRegisterGroups,
                  std::chrono::milliseconds registerReadPeriod);
 
     virtual ~ModbusBridge();
@@ -90,6 +91,7 @@ private:
 
     ModbusClient& m_modbusClient;
 
+    std::vector<ModbusRegisterGroup> m_modbusRegisterGroups;
     std::map<std::string, ModbusRegisterMapping> m_referenceToModbusRegisterMapping;
     std::map<std::string, ModbusRegisterWatcher> m_referenceToModbusRegisterWatcherMapping;
 

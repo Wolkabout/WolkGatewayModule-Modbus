@@ -33,9 +33,10 @@ public:
     int getSlaveAddress();
     ModbusRegisterMapping::RegisterType getRegisterType();
     ModbusRegisterMapping::DataType getDataType();
-    bool getStartingRegisterAddress(int& address);
+    int getStartingRegisterAddress();
     int getRegisterCount();
     void addRegister(ModbusRegisterMapping modbusRegisterMapping);
+    const std::vector<ModbusRegisterMapping> getRegisters() const;
 
 private:
     int m_slaveAddress;
