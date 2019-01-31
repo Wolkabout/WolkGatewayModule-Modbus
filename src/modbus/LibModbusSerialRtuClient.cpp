@@ -184,6 +184,14 @@ bool LibModbusSerialRtuClient::readCoil(int address, bool& value)
     return result;
 }
 
+bool LibModbusSerialRtuClient::readCoils(int address, int number, std::vector<bool> values)
+{
+    auto result = ModbusClient::readCoils(address, number, values);
+
+    sleepBetweenModbusMessages();
+    return result;
+}
+
 void LibModbusSerialRtuClient::sleepBetweenModbusMessages() const
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(10));

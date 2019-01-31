@@ -56,6 +56,7 @@ private:
     bool readHoldingRegister(int address, float& value) override;
 
     bool readCoil(int address, bool& value) override;
+    bool readCoils(int address, int number, std::vector<bool> values) override;
 
     void sleepBetweenModbusMessages() const;
 

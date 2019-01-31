@@ -334,7 +334,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                       m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
                     modbusRegisterWatcher.setValid(false);
                 }
-                return;
+                continue;
             }
 
             for (int i = 0; i < registerCount; ++i)
