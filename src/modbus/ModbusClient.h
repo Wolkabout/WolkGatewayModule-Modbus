@@ -48,6 +48,7 @@ public:
     bool readInputRegister(int slaveAddress, int address, float& value);
 
     bool readInputContact(int slaveAddress, int address, bool& value);
+    bool readInputContacts(int slaveAddress, int address, int number, std::vector<bool> values);
 
     bool readHoldingRegister(int slaveAddress, int address, signed short& value);
     bool readHoldingRegister(int slaveAddress, int address, unsigned short& value);
@@ -71,6 +72,7 @@ protected:
     virtual bool readInputRegister(int address, float& value);
 
     virtual bool readInputContact(int address, bool& value);
+    virtual bool readInputContacts(int address, int number, std::vector<bool> values);
 
     virtual bool readHoldingRegister(int address, signed short& value);
     virtual bool readHoldingRegister(int address, unsigned short& value);

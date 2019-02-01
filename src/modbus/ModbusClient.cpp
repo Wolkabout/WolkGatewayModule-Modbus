@@ -164,6 +164,17 @@ bool ModbusClient::readInputContact(int slaveAddress, int address, bool& value)
     return readInputContact(address, value);
 }
 
+bool ModbusClient::readInputContacts(int slaveAddress, int address, int number, std::vector<bool> values)
+{
+    std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
+    if (!changeSlaveAddress(slaveAddress))
+    {
+        return false;
+    }
+
+    return readInputContacts(address, number, values);
+}
+
 bool ModbusClient::readHoldingRegister(int slaveAddress, int address, signed short& value)
 {
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
@@ -321,6 +332,49 @@ bool ModbusClient::readInputContact(int address, bool& value)
     }
 
     value = tmpValue != 0 ? true : false;
+    return true;
+}
+
+bool ModbusClient::readInputContacts(int address, int number, std::vector<bool> values)
+{
+    std::vector<std::uint8_t> tmpValues(number / 8 + (number % 8 != 0));
+
+    if (modbus_read_bits(m_modbus, address, number, &tmpValues[0]) == -1)
+    {
+        LOG(DEBUG) << "LibModbusClient: Unable to read input contacts - " << modbus_strerror(errno);
+        return false;
+    }
+
+    for (auto tmpValuesByte = tmpValues.begin(); tmpValuesByte != tmpValues.end(); ++tmpValuesByte)
+    {
+        std::uint8_t bitmask;
+        if (tmpValuesByte != tmpValues.end())
+        {
+            bitmask = 128;
+        }
+        else
+        {
+            int bits = number % 8;
+            if (bits == 0)
+            {
+                bitmask = 128;
+            }
+            else
+            {
+                bitmask = static_cast<unsigned char>(std::pow(2, bits - 1));
+            }
+        }
+        for (std::uint8_t mask = 1; mask < bitmask;)
+        {
+            std::uint8_t tmpValue = mask & *tmpValuesByte;
+            bool value = tmpValue != 0 ? true : false;
+            values.push_back(value);
+            if (mask == bitmask)
+                break;
+            else
+                mask << 1;
+        }
+    }
     return true;
 }
 

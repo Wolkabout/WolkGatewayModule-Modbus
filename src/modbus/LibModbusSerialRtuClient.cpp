@@ -152,6 +152,14 @@ bool LibModbusSerialRtuClient::readInputContact(int address, bool& value)
     return result;
 }
 
+bool LibModbusSerialRtuClient::readInputContacts(int address, std::vector<bool> values)
+{
+    auto result = ModbusClient::readInputContacts(address, values);
+
+    sleepBetweenModbusMessages();
+    return result;
+}
+
 bool LibModbusSerialRtuClient::readHoldingRegister(int address, short& value)
 {
     auto result = ModbusClient::readHoldingRegister(address, value);

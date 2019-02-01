@@ -50,6 +50,7 @@ private:
     bool readInputRegister(int address, float& value) override;
 
     bool readInputContact(int address, bool& value) override;
+    bool readInputContacts(int address, std::vector<bool> values) override;
 
     bool readHoldingRegister(int address, signed short& value) override;
     bool readHoldingRegister(int address, unsigned short& value) override;
