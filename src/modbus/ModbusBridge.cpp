@@ -347,11 +347,10 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                     LOG(INFO) << "ModbusBridge: Actuator value changed - Reference: '"
                               << modbusRegisterMapping.getReference() << "' Value: '"
                               << modbusRegisterWatcher.getValue() << "'";
-                }
-
-                if (m_onActuatorStatusChange)
-                {
-                    m_onActuatorStatusChange(modbusRegisterMapping.getReference());
+                    if (m_onActuatorStatusChange)
+                    {
+                        m_onActuatorStatusChange(modbusRegisterMapping.getReference());
+                    }
                 }
             }
             break;
@@ -408,7 +407,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
-                    bool value = values[i];
+                    signed short value = values[i];
                     ModbusRegisterMapping modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
                     ModbusRegisterWatcher modbusRegisterWatcher =
                       m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
@@ -440,7 +439,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
-                    bool value = values[i];
+                    unsigned short value = values[i];
                     ModbusRegisterMapping modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
                     ModbusRegisterWatcher modbusRegisterWatcher =
                       m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
@@ -472,7 +471,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
-                    bool value = values[i];
+                    float value = values[i];
                     ModbusRegisterMapping modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
                     ModbusRegisterWatcher modbusRegisterWatcher =
                       m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
@@ -490,6 +489,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                 break;
             }
             }
+            break;
         }
         case ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR:
         {
@@ -628,11 +628,11 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                         LOG(INFO) << "ModbusBridge: Actuator value changed - Reference: '"
                                   << modbusRegisterMapping.getReference() << "' Value: '"
                                   << modbusRegisterWatcher.getValue() << "'";
-                    }
 
-                    if (m_onActuatorStatusChange)
-                    {
-                        m_onActuatorStatusChange(modbusRegisterMapping.getReference());
+                        if (m_onActuatorStatusChange)
+                        {
+                            m_onActuatorStatusChange(modbusRegisterMapping.getReference());
+                        }
                     }
                 }
                 break;
@@ -667,11 +667,10 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                         LOG(INFO) << "ModbusBridge: Actuator value changed - Reference: '"
                                   << modbusRegisterMapping.getReference() << "' Value: '"
                                   << modbusRegisterWatcher.getValue() << "'";
-                    }
-
-                    if (m_onActuatorStatusChange)
-                    {
-                        m_onActuatorStatusChange(modbusRegisterMapping.getReference());
+                        if (m_onActuatorStatusChange)
+                        {
+                            m_onActuatorStatusChange(modbusRegisterMapping.getReference());
+                        }
                     }
                 }
                 break;
@@ -706,11 +705,11 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                         LOG(INFO) << "ModbusBridge: Actuator value changed - Reference: '"
                                   << modbusRegisterMapping.getReference() << "' Value: '"
                                   << modbusRegisterWatcher.getValue() << "'";
-                    }
 
-                    if (m_onActuatorStatusChange)
-                    {
-                        m_onActuatorStatusChange(modbusRegisterMapping.getReference());
+                        if (m_onActuatorStatusChange)
+                        {
+                            m_onActuatorStatusChange(modbusRegisterMapping.getReference());
+                        }
                     }
                 }
                 break;

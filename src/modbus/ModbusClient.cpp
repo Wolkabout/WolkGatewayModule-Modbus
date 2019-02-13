@@ -131,7 +131,7 @@ bool ModbusClient::readInputRegister(int slaveAddress, int address, signed short
     return readInputRegister(address, value);
 }
 
-bool ModbusClient::readInputRegisters(int slaveAddress, int address, int number, std::vector<signed short> values)
+bool ModbusClient::readInputRegisters(int slaveAddress, int address, int number, std::vector<signed short>& values)
 {
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
     if (!changeSlaveAddress(slaveAddress))
@@ -153,7 +153,7 @@ bool ModbusClient::readInputRegister(int slaveAddress, int address, unsigned sho
     return readInputRegister(address, value);
 }
 
-bool ModbusClient::readInputRegisters(int slaveAddress, int address, int number, std::vector<unsigned short> values)
+bool ModbusClient::readInputRegisters(int slaveAddress, int address, int number, std::vector<unsigned short>& values)
 {
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
     if (!changeSlaveAddress(slaveAddress))
@@ -175,7 +175,7 @@ bool ModbusClient::readInputRegister(int slaveAddress, int address, float& value
     return readInputRegister(address, value);
 }
 
-bool ModbusClient::readInputRegisters(int slaveAddress, int address, int number, std::vector<float> values)
+bool ModbusClient::readInputRegisters(int slaveAddress, int address, int number, std::vector<float>& values)
 {
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
     if (!changeSlaveAddress(slaveAddress))
@@ -197,7 +197,7 @@ bool ModbusClient::readInputContact(int slaveAddress, int address, bool& value)
     return readInputContact(address, value);
 }
 
-bool ModbusClient::readInputContacts(int slaveAddress, int address, int number, std::vector<bool> values)
+bool ModbusClient::readInputContacts(int slaveAddress, int address, int number, std::vector<bool>& values)
 {
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
     if (!changeSlaveAddress(slaveAddress))
@@ -219,7 +219,7 @@ bool ModbusClient::readHoldingRegister(int slaveAddress, int address, signed sho
     return readHoldingRegister(address, value);
 }
 
-bool ModbusClient::readHoldingRegisters(int slaveAddress, int address, int number, std::vector<signed short> values)
+bool ModbusClient::readHoldingRegisters(int slaveAddress, int address, int number, std::vector<signed short>& values)
 {
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
     if (!changeSlaveAddress(slaveAddress))
@@ -241,7 +241,7 @@ bool ModbusClient::readHoldingRegister(int slaveAddress, int address, unsigned s
     return readHoldingRegister(address, value);
 }
 
-bool ModbusClient::readHoldingRegisters(int slaveAddress, int address, int number, std::vector<unsigned short> values)
+bool ModbusClient::readHoldingRegisters(int slaveAddress, int address, int number, std::vector<unsigned short>& values)
 {
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
     if (!changeSlaveAddress(slaveAddress))
@@ -263,7 +263,7 @@ bool ModbusClient::readHoldingRegister(int slaveAddress, int address, float& val
     return readHoldingRegister(address, value);
 }
 
-bool ModbusClient::readHoldingRegisters(int slaveAddress, int address, int number, std::vector<float> values)
+bool ModbusClient::readHoldingRegisters(int slaveAddress, int address, int number, std::vector<float>& values)
 {
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
     if (!changeSlaveAddress(slaveAddress))
@@ -285,7 +285,7 @@ bool ModbusClient::readCoil(int slaveAddress, int address, bool& value)
     return readCoil(address, value);
 }
 
-bool ModbusClient::readCoils(int slaveAddress, int address, int number, std::vector<bool> values)
+bool ModbusClient::readCoils(int slaveAddress, int address, int number, std::vector<bool>& values)
 {
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
     if (!changeSlaveAddress(slaveAddress))
@@ -362,7 +362,7 @@ bool ModbusClient::readInputRegister(int address, signed short& value)
     return true;
 }
 
-bool ModbusClient::readInputRegisters(int address, int number, std::vector<signed short> values)
+bool ModbusClient::readInputRegisters(int address, int number, std::vector<signed short>& values)
 {
     std::vector<unsigned short> tmpValues(number);
 
@@ -390,7 +390,7 @@ bool ModbusClient::readInputRegister(int address, unsigned short& value)
     return true;
 }
 
-bool ModbusClient::readInputRegisters(int address, int number, std::vector<unsigned short> values)
+bool ModbusClient::readInputRegisters(int address, int number, std::vector<unsigned short>& values)
 {
     std::vector<unsigned short> tmpValues(number);
 
@@ -422,7 +422,7 @@ bool ModbusClient::readInputRegister(int address, float& value)
     return true;
 }
 
-bool ModbusClient::readInputRegisters(int address, int number, std::vector<float> values)
+bool ModbusClient::readInputRegisters(int address, int number, std::vector<float>& values)
 {
     std::vector<std::uint16_t> tmpValues(number * 2);
 
@@ -458,7 +458,7 @@ bool ModbusClient::readInputContact(int address, bool& value)
     return true;
 }
 
-bool ModbusClient::readInputContacts(int address, int number, std::vector<bool> values)
+bool ModbusClient::readInputContacts(int address, int number, std::vector<bool>& values)
 {
     std::vector<std::uint8_t> tmpValues(number / 8 + (number % 8 != 0));
 
@@ -515,7 +515,7 @@ bool ModbusClient::readHoldingRegister(int address, short& value)
     return true;
 }
 
-bool ModbusClient::readHoldingRegisters(int address, int number, std::vector<signed short> values)
+bool ModbusClient::readHoldingRegisters(int address, int number, std::vector<signed short>& values)
 {
     std::vector<unsigned short> tmpValues(number);
 
@@ -543,7 +543,7 @@ bool ModbusClient::readHoldingRegister(int address, unsigned short& value)
     return true;
 }
 
-bool ModbusClient::readHoldingRegisters(int address, int number, std::vector<unsigned short> values)
+bool ModbusClient::readHoldingRegisters(int address, int number, std::vector<unsigned short>& values)
 {
     std::vector<unsigned short> tmpValues(number);
 
@@ -575,7 +575,7 @@ bool ModbusClient::readHoldingRegister(int address, float& value)
     return true;
 }
 
-bool ModbusClient::readHoldingRegisters(int address, int number, std::vector<float> values)
+bool ModbusClient::readHoldingRegisters(int address, int number, std::vector<float>& values)
 {
     std::vector<std::uint16_t> tmpValues(number * 2);
 
@@ -611,7 +611,7 @@ bool ModbusClient::readCoil(int address, bool& value)
     return true;
 }
 
-bool ModbusClient::readCoils(int address, int number, std::vector<bool> values)
+bool ModbusClient::readCoils(int address, int number, std::vector<bool>& values)
 {
     std::vector<std::uint8_t> tmpValues(number / 8 + (number % 8 != 0));
 

@@ -46,24 +46,24 @@ private:
     bool writeCoil(int address, bool value) override;
 
     bool readInputRegister(int address, signed short& value) override;
-    bool readInputRegisters(int address, int number, std::vector<signed short> values) override;
+    bool readInputRegisters(int address, int number, std::vector<signed short>& values) override;
     bool readInputRegister(int address, unsigned short& value) override;
-    bool readInputRegisters(int address, int number, std::vector<unsigned short> values) override;
+    bool readInputRegisters(int address, int number, std::vector<unsigned short>& values) override;
     bool readInputRegister(int address, float& value) override;
-    bool readInputRegisters(int address, int number, std::vector<float> values) override;
+    bool readInputRegisters(int address, int number, std::vector<float>& values) override;
 
     bool readInputContact(int address, bool& value) override;
-    bool readInputContacts(int address, int number, std::vector<bool> values) override;
+    bool readInputContacts(int address, int number, std::vector<bool>& values) override;
 
     bool readHoldingRegister(int address, signed short& value) override;
-    bool readHoldingRegisters(int address, int number, std::vector<signed short> values) override;
+    bool readHoldingRegisters(int address, int number, std::vector<signed short>& values) override;
     bool readHoldingRegister(int address, unsigned short& value) override;
-    bool readHoldingRegisters(int address, int number, std::vector<unsigned short> values) override;
+    bool readHoldingRegisters(int address, int number, std::vector<unsigned short>& values) override;
     bool readHoldingRegister(int address, float& value) override;
-    bool readHoldingRegisters(int address, int number, std::vector<float> values) override;
+    bool readHoldingRegisters(int address, int number, std::vector<float>& values) override;
 
     bool readCoil(int address, bool& value) override;
-    bool readCoils(int address, int number, std::vector<bool> values) override;
+    bool readCoils(int address, int number, std::vector<bool>& values) override;
 
     void sleepBetweenModbusMessages() const;
 
