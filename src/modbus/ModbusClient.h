@@ -54,8 +54,11 @@ public:
     bool readInputContacts(int slaveAddress, int address, int number, std::vector<bool> values);
 
     bool readHoldingRegister(int slaveAddress, int address, signed short& value);
+    bool readHoldingRegisters(int slaveAddress, int address, int number, std::vector<signed short> values);
     bool readHoldingRegister(int slaveAddress, int address, unsigned short& value);
+    bool readHoldingRegisters(int slaveAddress, int address, int number, std::vector<unsigned short> values);
     bool readHoldingRegister(int slaveAddress, int address, float& value);
+    bool readHoldingRegisters(int slaveAddress, int address, int number, std::vector<float> values);
 
     bool readCoil(int slaveAddress, int address, bool& value);
     bool readCoils(int slaveAddress, int address, int number, std::vector<bool> values);
@@ -81,8 +84,11 @@ protected:
     virtual bool readInputContacts(int address, int number, std::vector<bool> values);
 
     virtual bool readHoldingRegister(int address, signed short& value);
+    virtual bool readHoldingRegisters(int address, int number, std::vector<signed short> values);
     virtual bool readHoldingRegister(int address, unsigned short& value);
+    virtual bool readHoldingRegisters(int address, int number, std::vector<unsigned short> values);
     virtual bool readHoldingRegister(int address, float& value);
+    virtual bool readHoldingRegisters(int address, int number, std::vector<float> values);
 
     virtual bool readCoil(int address, bool& value);
     virtual bool readCoils(int address, int number, std::vector<bool> values);
