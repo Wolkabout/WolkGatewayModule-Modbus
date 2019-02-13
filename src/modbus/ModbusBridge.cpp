@@ -308,9 +308,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 
     for (ModbusRegisterGroup& modbusRegisterGroup : m_modbusRegisterGroups)
     {
-        int registerCount = modbusRegisterGroup.getRegisterCount();
-
-        if (registerCount == 1)
+        if (modbusRegisterGroup.getRegisterCount() == 1)
         {
             readAndReportModbusRegisterValue(
               *m_referenceToModbusRegisterMapping.find(modbusRegisterGroup.getRegisters().front().getReference()));
@@ -323,7 +321,8 @@ void ModbusBridge::readAndReportModbusRegistersValues()
         {
             std::vector<bool> values;
             if (!m_modbusClient.readCoils(modbusRegisterGroup.getSlaveAddress(),
-                                          modbusRegisterGroup.getStartingRegisterAddress(), registerCount, values))
+                                          modbusRegisterGroup.getStartingRegisterAddress(),
+                                          modbusRegisterGroup.getRegisterCount(), values))
             {
                 LOG(ERROR) << "ModbusBridge: Unable to read coils on slave " << modbusRegisterGroup.getSlaveAddress()
                            << " from address '" << modbusRegisterGroup.getStartingRegisterAddress() << "'";
@@ -337,7 +336,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                 continue;
             }
 
-            for (int i = 0; i < registerCount; ++i)
+            for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
             {
                 bool value = values[i];
                 ModbusRegisterMapping modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
@@ -357,12 +356,13 @@ void ModbusBridge::readAndReportModbusRegistersValues()
             }
             break;
         }
+
         case ModbusRegisterMapping::RegisterType::INPUT_CONTACT:
         {
             std::vector<bool> values;
             if (!m_modbusClient.readInputContacts(modbusRegisterGroup.getSlaveAddress(),
-                                                  modbusRegisterGroup.getStartingRegisterAddress(), registerCount,
-                                                  values))
+                                                  modbusRegisterGroup.getStartingRegisterAddress(),
+                                                  modbusRegisterGroup.getRegisterCount(), values))
             {
                 LOG(ERROR) << "ModbusBridge: Unable to read input contacts on slave "
                            << modbusRegisterGroup.getSlaveAddress() << " from address '"
@@ -370,7 +370,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                 continue;
             }
 
-            for (int i = 0; i < registerCount; ++i)
+            for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
             {
                 bool value = values[i];
                 ModbusRegisterMapping modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
@@ -391,7 +391,105 @@ void ModbusBridge::readAndReportModbusRegistersValues()
         }
         case ModbusRegisterMapping::RegisterType::INPUT_REGISTER:
         {
-            // TODO: switch for DataType : INT16 UINT16 REAL32 BOOL
+            switch (modbusRegisterGroup.getDataType())
+            {
+            case ModbusRegisterMapping::DataType::INT16:
+            {
+                std::vector<signed short> values;
+                if (!m_modbusClient.readInputRegisters(modbusRegisterGroup.getSlaveAddress(),
+                                                       modbusRegisterGroup.getStartingRegisterAddress(),
+                                                       modbusRegisterGroup.getRegisterCount(), values))
+                {
+                    LOG(ERROR) << "ModbusBridge: Unable to read input registers on slave "
+                               << modbusRegisterGroup.getSlaveAddress() << " from address '"
+                               << modbusRegisterGroup.getStartingRegisterAddress() << "'";
+                    continue;
+                }
+
+                for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
+                {
+                    bool value = values[i];
+                    ModbusRegisterMapping modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
+                    ModbusRegisterWatcher modbusRegisterWatcher =
+                      m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
+                    if (modbusRegisterWatcher.update(value))
+                    {
+                        LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << modbusRegisterMapping.getReference()
+                                  << "' Value: '" << modbusRegisterWatcher.getValue() << "'";
+
+                        if (m_onSensorReading)
+                        {
+                            m_onSensorReading(modbusRegisterMapping.getReference(), modbusRegisterWatcher.getValue());
+                        }
+                    }
+                }
+                break;
+            }
+            case ModbusRegisterMapping::DataType::UINT16:
+            {
+                std::vector<unsigned short> values;
+                if (!m_modbusClient.readInputRegisters(modbusRegisterGroup.getSlaveAddress(),
+                                                       modbusRegisterGroup.getStartingRegisterAddress(),
+                                                       modbusRegisterGroup.getRegisterCount(), values))
+                {
+                    LOG(ERROR) << "ModbusBridge: Unable to read input registers on slave "
+                               << modbusRegisterGroup.getSlaveAddress() << " from address '"
+                               << modbusRegisterGroup.getStartingRegisterAddress() << "'";
+                    continue;
+                }
+
+                for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
+                {
+                    bool value = values[i];
+                    ModbusRegisterMapping modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
+                    ModbusRegisterWatcher modbusRegisterWatcher =
+                      m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
+                    if (modbusRegisterWatcher.update(value))
+                    {
+                        LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << modbusRegisterMapping.getReference()
+                                  << "' Value: '" << modbusRegisterWatcher.getValue() << "'";
+
+                        if (m_onSensorReading)
+                        {
+                            m_onSensorReading(modbusRegisterMapping.getReference(), modbusRegisterWatcher.getValue());
+                        }
+                    }
+                }
+                break;
+            }
+            case ModbusRegisterMapping::DataType::REAL32:
+            {
+                std::vector<float> values;
+                if (!m_modbusClient.readInputRegisters(modbusRegisterGroup.getSlaveAddress(),
+                                                       modbusRegisterGroup.getStartingRegisterAddress(),
+                                                       modbusRegisterGroup.getRegisterCount(), values))
+                {
+                    LOG(ERROR) << "ModbusBridge: Unable to read input registers on slave "
+                               << modbusRegisterGroup.getSlaveAddress() << " from address '"
+                               << modbusRegisterGroup.getStartingRegisterAddress() << "'";
+                    continue;
+                }
+
+                for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
+                {
+                    bool value = values[i];
+                    ModbusRegisterMapping modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
+                    ModbusRegisterWatcher modbusRegisterWatcher =
+                      m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
+                    if (modbusRegisterWatcher.update(value))
+                    {
+                        LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << modbusRegisterMapping.getReference()
+                                  << "' Value: '" << modbusRegisterWatcher.getValue() << "'";
+
+                        if (m_onSensorReading)
+                        {
+                            m_onSensorReading(modbusRegisterMapping.getReference(), modbusRegisterWatcher.getValue());
+                        }
+                    }
+                }
+                break;
+            }
+            }
             break;
         }
         case ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR:

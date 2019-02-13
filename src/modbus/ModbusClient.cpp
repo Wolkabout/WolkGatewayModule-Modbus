@@ -131,6 +131,17 @@ bool ModbusClient::readInputRegister(int slaveAddress, int address, signed short
     return readInputRegister(address, value);
 }
 
+bool ModbusClient::readInputRegisters(int slaveAddress, int address, int number, std::vector<signed short> values)
+{
+    std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
+    if (!changeSlaveAddress(slaveAddress))
+    {
+        return false;
+    }
+
+    return readInputRegisters(address, number, values);
+}
+
 bool ModbusClient::readInputRegister(int slaveAddress, int address, unsigned short& value)
 {
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
@@ -142,6 +153,17 @@ bool ModbusClient::readInputRegister(int slaveAddress, int address, unsigned sho
     return readInputRegister(address, value);
 }
 
+bool ModbusClient::readInputRegisters(int slaveAddress, int address, int number, std::vector<unsigned short> values)
+{
+    std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
+    if (!changeSlaveAddress(slaveAddress))
+    {
+        return false;
+    }
+
+    return readInputRegisters(address, number, values);
+}
+
 bool ModbusClient::readInputRegister(int slaveAddress, int address, float& value)
 {
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
@@ -151,6 +173,17 @@ bool ModbusClient::readInputRegister(int slaveAddress, int address, float& value
     }
 
     return readInputRegister(address, value);
+}
+
+bool ModbusClient::readInputRegisters(int slaveAddress, int address, int number, std::vector<float> values)
+{
+    std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
+    if (!changeSlaveAddress(slaveAddress))
+    {
+        return false;
+    }
+
+    return readInputRegisters(address, number, values);
 }
 
 bool ModbusClient::readInputContact(int slaveAddress, int address, bool& value)
@@ -296,12 +329,47 @@ bool ModbusClient::readInputRegister(int address, signed short& value)
     return true;
 }
 
+bool ModbusClient::readInputRegisters(int address, int number, std::vector<signed short> values)
+{
+    std::vector<unsigned short> tmpValues(number);
+
+    if (modbus_read_input_registers(m_modbus, address, number, &tmpValues[0]) == -1)
+    {
+        LOG(DEBUG) << "LibModbusClient: Unable to read input registers - " << modbus_strerror(errno);
+        return false;
+    }
+
+    for (unsigned short tmpValue : tmpValues)
+    {
+        values.push_back(reinterpret_cast<short&>(tmpValue));
+    }
+    return true;
+}
+
 bool ModbusClient::readInputRegister(int address, unsigned short& value)
 {
     if (modbus_read_input_registers(m_modbus, address, 1, &value) == -1)
     {
         LOG(DEBUG) << "LibModbusClient: Unable to read input register - " << modbus_strerror(errno);
         return false;
+    }
+
+    return true;
+}
+
+bool ModbusClient::readInputRegisters(int address, int number, std::vector<unsigned short> values)
+{
+    std::vector<unsigned short> tmpValues(number);
+
+    if (modbus_read_input_registers(m_modbus, address, number, &tmpValues[0]) == -1)
+    {
+        LOG(DEBUG) << "LibModbusClient: Unable to read input registers - " << modbus_strerror(errno);
+        return false;
+    }
+
+    for (unsigned short tmpValue : tmpValues)
+    {
+        values.push_back(tmpValue);
     }
 
     return true;
@@ -318,6 +386,28 @@ bool ModbusClient::readInputRegister(int address, float& value)
     }
 
     value = modbusValue.floatValue;
+    return true;
+}
+
+bool ModbusClient::readInputRegisters(int address, int number, std::vector<float> values)
+{
+    std::vector<std::uint16_t> tmpValues(number * 2);
+
+    if (modbus_read_input_registers(m_modbus, address, number * 2, &tmpValues[0]) == -1)
+    {
+        LOG(DEBUG) << "LibModbusClient: Unable to read input registers - " << modbus_strerror(errno);
+        return false;
+    }
+
+    for (int i = 0; i < number * 2; i += 2)
+    {
+        float value;
+        std::uint32_t tmpValue = tmpValues[i];
+        tmpValue += tmpValues[i + 1] << 16;
+        value = reinterpret_cast<float&>(tmpValue);
+        values.push_back(value);
+    }
+
     return true;
 }
 

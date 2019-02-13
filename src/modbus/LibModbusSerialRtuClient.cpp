@@ -152,9 +152,9 @@ bool LibModbusSerialRtuClient::readInputContact(int address, bool& value)
     return result;
 }
 
-bool LibModbusSerialRtuClient::readInputContacts(int address, std::vector<bool> values)
+bool LibModbusSerialRtuClient::readInputContacts(int address, int number, std::vector<bool> values)
 {
-    auto result = ModbusClient::readInputContacts(address, values);
+    auto result = ModbusClient::readInputContacts(address, number, values);
 
     sleepBetweenModbusMessages();
     return result;
