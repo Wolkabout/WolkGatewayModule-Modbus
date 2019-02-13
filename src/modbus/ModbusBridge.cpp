@@ -339,8 +339,8 @@ void ModbusBridge::readAndReportModbusRegistersValues()
             for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
             {
                 bool value = values[i];
-                ModbusRegisterMapping modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
-                ModbusRegisterWatcher modbusRegisterWatcher =
+                const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
+                ModbusRegisterWatcher& modbusRegisterWatcher =
                   m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
                 if (modbusRegisterWatcher.update(value))
                 {
@@ -372,8 +372,8 @@ void ModbusBridge::readAndReportModbusRegistersValues()
             for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
             {
                 bool value = values[i];
-                ModbusRegisterMapping modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
-                ModbusRegisterWatcher modbusRegisterWatcher =
+                const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
+                ModbusRegisterWatcher& modbusRegisterWatcher =
                   m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
                 if (modbusRegisterWatcher.update(value))
                 {
@@ -408,8 +408,8 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
                     signed short value = values[i];
-                    ModbusRegisterMapping modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
-                    ModbusRegisterWatcher modbusRegisterWatcher =
+                    const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
+                    ModbusRegisterWatcher& modbusRegisterWatcher =
                       m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
                     if (modbusRegisterWatcher.update(value))
                     {
@@ -440,8 +440,8 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
                     unsigned short value = values[i];
-                    ModbusRegisterMapping modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
-                    ModbusRegisterWatcher modbusRegisterWatcher =
+                    const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
+                    ModbusRegisterWatcher& modbusRegisterWatcher =
                       m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
                     if (modbusRegisterWatcher.update(value))
                     {
@@ -472,8 +472,8 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
                     float value = values[i];
-                    ModbusRegisterMapping modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
-                    ModbusRegisterWatcher modbusRegisterWatcher =
+                    const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
+                    ModbusRegisterWatcher& modbusRegisterWatcher =
                       m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
                     if (modbusRegisterWatcher.update(value))
                     {
@@ -511,8 +511,8 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
                     signed short value = values[i];
-                    ModbusRegisterMapping modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
-                    ModbusRegisterWatcher modbusRegisterWatcher =
+                    const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
+                    ModbusRegisterWatcher& modbusRegisterWatcher =
                       m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
                     if (modbusRegisterWatcher.update(value))
                     {
@@ -543,8 +543,8 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
                     unsigned short value = values[i];
-                    ModbusRegisterMapping modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
-                    ModbusRegisterWatcher modbusRegisterWatcher =
+                    const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
+                    ModbusRegisterWatcher& modbusRegisterWatcher =
                       m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
                     if (modbusRegisterWatcher.update(value))
                     {
@@ -575,8 +575,8 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
                     float value = values[i];
-                    ModbusRegisterMapping modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
-                    ModbusRegisterWatcher modbusRegisterWatcher =
+                    const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
+                    ModbusRegisterWatcher& modbusRegisterWatcher =
                       m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
                     if (modbusRegisterWatcher.update(value))
                     {
@@ -620,8 +620,8 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
                     signed short value = values[i];
-                    ModbusRegisterMapping modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
-                    ModbusRegisterWatcher modbusRegisterWatcher =
+                    const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
+                    ModbusRegisterWatcher& modbusRegisterWatcher =
                       m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
                     if (modbusRegisterWatcher.update(value))
                     {
@@ -659,8 +659,8 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
                     unsigned short value = values[i];
-                    ModbusRegisterMapping modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
-                    ModbusRegisterWatcher modbusRegisterWatcher =
+                    const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
+                    ModbusRegisterWatcher& modbusRegisterWatcher =
                       m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
                     if (modbusRegisterWatcher.update(value))
                     {
@@ -697,8 +697,8 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
                     float value = values[i];
-                    ModbusRegisterMapping modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
-                    ModbusRegisterWatcher modbusRegisterWatcher =
+                    const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
+                    ModbusRegisterWatcher& modbusRegisterWatcher =
                       m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
                     if (modbusRegisterWatcher.update(value))
                     {
