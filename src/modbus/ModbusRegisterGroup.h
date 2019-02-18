@@ -19,7 +19,6 @@
 
 #include "modbus/ModbusRegisterMapping.h"
 
-#include <string>
 #include <vector>
 
 namespace wolkabout
@@ -36,7 +35,7 @@ public:
     int getStartingRegisterAddress();
     int getRegisterCount();
     void addRegister(ModbusRegisterMapping modbusRegisterMapping);
-    const std::vector<ModbusRegisterMapping> getRegisters() const;
+    const std::vector<ModbusRegisterMapping>& getRegisters() const;
 
 private:
     int m_slaveAddress;

@@ -15,11 +15,8 @@
  */
 
 #include "ModbusRegisterGroup.h"
-#include "ModbusRegisterMapping.h"
 
 #include <algorithm>
-#include <string>
-#include <vector>
 
 namespace wolkabout
 {
@@ -54,7 +51,7 @@ int ModbusRegisterGroup::getRegisterCount()
     return m_modbusRegisterMappings.size();
 }
 
-const std::vector<ModbusRegisterMapping> ModbusRegisterGroup::getRegisters() const
+const std::vector<ModbusRegisterMapping>& ModbusRegisterGroup::getRegisters() const
 {
     return m_modbusRegisterMappings;
 }

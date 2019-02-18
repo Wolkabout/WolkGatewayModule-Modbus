@@ -42,7 +42,7 @@ class ModbusBridge : public ActuationHandlerPerDevice,
                      public DeviceStatusProvider
 {
 public:
-    ModbusBridge(ModbusClient& modbusClient, const std::vector<ModbusRegisterGroup>& modbusRegisterGroups,
+    ModbusBridge(ModbusClient& modbusClient, std::vector<ModbusRegisterMapping>& modbusRegisterMappings,
                  std::chrono::milliseconds registerReadPeriod);
 
     virtual ~ModbusBridge();
@@ -74,20 +74,6 @@ private:
     void run();
 
     void readAndReportModbusRegistersValues();
-    void readAndReportModbusRegisterValue(
-      const std::pair<std::string, ModbusRegisterMapping>& referenceToModbusRegisterMapping);
-
-    bool isRegisterValueUpdated(const ModbusRegisterMapping& modbusRegisterMapping,
-                                ModbusRegisterWatcher& modbusRegisterWatcher);
-
-    bool isHoldingRegisterValueUpdated(const ModbusRegisterMapping& modbusRegisterMapping,
-                                       ModbusRegisterWatcher& modbusRegisterWatcher);
-    bool isInputRegisterValueUpdated(const ModbusRegisterMapping& modbusRegisterMapping,
-                                     ModbusRegisterWatcher& modbusRegisterWatcher);
-    bool isCoilValueUpdated(const ModbusRegisterMapping& modbusRegisterMapping,
-                            ModbusRegisterWatcher& modbusRegisterWatcher);
-    bool isInputContactValueUpdated(const ModbusRegisterMapping& modbusRegisterMapping,
-                                    ModbusRegisterWatcher& modbusRegisterWatcher);
 
     ModbusClient& m_modbusClient;
 

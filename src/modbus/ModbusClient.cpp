@@ -18,8 +18,6 @@
 #include "modbus/libmodbus/modbus.h"
 #include "utilities/Logger.h"
 
-#include <cmath>
-
 namespace wolkabout
 {
 ModbusClient::ModbusClient(std::chrono::milliseconds responseTimeout)
@@ -120,17 +118,6 @@ bool ModbusClient::writeCoil(int slaveAddress, int address, bool value)
     return writeCoil(address, value);
 }
 
-bool ModbusClient::readInputRegister(int slaveAddress, int address, signed short& value)
-{
-    std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
-    if (!changeSlaveAddress(slaveAddress))
-    {
-        return false;
-    }
-
-    return readInputRegister(address, value);
-}
-
 bool ModbusClient::readInputRegisters(int slaveAddress, int address, int number, std::vector<signed short>& values)
 {
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
@@ -140,17 +127,6 @@ bool ModbusClient::readInputRegisters(int slaveAddress, int address, int number,
     }
 
     return readInputRegisters(address, number, values);
-}
-
-bool ModbusClient::readInputRegister(int slaveAddress, int address, unsigned short& value)
-{
-    std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
-    if (!changeSlaveAddress(slaveAddress))
-    {
-        return false;
-    }
-
-    return readInputRegister(address, value);
 }
 
 bool ModbusClient::readInputRegisters(int slaveAddress, int address, int number, std::vector<unsigned short>& values)
@@ -164,17 +140,6 @@ bool ModbusClient::readInputRegisters(int slaveAddress, int address, int number,
     return readInputRegisters(address, number, values);
 }
 
-bool ModbusClient::readInputRegister(int slaveAddress, int address, float& value)
-{
-    std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
-    if (!changeSlaveAddress(slaveAddress))
-    {
-        return false;
-    }
-
-    return readInputRegister(address, value);
-}
-
 bool ModbusClient::readInputRegisters(int slaveAddress, int address, int number, std::vector<float>& values)
 {
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
@@ -184,17 +149,6 @@ bool ModbusClient::readInputRegisters(int slaveAddress, int address, int number,
     }
 
     return readInputRegisters(address, number, values);
-}
-
-bool ModbusClient::readInputContact(int slaveAddress, int address, bool& value)
-{
-    std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
-    if (!changeSlaveAddress(slaveAddress))
-    {
-        return false;
-    }
-
-    return readInputContact(address, value);
 }
 
 bool ModbusClient::readInputContacts(int slaveAddress, int address, int number, std::vector<bool>& values)
@@ -348,20 +302,6 @@ bool ModbusClient::writeCoil(int address, bool value)
     return true;
 }
 
-bool ModbusClient::readInputRegister(int address, signed short& value)
-{
-    ModbusValue modbusValue;
-
-    if (modbus_read_input_registers(m_modbus, address, 1, &modbusValue.unsignedShortValue) == -1)
-    {
-        LOG(DEBUG) << "LibModbusClient: Unable to read input register - " << modbus_strerror(errno);
-        return false;
-    }
-
-    value = modbusValue.signedShortValue;
-    return true;
-}
-
 bool ModbusClient::readInputRegisters(int address, int number, std::vector<signed short>& values)
 {
     std::vector<unsigned short> tmpValues(number);
@@ -372,21 +312,10 @@ bool ModbusClient::readInputRegisters(int address, int number, std::vector<signe
         return false;
     }
 
-    for (unsigned short tmpValue : tmpValues)
+    for (unsigned short& tmpValue : tmpValues)
     {
         values.push_back(reinterpret_cast<short&>(tmpValue));
     }
-    return true;
-}
-
-bool ModbusClient::readInputRegister(int address, unsigned short& value)
-{
-    if (modbus_read_input_registers(m_modbus, address, 1, &value) == -1)
-    {
-        LOG(DEBUG) << "LibModbusClient: Unable to read input register - " << modbus_strerror(errno);
-        return false;
-    }
-
     return true;
 }
 
@@ -400,25 +329,11 @@ bool ModbusClient::readInputRegisters(int address, int number, std::vector<unsig
         return false;
     }
 
-    for (unsigned short tmpValue : tmpValues)
+    for (const unsigned short& tmpValue : tmpValues)
     {
         values.push_back(tmpValue);
     }
 
-    return true;
-}
-
-bool ModbusClient::readInputRegister(int address, float& value)
-{
-    ModbusValue modbusValue;
-
-    if (modbus_read_input_registers(m_modbus, address, 2, modbusValue.unsignedShortValues) == -1)
-    {
-        LOG(DEBUG) << "LibModbusClient: Unable to read input register - " << modbus_strerror(errno);
-        return false;
-    }
-
-    value = modbusValue.floatValue;
     return true;
 }
 
@@ -437,24 +352,9 @@ bool ModbusClient::readInputRegisters(int address, int number, std::vector<float
         float value;
         std::uint32_t tmpValue = tmpValues[i];
         tmpValue += tmpValues[i + 1] << 16;
-        value = reinterpret_cast<float&>(tmpValue);
-        values.push_back(value);
+        values.push_back(reinterpret_cast<float&>(tmpValue));
     }
 
-    return true;
-}
-
-bool ModbusClient::readInputContact(int address, bool& value)
-{
-    uint8_t tmpValue = 0;
-
-    if (modbus_read_input_bits(m_modbus, address, 1, &tmpValue) == -1)
-    {
-        LOG(DEBUG) << "LibModbusClient: Unable to read input contact - " << modbus_strerror(errno);
-        return false;
-    }
-
-    value = tmpValue != 0 ? true : false;
     return true;
 }
 
@@ -468,34 +368,27 @@ bool ModbusClient::readInputContacts(int address, int number, std::vector<bool>&
         return false;
     }
 
-    for (auto tmpValuesByte = tmpValues.begin(); tmpValuesByte != tmpValues.end(); ++tmpValuesByte)
+    for (unsigned short i = 0; i < tmpValues.size(); ++i)
     {
-        std::uint8_t bitmask;
-        if (tmpValuesByte != tmpValues.end())
+        int bits;
+        if (i == tmpValues.size() - 1)
         {
-            bitmask = 128;
+            bits = number % 8;
+            if (bits == 0)
+            {
+                bits = 8;
+            }
         }
         else
         {
-            int bits = number % 8;
-            if (bits == 0)
-            {
-                bitmask = 128;
-            }
-            else
-            {
-                bitmask = static_cast<unsigned char>(std::pow(2, bits - 1));
-            }
+            bits = 8;
         }
-        for (std::uint8_t mask = 1; mask < bitmask;)
+        std::uint8_t mask = 1;
+        for (int j = 0; j < bits; ++j)
         {
-            std::uint8_t tmpValue = mask & *tmpValuesByte;
-            bool value = tmpValue != 0 ? true : false;
-            values.push_back(value);
-            if (mask == bitmask)
-                break;
-            else
-                mask << 1;
+            std::uint8_t tmpValue = mask & tmpValues[i];
+            values.push_back(static_cast<bool>(tmpValue));
+            mask << 1;
         }
     }
     return true;
@@ -525,7 +418,7 @@ bool ModbusClient::readHoldingRegisters(int address, int number, std::vector<sig
         return false;
     }
 
-    for (unsigned short tmpValue : tmpValues)
+    for (unsigned short& tmpValue : tmpValues)
     {
         values.push_back(reinterpret_cast<short&>(tmpValue));
     }
@@ -553,7 +446,7 @@ bool ModbusClient::readHoldingRegisters(int address, int number, std::vector<uns
         return false;
     }
 
-    for (unsigned short tmpValue : tmpValues)
+    for (const unsigned short& tmpValue : tmpValues)
     {
         values.push_back(tmpValue);
     }
@@ -587,11 +480,9 @@ bool ModbusClient::readHoldingRegisters(int address, int number, std::vector<flo
 
     for (int i = 0; i < number * 2; i += 2)
     {
-        float value;
         std::uint32_t tmpValue = tmpValues[i];
         tmpValue += tmpValues[i + 1] << 16;
-        value = reinterpret_cast<float&>(tmpValue);
-        values.push_back(value);
+        values.push_back(reinterpret_cast<float&>(tmpValue));
     }
 
     return true;
@@ -621,34 +512,27 @@ bool ModbusClient::readCoils(int address, int number, std::vector<bool>& values)
         return false;
     }
 
-    for (auto tmpValuesByte = tmpValues.begin(); tmpValuesByte != tmpValues.end(); ++tmpValuesByte)
+    for (unsigned short i = 0; i < tmpValues.size(); ++i)
     {
-        std::uint8_t bitmask;
-        if (tmpValuesByte != tmpValues.end())
+        int bits;
+        if (i == tmpValues.size() - 1)
         {
-            bitmask = 128;
+            bits = number % 8;
+            if (bits == 0)
+            {
+                bits = 8;
+            }
         }
         else
         {
-            int bits = number % 8;
-            if (bits == 0)
-            {
-                bitmask = 128;
-            }
-            else
-            {
-                bitmask = static_cast<unsigned char>(std::pow(2, bits - 1));
-            }
+            bits = 8;
         }
-        for (std::uint8_t mask = 1; mask < bitmask;)
+        std::uint8_t mask = 1;
+        for (int j = 0; j < bits; ++j)
         {
-            std::uint8_t tmpValue = mask & *tmpValuesByte;
-            bool value = tmpValue != 0 ? true : false;
-            values.push_back(value);
-            if (mask == bitmask)
-                break;
-            else
-                mask << 1;
+            std::uint8_t tmpValue = mask & tmpValues[i];
+            values.push_back(static_cast<bool>(tmpValue));
+            mask << 1;
         }
     }
     return true;

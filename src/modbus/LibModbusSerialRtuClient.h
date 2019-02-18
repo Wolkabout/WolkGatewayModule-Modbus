@@ -45,14 +45,10 @@ private:
 
     bool writeCoil(int address, bool value) override;
 
-    bool readInputRegister(int address, signed short& value) override;
     bool readInputRegisters(int address, int number, std::vector<signed short>& values) override;
-    bool readInputRegister(int address, unsigned short& value) override;
     bool readInputRegisters(int address, int number, std::vector<unsigned short>& values) override;
-    bool readInputRegister(int address, float& value) override;
     bool readInputRegisters(int address, int number, std::vector<float>& values) override;
 
-    bool readInputContact(int address, bool& value) override;
     bool readInputContacts(int address, int number, std::vector<bool>& values) override;
 
     bool readHoldingRegister(int address, signed short& value) override;

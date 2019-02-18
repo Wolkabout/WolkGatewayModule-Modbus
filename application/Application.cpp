@@ -147,51 +147,6 @@ void makeSensorAndActuatorManifestsFromModbusRegisterMappings(
         }
     }
 }
-
-void makeModbusRegisterGroupsFromModbusRegisterMappings(
-  const std::vector<wolkabout::ModbusRegisterMapping>& modbusRegisterMappings,
-  std::vector<wolkabout::ModbusRegisterGroup>& modbusRegisterGroups)
-{
-    int previousSlaveAddress = modbusRegisterMappings.front().getSlaveAddress();
-    wolkabout::ModbusRegisterMapping::RegisterType previousRegisterType =
-      modbusRegisterMappings.front().getRegisterType();
-    wolkabout::ModbusRegisterMapping::DataType previousDataType = modbusRegisterMappings.front().getDataType();
-    int previousAddress = modbusRegisterMappings.front().getAddress() - 1;
-
-    wolkabout::ModbusRegisterGroup modbusRegisterGroup(previousSlaveAddress, previousRegisterType, previousDataType);
-    modbusRegisterGroups.push_back(modbusRegisterGroup);
-
-    for (const wolkabout::ModbusRegisterMapping& modbusRegisterMapping : modbusRegisterMappings)
-    {
-        if (modbusRegisterMapping.getSlaveAddress() == previousSlaveAddress)
-        {
-            if (static_cast<int>(modbusRegisterMapping.getRegisterType()) == static_cast<int>(previousRegisterType))
-            {
-                if (static_cast<int>(modbusRegisterMapping.getDataType()) == static_cast<int>(previousDataType))
-                {
-                    if (modbusRegisterMapping.getAddress() == previousAddress + 1)
-                    {
-                        previousSlaveAddress = modbusRegisterMapping.getSlaveAddress();
-                        previousRegisterType = modbusRegisterMapping.getRegisterType();
-                        previousDataType = modbusRegisterMapping.getDataType();
-                        previousAddress = modbusRegisterMapping.getAddress();
-
-                        modbusRegisterGroups.back().addRegister(modbusRegisterMapping);
-                        continue;
-                    }
-                }
-            }
-        }
-        previousSlaveAddress = modbusRegisterMapping.getSlaveAddress();
-        previousRegisterType = modbusRegisterMapping.getRegisterType();
-        previousDataType = modbusRegisterMapping.getDataType();
-        previousAddress = modbusRegisterMapping.getAddress();
-
-        wolkabout::ModbusRegisterGroup nextRegisterGroup(previousSlaveAddress, previousRegisterType, previousDataType);
-        modbusRegisterGroups.push_back(nextRegisterGroup);
-        modbusRegisterGroups.back().addRegister(modbusRegisterMapping);
-    }
-}
 }    // namespace
 
 int main(int argc, char** argv)
@@ -231,35 +186,6 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    std::sort(modbusRegisterMappings.begin(), modbusRegisterMappings.end(),
-              [](const wolkabout::ModbusRegisterMapping& lhs, const wolkabout::ModbusRegisterMapping& rhs) {
-                  if (lhs.getSlaveAddress() != rhs.getSlaveAddress())
-                  {
-                      return lhs.getSlaveAddress() < rhs.getSlaveAddress();
-                  }
-                  else
-                  {
-                      if (static_cast<int>(lhs.getRegisterType()) != static_cast<int>(rhs.getRegisterType()))
-                      {
-                          return static_cast<int>(lhs.getRegisterType()) < static_cast<int>(rhs.getRegisterType());
-                      }
-                      else
-                      {
-                          if (static_cast<int>(lhs.getDataType()) != static_cast<int>(rhs.getDataType()))
-                          {
-                              return static_cast<int>(lhs.getDataType()) < static_cast<int>(rhs.getDataType());
-                          }
-                          else
-                          {
-                              return lhs.getAddress() < rhs.getAddress();
-                          }
-                      }
-                  }
-              });
-
-    std::vector<wolkabout::ModbusRegisterGroup> modbusRegisterGroups;
-    makeModbusRegisterGroupsFromModbusRegisterMappings(modbusRegisterMappings, modbusRegisterGroups);
-
     std::vector<wolkabout::SensorManifest> sensorManifests;
     std::vector<wolkabout::ActuatorManifest> actuatorManifests;
     makeSensorAndActuatorManifestsFromModbusRegisterMappings(modbusRegisterMappings, sensorManifests,
@@ -282,7 +208,7 @@ int main(int argc, char** argv)
         throw std::logic_error("Unsupported Modbus implementation specified in modbus configuration file");
     }();
 
-    auto modbusBridge = std::make_shared<wolkabout::ModbusBridge>(*libModbusClient, modbusRegisterGroups,
+    auto modbusBridge = std::make_shared<wolkabout::ModbusBridge>(*libModbusClient, modbusRegisterMappings,
                                                                   modbusConfiguration.getReadPeriod());
 
     auto modbusBridgeManifest = std::unique_ptr<wolkabout::DeviceManifest>(new wolkabout::DeviceManifest(

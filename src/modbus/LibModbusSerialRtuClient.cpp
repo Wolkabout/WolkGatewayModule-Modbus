@@ -120,25 +120,9 @@ bool LibModbusSerialRtuClient::writeCoil(int address, bool value)
     return result;
 }
 
-bool LibModbusSerialRtuClient::readInputRegister(int address, signed short& value)
-{
-    auto result = ModbusClient::readInputRegister(address, value);
-
-    sleepBetweenModbusMessages();
-    return result;
-}
-
 bool LibModbusSerialRtuClient::readInputRegisters(int address, int number, std::vector<signed short>& values)
 {
     auto result = ModbusClient::readInputRegisters(address, number, values);
-
-    sleepBetweenModbusMessages();
-    return result;
-}
-
-bool LibModbusSerialRtuClient::readInputRegister(int address, unsigned short& value)
-{
-    auto result = ModbusClient::readInputRegister(address, value);
 
     sleepBetweenModbusMessages();
     return result;
@@ -152,25 +136,9 @@ bool LibModbusSerialRtuClient::readInputRegisters(int address, int number, std::
     return result;
 }
 
-bool LibModbusSerialRtuClient::readInputRegister(int address, float& value)
-{
-    auto result = ModbusClient::readInputRegister(address, value);
-
-    sleepBetweenModbusMessages();
-    return result;
-}
-
 bool LibModbusSerialRtuClient::readInputRegisters(int address, int number, std::vector<float>& values)
 {
     auto result = ModbusClient::readInputRegisters(address, number, values);
-
-    sleepBetweenModbusMessages();
-    return result;
-}
-
-bool LibModbusSerialRtuClient::readInputContact(int address, bool& value)
-{
-    auto result = ModbusClient::readInputContact(address, value);
 
     sleepBetweenModbusMessages();
     return result;
