@@ -145,9 +145,9 @@ ModbusRegisterMapping::RegisterType ModbusRegisterMappingFactory::deserializeReg
     {
         return ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR;
     }
-    else if (registerType == "INPUT_BIT")
+    else if (registerType == "INPUT_CONTACT")
     {
-        return ModbusRegisterMapping::RegisterType::INPUT_BIT;
+        return ModbusRegisterMapping::RegisterType::INPUT_CONTACT;
     }
     else if (registerType == "COIL")
     {

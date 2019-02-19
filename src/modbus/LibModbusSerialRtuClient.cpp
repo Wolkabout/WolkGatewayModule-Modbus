@@ -120,33 +120,33 @@ bool LibModbusSerialRtuClient::writeCoil(int address, bool value)
     return result;
 }
 
-bool LibModbusSerialRtuClient::readInputRegister(int address, signed short& value)
+bool LibModbusSerialRtuClient::readInputRegisters(int address, int number, std::vector<signed short>& values)
 {
-    auto result = ModbusClient::readInputRegister(address, value);
+    auto result = ModbusClient::readInputRegisters(address, number, values);
 
     sleepBetweenModbusMessages();
     return result;
 }
 
-bool LibModbusSerialRtuClient::readInputRegister(int address, unsigned short& value)
+bool LibModbusSerialRtuClient::readInputRegisters(int address, int number, std::vector<unsigned short>& values)
 {
-    auto result = ModbusClient::readInputRegister(address, value);
+    auto result = ModbusClient::readInputRegisters(address, number, values);
 
     sleepBetweenModbusMessages();
     return result;
 }
 
-bool LibModbusSerialRtuClient::readInputRegister(int address, float& value)
+bool LibModbusSerialRtuClient::readInputRegisters(int address, int number, std::vector<float>& values)
 {
-    auto result = ModbusClient::readInputRegister(address, value);
+    auto result = ModbusClient::readInputRegisters(address, number, values);
 
     sleepBetweenModbusMessages();
     return result;
 }
 
-bool LibModbusSerialRtuClient::readInputBit(int address, bool& value)
+bool LibModbusSerialRtuClient::readInputContacts(int address, int number, std::vector<bool>& values)
 {
-    auto result = ModbusClient::readInputBit(address, value);
+    auto result = ModbusClient::readInputContacts(address, number, values);
 
     sleepBetweenModbusMessages();
     return result;
@@ -160,9 +160,25 @@ bool LibModbusSerialRtuClient::readHoldingRegister(int address, short& value)
     return result;
 }
 
+bool LibModbusSerialRtuClient::readHoldingRegisters(int address, int number, std::vector<signed short>& values)
+{
+    auto result = ModbusClient::readHoldingRegisters(address, number, values);
+
+    sleepBetweenModbusMessages();
+    return result;
+}
+
 bool LibModbusSerialRtuClient::readHoldingRegister(int address, unsigned short& value)
 {
     auto result = ModbusClient::readHoldingRegister(address, value);
+
+    sleepBetweenModbusMessages();
+    return result;
+}
+
+bool LibModbusSerialRtuClient::readHoldingRegisters(int address, int number, std::vector<unsigned short>& values)
+{
+    auto result = ModbusClient::readHoldingRegisters(address, number, values);
 
     sleepBetweenModbusMessages();
     return result;
@@ -176,9 +192,25 @@ bool LibModbusSerialRtuClient::readHoldingRegister(int address, float& value)
     return result;
 }
 
+bool LibModbusSerialRtuClient::readHoldingRegisters(int address, int number, std::vector<float>& values)
+{
+    auto result = ModbusClient::readHoldingRegisters(address, number, values);
+
+    sleepBetweenModbusMessages();
+    return result;
+}
+
 bool LibModbusSerialRtuClient::readCoil(int address, bool& value)
 {
     auto result = ModbusClient::readCoil(address, value);
+
+    sleepBetweenModbusMessages();
+    return result;
+}
+
+bool LibModbusSerialRtuClient::readCoils(int address, int number, std::vector<bool>& values)
+{
+    auto result = ModbusClient::readCoils(address, number, values);
 
     sleepBetweenModbusMessages();
     return result;

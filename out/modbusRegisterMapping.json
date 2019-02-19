@@ -29,7 +29,7 @@
          "reference": "mappingReference3",
 
          "address": 2,
-         "registerType": "INPUT_BIT",
+         "registerType": "INPUT_CONTACT",
          "dataType": "BOOL",
          "slaveAddress" : 2
       },

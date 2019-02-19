@@ -21,6 +21,7 @@
 #include "modbus/ModbusBridge.h"
 #include "modbus/ModbusClient.h"
 #include "modbus/ModbusConfiguration.h"
+#include "modbus/ModbusRegisterGroup.h"
 #include "modbus/ModbusRegisterMapping.h"
 #include "model/ActuatorManifest.h"
 #include "model/DeviceManifest.h"
@@ -36,6 +37,7 @@
 #include <random>
 #include <string>
 #include <thread>
+#include <utility>
 
 namespace
 {
@@ -128,7 +130,7 @@ void makeSensorAndActuatorManifestsFromModbusRegisterMappings(
             break;
         }
 
-        case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_BIT:
+        case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_CONTACT:
         {
             sensorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
                                          wolkabout::DataType::BOOLEAN, std::string(""),
@@ -207,7 +209,7 @@ int main(int argc, char** argv)
         throw std::logic_error("Unsupported Modbus implementation specified in modbus configuration file");
     }();
 
-    auto modbusBridge = std::make_shared<wolkabout::ModbusBridge>(*libModbusClient, modbusRegisterMappings,
+    auto modbusBridge = std::make_shared<wolkabout::ModbusBridge>(*libModbusClient, std::move(modbusRegisterMappings),
                                                                   modbusConfiguration.getReadPeriod());
 
     auto modbusBridgeManifest = std::unique_ptr<wolkabout::DeviceManifest>(new wolkabout::DeviceManifest(

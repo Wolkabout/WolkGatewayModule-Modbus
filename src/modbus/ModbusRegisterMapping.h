@@ -27,21 +27,18 @@ class ModbusRegisterMapping
 public:
     enum class RegisterType
     {
+        COIL = 0,
+        INPUT_CONTACT,
         INPUT_REGISTER,
         HOLDING_REGISTER_SENSOR,
-        HOLDING_REGISTER_ACTUATOR,
-
-        INPUT_BIT,
-        COIL
+        HOLDING_REGISTER_ACTUATOR
     };
 
     enum class DataType
     {
-        INT16,
+        INT16 = 0,
         UINT16,
-
         REAL32,
-
         BOOL
     };
 
