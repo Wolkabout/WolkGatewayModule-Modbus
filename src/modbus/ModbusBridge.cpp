@@ -37,7 +37,7 @@
 
 namespace wolkabout
 {
-ModbusBridge::ModbusBridge(ModbusClient& modbusClient, std::vector<ModbusRegisterMapping>& modbusRegisterMappings,
+ModbusBridge::ModbusBridge(ModbusClient& modbusClient, std::vector<ModbusRegisterMapping> modbusRegisterMappings,
                            std::chrono::milliseconds registerReadPeriod)
 : m_modbusClient(modbusClient), m_registerReadPeriod(std::move(registerReadPeriod)), m_readerShouldRun(false)
 {
@@ -550,7 +550,6 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                                << modbusRegisterGroup.getStartingRegisterAddress() << "'";
                     continue;
                 }
-
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
                     signed short value = values[i];

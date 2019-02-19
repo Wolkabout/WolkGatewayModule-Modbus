@@ -42,7 +42,7 @@ class ModbusBridge : public ActuationHandlerPerDevice,
                      public DeviceStatusProvider
 {
 public:
-    ModbusBridge(ModbusClient& modbusClient, std::vector<ModbusRegisterMapping>& modbusRegisterMappings,
+    ModbusBridge(ModbusClient& modbusClient, std::vector<ModbusRegisterMapping> modbusRegisterMappings,
                  std::chrono::milliseconds registerReadPeriod);
 
     virtual ~ModbusBridge();
