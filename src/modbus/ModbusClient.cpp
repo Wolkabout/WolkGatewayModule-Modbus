@@ -504,8 +504,7 @@ bool ModbusClient::readCoil(int address, bool& value)
 
 bool ModbusClient::readCoils(int address, int number, std::vector<bool>& values)
 {
-    //std::vector<std::uint8_t> tmpValues(number / 8 + (number % 8 != 0));
-    uint8_t* tmpValues = new uint8_t[number];
+    std::vector<std::uint8_t> tmpValues(number);
     int bits_read = 0;
     bits_read = modbus_read_bits(m_modbus, address, number, &tmpValues[0]);
     if ( bits_read == -1)
@@ -518,7 +517,6 @@ bool ModbusClient::readCoils(int address, int number, std::vector<bool>& values)
     {
         values.push_back(static_cast<bool>(tmpValues[i]));
     }
-    delete [] tmpValues;
     return true;
 }
 
