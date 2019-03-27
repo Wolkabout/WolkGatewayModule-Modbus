@@ -507,7 +507,7 @@ bool ModbusClient::readCoils(int address, int number, std::vector<bool>& values)
     std::vector<std::uint8_t> tmpValues(number);
     int bits_read = 0;
     bits_read = modbus_read_bits(m_modbus, address, number, &tmpValues[0]);
-    if ( bits_read == -1)
+    if (bits_read == -1)
     {
         LOG(DEBUG) << "LibModbusClient: Unable to read coils - " << modbus_strerror(errno);
         return false;
