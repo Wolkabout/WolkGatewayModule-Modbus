@@ -23,9 +23,9 @@
 #include "modbus/ModbusConfiguration.h"
 #include "modbus/ModbusRegisterGroup.h"
 #include "modbus/ModbusRegisterMapping.h"
-#include "model/ActuatorManifest.h"
-#include "model/DeviceManifest.h"
-#include "model/SensorManifest.h"
+#include "model/ActuatorTemplate.h"
+#include "model/DeviceTemplate.h"
+#include "model/SensorTemplate.h"
 #include "service/FirmwareInstaller.h"
 #include "utilities/ConsoleLogger.h"
 
@@ -90,9 +90,9 @@ bool loadModbusRegisterMappingFromFile(const std::string& file,
     }
 }
 
-void makeSensorAndActuatorManifestsFromModbusRegisterMappings(
+void makeSensorAndActuatorTemplatesFromModbusRegisterMappings(
   const std::vector<wolkabout::ModbusRegisterMapping>& modbusRegisterMappings,
-  std::vector<wolkabout::SensorManifest>& sensorManifests, std::vector<wolkabout::ActuatorManifest>& actuatorManifests)
+  std::vector<wolkabout::SensorTemplate>& sensorTemplates, std::vector<wolkabout::ActuatorTemplate>& actuatorTemplates)
 {
     for (const wolkabout::ModbusRegisterMapping& modbusRegisterMapping : modbusRegisterMappings)
     {
@@ -100,7 +100,7 @@ void makeSensorAndActuatorManifestsFromModbusRegisterMappings(
         {
         case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
         {
-            actuatorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
+            actuatorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
                                            wolkabout::DataType::NUMERIC, "", modbusRegisterMapping.getMinimum(),
                                            modbusRegisterMapping.getMaximum());
             break;
@@ -108,7 +108,7 @@ void makeSensorAndActuatorManifestsFromModbusRegisterMappings(
 
         case wolkabout::ModbusRegisterMapping::RegisterType::COIL:
         {
-            actuatorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
+            actuatorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
                                            wolkabout::DataType::BOOLEAN, "", modbusRegisterMapping.getMinimum(),
                                            modbusRegisterMapping.getMaximum());
             break;
@@ -116,7 +116,7 @@ void makeSensorAndActuatorManifestsFromModbusRegisterMappings(
 
         case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR:
         {
-            sensorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
+            sensorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
                                          wolkabout::DataType::NUMERIC, std::string(""),
                                          modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
             break;
@@ -124,7 +124,7 @@ void makeSensorAndActuatorManifestsFromModbusRegisterMappings(
 
         case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_REGISTER:
         {
-            sensorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
+            sensorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
                                          wolkabout::DataType::NUMERIC, std::string(""),
                                          modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
             break;
@@ -132,7 +132,7 @@ void makeSensorAndActuatorManifestsFromModbusRegisterMappings(
 
         case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_CONTACT:
         {
-            sensorManifests.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
+            sensorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
                                          wolkabout::DataType::BOOLEAN, std::string(""),
                                          modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
             break;
@@ -187,10 +187,10 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    std::vector<wolkabout::SensorManifest> sensorManifests;
-    std::vector<wolkabout::ActuatorManifest> actuatorManifests;
-    makeSensorAndActuatorManifestsFromModbusRegisterMappings(modbusRegisterMappings, sensorManifests,
-                                                             actuatorManifests);
+    std::vector<wolkabout::SensorTemplate> sensorTemplates;
+    std::vector<wolkabout::ActuatorTemplate> actuatorTemplates;
+    makeSensorAndActuatorTemplatesFromModbusRegisterMappings(modbusRegisterMappings, sensorTemplates,
+                                                             actuatorTemplates);
 
     auto libModbusClient = [&]() -> std::unique_ptr<wolkabout::ModbusClient> {
         if (modbusConfiguration.getConnectionType() == wolkabout::ModbusConfiguration::ConnectionType::TCP_IP)
@@ -212,12 +212,11 @@ int main(int argc, char** argv)
     auto modbusBridge = std::make_shared<wolkabout::ModbusBridge>(*libModbusClient, std::move(modbusRegisterMappings),
                                                                   modbusConfiguration.getReadPeriod());
 
-    auto modbusBridgeManifest = std::unique_ptr<wolkabout::DeviceManifest>(new wolkabout::DeviceManifest(
-      deviceConfiguration.getName() + "_Manifest", "WolkGateway Modbus Module", deviceConfiguration.getProtocol(), "",
-      {}, {sensorManifests}, {}, {actuatorManifests}));
+    auto modbusBridgeTemplate = std::unique_ptr<wolkabout::DeviceTemplate>(
+      new wolkabout::DeviceTemplate({}, {sensorTemplates}, {}, {actuatorTemplates}, "", {}, {}, {}));
 
     auto modbusBridgeDevice = std::make_shared<wolkabout::Device>(deviceConfiguration.getName(),
-                                                                  deviceConfiguration.getKey(), *modbusBridgeManifest);
+                                                                  deviceConfiguration.getKey(), *modbusBridgeTemplate);
 
     std::unique_ptr<wolkabout::Wolk> wolk = wolkabout::Wolk::newBuilder()
                                               .deviceStatusProvider(modbusBridge)
