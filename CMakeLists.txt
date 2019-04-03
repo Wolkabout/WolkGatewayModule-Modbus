@@ -61,16 +61,6 @@ target_link_libraries(${PROJECT_NAME} WolkGatewayModule modbus)
 set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-Wl,-rpath,./")
 
-# Tests
-include_directories("tests")
-include_directories(SYSTEM "${CONAN_INCLUDE_DIRS_GTEST}")
-
-file(GLOB_RECURSE TESTS_HEADER_FILES "tests/*.h" "tests/*.hpp")
-file(GLOB_RECURSE TESTS_SOURCE_FILES "tests/*.cpp")
-
-add_executable(modbusTests ${TESTS_SOURCE_FILES})
-target_link_libraries(modbusTests gmock_main gmock gtest ${PROJECT_NAME})
-set_target_properties(modbusTests PROPERTIES LINK_FLAGS "-Wl,-rpath,./lib")
 
 # Example
 include_directories("application")
