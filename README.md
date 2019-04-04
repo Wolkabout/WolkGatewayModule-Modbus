@@ -49,11 +49,11 @@ Module configuration consists of 3 configurations files
 * Modbus configuration
 * Modbus register mapping
 
+Below are sections describing each of these configuration files that need to be edited with the parameters of your modbus devices before running the application.
 These files are located in `out` directory, and are passed to Modbus module executable in following manner:
 ```sh
 ./modbusModule deviceConfiguration.json modbusConfiguration.json modbusRegisterMapping.json
 ```
-Below are sections describing each of these configuration files.
 
 Device configuration
 --------------------
@@ -61,10 +61,10 @@ Device configuration file contains settings that relate to communication with Wo
 
 ```javascript
 {
-    "name": "WolkGateway Modbus Bridge",   // Device name
-    "key": "modbus_bridge",                // Device key
-    "protocol": "JsonProtocol",            // Protocol used on WolkGateway
-    "localMqttUri": "tcp://localhost:1883" // WolkGateway Bus
+    "name": "DEVICE_NAME",                  // Device name
+    "key": "DEVICE_KEY",                    // Device key
+    "protocol": "JsonProtocol",             // Protocol used on WolkGateway
+    "localMqttUri": "tcp://localhost:1883"  // WolkGateway Bus
 }
 
 ```
@@ -81,16 +81,16 @@ Here one can select between two modes of modbus communication:
 ```javascript
 {
     // TCP/IP Configuration
-    "ip": "192.168.100.1",          // Slave IP address
-    "port": 502,                    // Slave port
+    "ip": "192.168.x.x",          // Slave IP address
+    "port": 502,                  // Slave port
 ```
 
 * Serial RTU - supports communication with multiple slaves
 
 ```javascript
     // SERIAL/RTU Configuration
-    "serialPort": "/dev/ttyS",      // Serial port
-    "baudRate": 115200,             // Baud rate
+    "serialPort": "SERIAL_PORT",    // Serial port
+    "baudRate": BAUD_RATE,          // Baud rate
     "dataBits": 8,                  // Number of data bits
     "stopBits": 1,                  // Number of stop bits
     "bitParity": "NONE",            // Bit parity - "NONE" or "EVEN" or "ODD"
