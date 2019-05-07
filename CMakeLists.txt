@@ -46,7 +46,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 link_directories(${CMAKE_BINARY_DIR}/lib)
 
 # WolkAbout c++ SDK
-add_subdirectory(WolkGatewayModule-Cpp lib)
+add_subdirectory(WolkGatewayModule-SDK-Cpp lib)
 
 # WolkAbout Modbus Module
 include_directories("src")
