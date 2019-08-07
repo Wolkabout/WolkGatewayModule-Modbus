@@ -18,6 +18,9 @@
 #include "modbus/libmodbus/modbus.h"
 #include "utilities/Logger.h"
 
+#include <ostream>
+#include <string>
+
 namespace wolkabout
 {
 ModbusClient::ModbusClient(std::chrono::milliseconds responseTimeout)
@@ -40,11 +43,25 @@ bool ModbusClient::connect()
         return false;
     }
 
-    if (modbus_connect(m_modbus) == -1)
+    int sleepDurations[12] = {5, 10, 15, 30, 60, 120, 180, 300, 600, 900, 1800, 3600};
+
+    for (const auto& sleepDuration : sleepDurations)
     {
-        LOG(ERROR) << "LibModbusClient: Unable to connect - " << modbus_strerror(errno);
-        destroyContext();
-        return false;
+        if (modbus_connect(m_modbus) == -1)
+        {
+            LOG(ERROR) << "LibModbusClient: Unable to connect - " << modbus_strerror(errno)
+                       << ". Attempting reconnection in " << std::to_string(sleepDuration) << " seconds.";
+            std::this_thread::sleep_for(std::chrono::milliseconds(sleepDuration * 1000));
+            continue;
+        }
+        break;
+    }
+
+    while (!ModbusClient::isConnected())
+    {
+        LOG(ERROR) << "LibModbusClient: Unable to connect - " << modbus_strerror(errno)
+                   << ". Attempting reconnection in 3600 seconds.";
+        std::this_thread::sleep_for(std::chrono::milliseconds(3600 * 1000));
     }
 
     auto responseTimeOutSeconds = std::chrono::duration_cast<std::chrono::seconds>(m_responseTimeout);
