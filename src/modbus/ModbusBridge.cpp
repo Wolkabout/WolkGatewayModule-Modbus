@@ -352,9 +352,39 @@ void ModbusBridge::stop()
 
 void ModbusBridge::run()
 {
+    m_timeoutIterator = 0;
+    m_shouldReconnect = false;
+    m_lastReconnectTime = static_cast<unsigned long long>(
+      std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+
     while (m_readerShouldRun)
     {
-        readAndReportModbusRegistersValues();
+        if (!m_shouldReconnect)
+        {
+            m_timeoutIterator = 0;
+            readAndReportModbusRegistersValues();
+        }
+        else if (m_lastReconnectTime + m_timeoutDurations[m_timeoutIterator] <
+                 static_cast<unsigned long long>(
+                   std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch())
+                     .count()))
+        {
+            m_lastReconnectTime = static_cast<unsigned long long>(
+              std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch())
+                .count());
+
+            m_modbusClient.disconnect();
+
+            if (m_modbusClient.connect())
+            {
+                m_timeoutIterator = 0;
+                readAndReportModbusRegistersValues();
+            }
+            else if (m_timeoutIterator > 12)
+            {
+                m_timeoutIterator++;
+            }
+        }
 
         std::this_thread::sleep_for(m_registerReadPeriod);
     }
@@ -387,17 +417,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                 continue;
             }
 
-            if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
-            {
-                slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), true));
-            }
-            else
-            {
-                if (!slavesRead.at(modbusRegisterGroup.getSlaveAddress()))
-                {
-                    slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), true));
-                }
-            }
+            slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
             for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
             {
@@ -436,17 +456,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                 continue;
             }
 
-            if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
-            {
-                slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), true));
-            }
-            else
-            {
-                if (!slavesRead.at(modbusRegisterGroup.getSlaveAddress()))
-                {
-                    slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), true));
-                }
-            }
+            slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
             for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
             {
@@ -488,17 +498,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                     continue;
                 }
 
-                if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
-                {
-                    slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), true));
-                }
-                else
-                {
-                    if (!slavesRead.at(modbusRegisterGroup.getSlaveAddress()))
-                    {
-                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), true));
-                    }
-                }
+                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
@@ -536,17 +536,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                     continue;
                 }
 
-                if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
-                {
-                    slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), true));
-                }
-                else
-                {
-                    if (!slavesRead.at(modbusRegisterGroup.getSlaveAddress()))
-                    {
-                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), true));
-                    }
-                }
+                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
@@ -584,17 +574,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                     continue;
                 }
 
-                if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
-                {
-                    slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), true));
-                }
-                else
-                {
-                    if (!slavesRead.at(modbusRegisterGroup.getSlaveAddress()))
-                    {
-                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), true));
-                    }
-                }
+                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
@@ -639,17 +619,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                     continue;
                 }
 
-                if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
-                {
-                    slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), true));
-                }
-                else
-                {
-                    if (!slavesRead.at(modbusRegisterGroup.getSlaveAddress()))
-                    {
-                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), true));
-                    }
-                }
+                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
@@ -687,17 +657,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                     continue;
                 }
 
-                if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
-                {
-                    slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), true));
-                }
-                else
-                {
-                    if (!slavesRead.at(modbusRegisterGroup.getSlaveAddress()))
-                    {
-                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), true));
-                    }
-                }
+                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
@@ -735,17 +695,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                     continue;
                 }
 
-                if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
-                {
-                    slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), true));
-                }
-                else
-                {
-                    if (!slavesRead.at(modbusRegisterGroup.getSlaveAddress()))
-                    {
-                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), true));
-                    }
-                }
+                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
@@ -790,17 +740,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                     continue;
                 }
 
-                if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
-                {
-                    slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), true));
-                }
-                else
-                {
-                    if (!slavesRead.at(modbusRegisterGroup.getSlaveAddress()))
-                    {
-                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), true));
-                    }
-                }
+                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
@@ -839,17 +779,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                     continue;
                 }
 
-                if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
-                {
-                    slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), true));
-                }
-                else
-                {
-                    if (!slavesRead.at(modbusRegisterGroup.getSlaveAddress()))
-                    {
-                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), true));
-                    }
-                }
+                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
@@ -887,17 +817,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                     continue;
                 }
 
-                if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
-                {
-                    slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), true));
-                }
-                else
-                {
-                    if (!slavesRead.at(modbusRegisterGroup.getSlaveAddress()))
-                    {
-                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), true));
-                    }
-                }
+                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
@@ -927,10 +847,12 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 
     if (slavesRead.size() == 1)
     {
-        if (!slavesRead.begin()->second)
+        m_shouldReconnect = !slavesRead.begin()->second;
+        if (m_shouldReconnect)
         {
-            m_modbusClient.disconnect();
-            m_modbusClient.connect();
+            m_lastReconnectTime = static_cast<unsigned long long>(
+              std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch())
+                .count());
         }
     }
 }

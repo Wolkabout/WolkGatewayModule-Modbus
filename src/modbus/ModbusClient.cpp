@@ -40,46 +40,11 @@ bool ModbusClient::connect()
         return false;
     }
 
-    int timeoutDurations[12] = {5, 10, 15, 30, 60, 120, 180, 300, 600, 900, 1800, 3600};
-
-    for (const auto& timeoutDuration : timeoutDurations)
+    if (modbus_connect(m_modbus) == -1)
     {
-        if (modbus_connect(m_modbus) == -1)
-        {
-            LOG(ERROR) << "LibModbusClient: Unable to connect - " << modbus_strerror(errno)
-                       << ". Attempting reconnection in " << std::to_string(timeoutDuration) << " seconds.";
-
-            unsigned long long timeout =
-              static_cast<unsigned long long>(
-                std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch())
-                  .count()) +
-              timeoutDuration;
-            while (timeout > static_cast<unsigned long long>(std::chrono::duration_cast<std::chrono::seconds>(
-                                                               std::chrono::system_clock::now().time_since_epoch())
-                                                               .count()))
-            {
-                continue;
-            }
-            continue;
-        }
-        break;
-    }
-
-    while (!ModbusClient::isConnected())
-    {
-        LOG(ERROR) << "LibModbusClient: Unable to connect - " << modbus_strerror(errno)
-                   << ". Attempting reconnection in 3600 seconds.";
-        unsigned long long timeout =
-          static_cast<unsigned long long>(
-            std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch())
-              .count()) +
-          3600;
-        while (timeout > static_cast<unsigned long long>(std::chrono::duration_cast<std::chrono::seconds>(
-                                                           std::chrono::system_clock::now().time_since_epoch())
-                                                           .count()))
-        {
-            continue;
-        }
+        LOG(ERROR) << "LibModbusClient: Unable to connect - " << modbus_strerror(errno);
+        destroyContext();
+        return false;
     }
 
     auto responseTimeOutSeconds = std::chrono::duration_cast<std::chrono::seconds>(m_responseTimeout);
