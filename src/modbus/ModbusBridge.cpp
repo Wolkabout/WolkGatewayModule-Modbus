@@ -359,19 +359,18 @@ void ModbusBridge::run()
 
     while (m_readerShouldRun)
     {
+        unsigned long long currentTime = static_cast<unsigned long long>(
+          std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch())
+            .count());
+
         if (!m_shouldReconnect)
         {
             m_timeoutIterator = 0;
             readAndReportModbusRegistersValues();
         }
-        else if (m_lastReconnectTime + m_timeoutDurations[m_timeoutIterator] <
-                 static_cast<unsigned long long>(
-                   std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch())
-                     .count()))
+        else if (m_lastReconnectTime + m_timeoutDurations[m_timeoutIterator] < currentTime)
         {
-            m_lastReconnectTime = static_cast<unsigned long long>(
-              std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch())
-                .count());
+            m_lastReconnectTime = currentTime;
 
             m_modbusClient.disconnect();
 
@@ -380,7 +379,7 @@ void ModbusBridge::run()
                 m_timeoutIterator = 0;
                 readAndReportModbusRegistersValues();
             }
-            else if (m_timeoutIterator > 12)
+            else if (m_timeoutIterator < 12)
             {
                 m_timeoutIterator++;
             }
@@ -848,12 +847,6 @@ void ModbusBridge::readAndReportModbusRegistersValues()
     if (slavesRead.size() == 1)
     {
         m_shouldReconnect = !slavesRead.begin()->second;
-        if (m_shouldReconnect)
-        {
-            m_lastReconnectTime = static_cast<unsigned long long>(
-              std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch())
-                .count());
-        }
     }
 }
 }    // namespace wolkabout
