@@ -92,7 +92,8 @@ bool loadModbusRegisterMappingFromFile(const std::string& file,
 
 void makeSensorAndActuatorTemplatesFromModbusRegisterMappings(
   const std::vector<wolkabout::ModbusRegisterMapping>& modbusRegisterMappings,
-  std::vector<wolkabout::SensorTemplate>& sensorTemplates, std::vector<wolkabout::ActuatorTemplate>& actuatorTemplates)
+  std::vector<wolkabout::SensorTemplate>& sensorTemplates, std::vector<wolkabout::ActuatorTemplate>& actuatorTemplates,
+  std::vector<wolkabout::AlarmTemplate>& alarmTemplates, std::vector<wolkabout::ConfigurationTemplate>& configurationTemplates)
 {
     for (const wolkabout::ModbusRegisterMapping& modbusRegisterMapping : modbusRegisterMappings)
     {
@@ -189,8 +190,10 @@ int main(int argc, char** argv)
 
     std::vector<wolkabout::SensorTemplate> sensorTemplates;
     std::vector<wolkabout::ActuatorTemplate> actuatorTemplates;
+    std::vector<wolkabout::AlarmTemplate> alarmTemplates;
+    std::vector<wolkabout::ConfigurationTemplate> configurationTemplates;
     makeSensorAndActuatorTemplatesFromModbusRegisterMappings(modbusRegisterMappings, sensorTemplates,
-                                                             actuatorTemplates);
+                                                             actuatorTemplates, alarmTemplates, configurationTemplates);
 
     auto libModbusClient = [&]() -> std::unique_ptr<wolkabout::ModbusClient> {
         if (modbusConfiguration.getConnectionType() == wolkabout::ModbusConfiguration::ConnectionType::TCP_IP)
@@ -213,7 +216,7 @@ int main(int argc, char** argv)
                                                                   modbusConfiguration.getReadPeriod());
 
     auto modbusBridgeTemplate = std::unique_ptr<wolkabout::DeviceTemplate>(
-      new wolkabout::DeviceTemplate({}, {sensorTemplates}, {}, {actuatorTemplates}, "", {}, {}, {}));
+      new wolkabout::DeviceTemplate({configurationTemplates}, {sensorTemplates}, {alarmTemplates}, {actuatorTemplates}, "", {}, {}, {}));
 
     auto modbusBridgeDevice = std::make_shared<wolkabout::Device>(deviceConfiguration.getName(),
                                                                   deviceConfiguration.getKey(), *modbusBridgeTemplate);

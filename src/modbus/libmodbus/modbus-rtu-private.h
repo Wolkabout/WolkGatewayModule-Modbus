@@ -19,11 +19,11 @@
 #include <termios.h>
 #endif
 
-#define _MODBUS_RTU_HEADER_LENGTH 1
-#define _MODBUS_RTU_PRESET_REQ_LENGTH 6
-#define _MODBUS_RTU_PRESET_RSP_LENGTH 2
+#define _MODBUS_RTU_HEADER_LENGTH      1
+#define _MODBUS_RTU_PRESET_REQ_LENGTH  6
+#define _MODBUS_RTU_PRESET_RSP_LENGTH  2
 
-#define _MODBUS_RTU_CHECKSUM_LENGTH 2
+#define _MODBUS_RTU_CHECKSUM_LENGTH    2
 
 #if defined(_WIN32)
 #if !defined(ENOTSUP)
@@ -32,8 +32,7 @@
 
 /* WIN32: struct containing serial handle and a receive buffer */
 #define PY_BUF_SIZE 512
-struct win32_ser
-{
+struct win32_ser {
     /* File handle */
     HANDLE fd;
     /* Receive buffer */
@@ -43,10 +42,9 @@ struct win32_ser
 };
 #endif /* _WIN32 */
 
-typedef struct _modbus_rtu
-{
+typedef struct _modbus_rtu {
     /* Device: "/dev/ttyS0", "/dev/ttyUSB0" or "/dev/tty.USA19*" on Mac OS X. */
-    char* device;
+    char *device;
     /* Bauds: 9600, 19200, 57600, 115200, etc */
     int baud;
     /* Data bit */
@@ -69,7 +67,7 @@ typedef struct _modbus_rtu
     int rts;
     int rts_delay;
     int onebyte_time;
-    void (*set_rts)(modbus_t* ctx, int on);
+    void (*set_rts) (modbus_t *ctx, int on);
 #endif
     /* To handle many slaves on the same link */
     int confirmation_to_ignore;
