@@ -16,7 +16,8 @@
          "address": 24,
          "registerType": "INPUT_REGISTER",
          "dataType": "INT16",
-         "slaveAddress": 1
+         "slaveAddress": 1,
+         "mappingType": "ALARM"
       },
       {
          "name": "Paper Jam Alarm",
@@ -26,7 +27,8 @@
          "address": 25,
          "registerType": "INPUT_REGISTER",
          "dataType": "INT16",
-         "slaveAddress": 1
+         "slaveAddress": 1,
+         "mappingType": "ALARM"
       },
       {
          "name": "Machine Running",

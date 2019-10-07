@@ -34,6 +34,15 @@ public:
         HOLDING_REGISTER_ACTUATOR
     };
 
+    enum class MappingType 
+    {
+        DEFAULT,
+        SENSOR,
+        ACTUATOR,
+        ALARM,
+        CONFIGURATION
+    };
+
     enum class DataType
     {
         INT16 = 0,
@@ -43,7 +52,7 @@ public:
     };
 
     ModbusRegisterMapping(std::string name, std::string reference, double minimum, double maximum, int address,
-                          RegisterType registerType, DataType dataType, int slaveAddress);
+                          RegisterType registerType, DataType dataType, int slaveAddress, MappingType mappingType);
 
     const std::string& getName() const;
     const std::string& getReference() const;
@@ -55,6 +64,7 @@ public:
 
     RegisterType getRegisterType() const;
     DataType getDataType() const;
+    MappingType getMappingType() const;
     int getSlaveAddress() const;
 
 private:
@@ -68,6 +78,7 @@ private:
 
     RegisterType m_registerType;
     DataType m_dataType;
+    MappingType m_mappingType;
     int m_slaveAddress;
 };
 
@@ -79,6 +90,7 @@ public:
 private:
     static ModbusRegisterMapping::RegisterType deserializeRegisterType(const std::string& registerType);
     static ModbusRegisterMapping::DataType deserializeDataType(const std::string& dataType);
+    static ModbusRegisterMapping::MappingType deserializeMappingType(const std::string& mappingType);
 };
 }    // namespace wolkabout
 
