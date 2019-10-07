@@ -97,6 +97,10 @@ void makeSensorAndActuatorTemplatesFromModbusRegisterMappings(
 {
     for (const wolkabout::ModbusRegisterMapping& modbusRegisterMapping : modbusRegisterMappings)
     {
+        std::cout << modbusRegisterMapping.getName() << " | " << (int)modbusRegisterMapping.getMappingType() << std::endl;
+        
+        // TODO Decision making here for what should be registered!
+
         switch (modbusRegisterMapping.getRegisterType())
         {
         case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:

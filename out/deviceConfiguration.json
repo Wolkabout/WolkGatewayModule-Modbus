@@ -1,6 +1,6 @@
 {
-    "name": "DEVICE_NAME",
-    "key": "DEVICE_KEY",
+    "name": "Development Modbus TCP HMI",
+    "key": "MTP-DEV",
     "protocol": "JsonProtocol",
     "localMqttUri": "tcp://localhost:1883"
 }
