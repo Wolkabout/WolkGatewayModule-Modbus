@@ -51,11 +51,12 @@ public:
         BOOL
     };
 
-    ModbusRegisterMapping(std::string name, std::string reference, double minimum, double maximum, int address,
+    ModbusRegisterMapping(std::string name, std::string reference, std::string description, double minimum, double maximum, int address,
                           RegisterType registerType, DataType dataType, int slaveAddress, MappingType mappingType);
 
     const std::string& getName() const;
     const std::string& getReference() const;
+    const std::string& getDescription() const;
 
     double getMinimum() const;
     double getMaximum() const;
@@ -70,6 +71,7 @@ public:
 private:
     std::string m_name;
     std::string m_reference;
+    std::string m_description;
 
     double m_minimum;
     double m_maximum;
