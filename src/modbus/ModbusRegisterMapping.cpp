@@ -27,12 +27,14 @@ namespace wolkabout
 {
 using nlohmann::json;
 
-ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string reference, double minimum, double maximum,
-                                             int address, wolkabout::ModbusRegisterMapping::RegisterType registerType,
+ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string reference, std::string description,
+                                             double minimum, double maximum, int address, 
+                                             wolkabout::ModbusRegisterMapping::RegisterType registerType,
                                              wolkabout::ModbusRegisterMapping::DataType dataType, int slaveAddress,
                                              wolkabout::ModbusRegisterMapping::MappingType mappingType = MappingType::DEFAULT)
 : m_name(std::move(name))
 , m_reference(std::move(reference))
+, m_description(std::move(description))
 , m_minimum(minimum)
 , m_maximum(maximum)
 , m_address(address)
@@ -51,6 +53,11 @@ const std::string& ModbusRegisterMapping::getName() const
 const std::string& ModbusRegisterMapping::getReference() const
 {
     return m_reference;
+}
+
+const std::string& ModbusRegisterMapping::getDescription() const
+{
+    return m_description;
 }
 
 double ModbusRegisterMapping::getMinimum() const
@@ -110,6 +117,14 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
         const auto name = modbusRegisterMappingJson.at("name").get<std::string>();
         const auto reference = modbusRegisterMappingJson.at("reference").get<std::string>();
 
+        // description is optional
+        auto description = std::string("");
+        try {
+            description = modbusRegisterMappingJson.at("description").get<std::string>();
+        } catch (std::exception& e) {
+            // it will be empty
+        }
+
         const auto address = modbusRegisterMappingJson.at("address").get<int>();
 
         const auto registerTypeStr = modbusRegisterMappingJson.at("registerType").get<std::string>();
@@ -122,7 +137,7 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
         try {
             const auto mappingTypeStr = modbusRegisterMappingJson.at("mappingType").get<std::string>();
             mappingType = deserializeMappingType(mappingTypeStr);
-        } catch (std::exception& e) {   
+        } catch (std::exception& e) {
             // it will be default
         }
 
@@ -138,8 +153,10 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
             maximum = modbusRegisterMappingJson.at("maximum").get<double>();
         }
 
-        modbusRegisterMappingVector.emplace_back(name, reference, minimum, maximum, address, registerType, dataType,
-                                                 slaveAddress, mappingType);
+        modbusRegisterMappingVector.emplace_back(name, reference, description, 
+                                                    minimum, maximum, address, 
+                                                    registerType, dataType, 
+                                                    slaveAddress, mappingType);
     }
 
     return modbusRegisterMappingVector;

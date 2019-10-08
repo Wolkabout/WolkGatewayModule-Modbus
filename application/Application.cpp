@@ -90,43 +90,41 @@ bool loadModbusRegisterMappingFromFile(const std::string& file,
     }
 }
 
-void makeSensorAndActuatorTemplatesFromModbusRegisterMappings(
+void makeTemplatesFromMappings(
   const std::vector<wolkabout::ModbusRegisterMapping>& modbusRegisterMappings,
   std::vector<wolkabout::SensorTemplate>& sensorTemplates, std::vector<wolkabout::ActuatorTemplate>& actuatorTemplates,
   std::vector<wolkabout::AlarmTemplate>& alarmTemplates, std::vector<wolkabout::ConfigurationTemplate>& configurationTemplates)
 {
     for (const wolkabout::ModbusRegisterMapping& modbusRegisterMapping : modbusRegisterMappings)
     {
-        // TODO Decision making here for what should be registered!
+        auto mappingType = modbusRegisterMapping.getMappingType();
+        auto registerType = modbusRegisterMapping.getRegisterType();
 
-        // std::cout << modbusRegisterMapping.getName() << " | " << (int)modbusRegisterMapping.getMappingType() << std::endl;
-
-        switch (modbusRegisterMapping.getMappingType())
+        switch (mappingType)
         {
         case wolkabout::ModbusRegisterMapping::MappingType::DEFAULT:
-            std::cout << "DEFAULT" << std::endl;
-            switch (modbusRegisterMapping.getRegisterType())
+            switch (registerType)
             {
             case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
             {
                 actuatorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                            wolkabout::DataType::NUMERIC, "", modbusRegisterMapping.getMinimum(),
-                                            modbusRegisterMapping.getMaximum());
+                                            wolkabout::DataType::NUMERIC, modbusRegisterMapping.getDescription(), 
+                                            modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
                 break;
             }
 
             case wolkabout::ModbusRegisterMapping::RegisterType::COIL:
             {
                 actuatorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                            wolkabout::DataType::BOOLEAN, "", modbusRegisterMapping.getMinimum(),
-                                            modbusRegisterMapping.getMaximum());
+                                            wolkabout::DataType::BOOLEAN, modbusRegisterMapping.getDescription(), 
+                                            modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
                 break;
             }
 
             case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR:
             {
                 sensorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                            wolkabout::DataType::NUMERIC, std::string(""),
+                                            wolkabout::DataType::NUMERIC, modbusRegisterMapping.getDescription(),
                                             modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
                 break;
             }
@@ -134,7 +132,7 @@ void makeSensorAndActuatorTemplatesFromModbusRegisterMappings(
             case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_REGISTER:
             {
                 sensorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                            wolkabout::DataType::NUMERIC, std::string(""),
+                                            wolkabout::DataType::NUMERIC, modbusRegisterMapping.getDescription(),
                                             modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
                 break;
             }
@@ -142,7 +140,7 @@ void makeSensorAndActuatorTemplatesFromModbusRegisterMappings(
             case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_CONTACT:
             {
                 sensorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                            wolkabout::DataType::BOOLEAN, std::string(""),
+                                            wolkabout::DataType::BOOLEAN, modbusRegisterMapping.getDescription(),
                                             modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
                 break;
             }
@@ -155,41 +153,81 @@ void makeSensorAndActuatorTemplatesFromModbusRegisterMappings(
                 break;
             }
             }
-            break;
+        break;
             
-            // Decide on the data type
-            wolkabout::DataType dataType;
-            if (modbusRegisterMapping.getRegisterType() == wolkabout::ModbusRegisterMapping::RegisterType::COIL ||
-                modbusRegisterMapping.getRegisterType() == wolkabout::ModbusRegisterMapping::RegisterType::INPUT_CONTACT) {
-                    dataType = wolkabout::DataType::BOOLEAN;
-                } else {
-                    dataType = wolkabout::DataType::NUMERIC;
-                }
+        // Decide on the data type
+        wolkabout::DataType dataType;
+        if (registerType == wolkabout::ModbusRegisterMapping::RegisterType::COIL ||
+            registerType == wolkabout::ModbusRegisterMapping::RegisterType::INPUT_CONTACT) {
+                dataType = wolkabout::DataType::BOOLEAN;
+            } else {
+                dataType = wolkabout::DataType::NUMERIC;
+            }
 
         case wolkabout::ModbusRegisterMapping::MappingType::SENSOR:
-            std::cout << "SENSOR" << std::endl;
-            sensorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                            dataType, std::string(""),
+            switch (registerType)
+            {
+            case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_CONTACT:
+            case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_REGISTER:
+            case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR:
+                sensorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
+                                            dataType, modbusRegisterMapping.getDescription(),
                                             modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
+                break;
+            default:
+                LOG(WARN) << "WolkGatewayModbusModule Application: Mapping with reference '"
+                        << modbusRegisterMapping.getReference()
+                        << "' not added to device manifest - Incompatible Mapping and Register type combination";
+                break;
+            }
             break;
         
         case wolkabout::ModbusRegisterMapping::MappingType::ACTUATOR:
-            std::cout << "ACTUATOR" << std::endl;
-            actuatorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                            dataType, std::string(""),
+            switch (registerType)
+            {
+            case wolkabout::ModbusRegisterMapping::RegisterType::COIL:
+            case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
+                actuatorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
+                                            dataType, modbusRegisterMapping.getDescription(), 
                                             modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
+                break;
+            default:
+                LOG(WARN) << "WolkGatewayModbusModule Application: Mapping with reference '"
+                        << modbusRegisterMapping.getReference()
+                        << "' not added to device manifest - Incompatible Mapping and Register type combination";
+                break;
+            }
             break;
 
         case wolkabout::ModbusRegisterMapping::MappingType::ALARM:
-            std::cout << "ALARM" << std::endl;
-            alarmTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), "[DEVELOPMENT] Default Description");
+            switch (registerType)
+            {
+            case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_CONTACT:
+                alarmTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), modbusRegisterMapping.getDescription());
+                break;
+            default:
+                LOG(WARN) << "WolkGatewayModbusModule Application: Mapping with reference '"
+                        << modbusRegisterMapping.getReference()
+                        << "' not added to device manifest - Incompatible Mapping and Register type combination";
+                break;
+            }
             break;
 
         case wolkabout::ModbusRegisterMapping::MappingType::CONFIGURATION:
-            std::cout << "CONFIGURATION" << std::endl;
-            configurationTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                            dataType, "[DEVELOPMENT] Default Description", std::string(""),
+            switch (registerType)
+            {
+            case wolkabout::ModbusRegisterMapping::RegisterType::COIL:
+            case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
+                configurationTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
+                                            dataType, modbusRegisterMapping.getDescription(), std::string(""), std::vector<std::string>{"A1", "A2", "A3"},
                                             modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
+                break;
+            default:
+                LOG(WARN) << "WolkGatewayModbusModule Application: Mapping with reference '"
+                        << modbusRegisterMapping.getReference()
+                        << "' not added to device manifest - Incompatible Mapping and Register type combination";
+                break;
+            }
             break;
 
         default:
@@ -240,7 +278,7 @@ int main(int argc, char** argv)
     std::vector<wolkabout::ActuatorTemplate> actuatorTemplates;
     std::vector<wolkabout::AlarmTemplate> alarmTemplates;
     std::vector<wolkabout::ConfigurationTemplate> configurationTemplates;
-    makeSensorAndActuatorTemplatesFromModbusRegisterMappings(modbusRegisterMappings, sensorTemplates,
+    makeTemplatesFromMappings(modbusRegisterMappings, sensorTemplates,
                                                              actuatorTemplates, alarmTemplates, configurationTemplates);
 
     auto libModbusClient = [&]() -> std::unique_ptr<wolkabout::ModbusClient> {
