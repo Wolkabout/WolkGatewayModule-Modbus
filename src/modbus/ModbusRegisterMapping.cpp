@@ -123,7 +123,7 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
             const auto mappingTypeStr = modbusRegisterMappingJson.at("mappingType").get<std::string>();
             mappingType = deserializeMappingType(mappingTypeStr);
         } catch (std::exception& e) {   
-            //
+            // it will be default
         }
 
         const auto slaveAddress = modbusRegisterMappingJson.at("slaveAddress").get<int>();
