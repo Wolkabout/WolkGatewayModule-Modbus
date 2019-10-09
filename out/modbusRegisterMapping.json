@@ -29,18 +29,6 @@
          "mappingType": "ALARM"
       },
       {
-         "name": "Default Component Values",
-         "reference": "DCV",
-         "description": "These are the values with which the machine will start",
-         "address": 26,
-         "minimum": 0,
-         "maximum": 20000,
-         "registerType": "HOLDING_REGISTER_ACTUATOR",
-         "dataType": "INT16",
-         "slaveAddress": 1,
-         "mappingType": "CONFIGURATION"
-      },
-      {
          "name": "Machine Running",
          "reference": "RUN",
          "address": 0,
