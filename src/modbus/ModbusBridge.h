@@ -78,9 +78,6 @@ private:
     ModbusClient& m_modbusClient;
 
     bool m_shouldReconnect;
-    unsigned long long int m_lastReconnectTime;
-    const int m_timeoutDurations[13] = {0, 5, 10, 15, 30, 60, 120, 180, 300, 600, 900, 1800, 3600};
-    int m_timeoutIterator;
 
     std::vector<ModbusRegisterGroup> m_modbusRegisterGroups;
     std::map<std::string, ModbusRegisterMapping> m_referenceToModbusRegisterMapping;

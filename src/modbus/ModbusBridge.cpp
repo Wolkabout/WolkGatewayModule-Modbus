@@ -352,37 +352,19 @@ void ModbusBridge::stop()
 
 void ModbusBridge::run()
 {
-    m_timeoutIterator = 0;
     m_shouldReconnect = false;
-    m_lastReconnectTime = static_cast<unsigned long long>(
-      std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
-
+    
     while (m_readerShouldRun)
     {
-        unsigned long long currentTime = static_cast<unsigned long long>(
-          std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch())
-            .count());
-
         if (!m_shouldReconnect)
         {
-            m_timeoutIterator = 0;
             readAndReportModbusRegistersValues();
         }
-        else if (m_lastReconnectTime + m_timeoutDurations[m_timeoutIterator] < currentTime)
+        else
         {
-            m_lastReconnectTime = currentTime;
-
             m_modbusClient.disconnect();
-
-            if (m_modbusClient.connect())
-            {
-                m_timeoutIterator = 0;
-                readAndReportModbusRegistersValues();
-            }
-            else if (m_timeoutIterator < 12)
-            {
-                m_timeoutIterator++;
-            }
+            m_modbusClient.connect();
+            readAndReportModbusRegistersValues();
         }
 
         std::this_thread::sleep_for(m_registerReadPeriod);
