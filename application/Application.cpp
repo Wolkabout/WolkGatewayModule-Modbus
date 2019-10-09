@@ -219,7 +219,7 @@ void makeTemplatesFromMappings(
             case wolkabout::ModbusRegisterMapping::RegisterType::COIL:
             case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
                 configurationTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                            dataType, modbusRegisterMapping.getDescription(), std::string(""), std::vector<std::string>{"A1", "A2", "A3"},
+                                            dataType, modbusRegisterMapping.getDescription(), std::string(""),
                                             modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
                 break;
             default:
@@ -240,7 +240,7 @@ void makeTemplatesFromMappings(
 int main(int argc, char** argv)
 {
     auto logger = std::unique_ptr<wolkabout::ConsoleLogger>(new wolkabout::ConsoleLogger());
-    logger->setLogLevel(wolkabout::LogLevel::INFO);
+    logger->setLogLevel(wolkabout::LogLevel::TRACE);
     wolkabout::Logger::setInstance(std::move(logger));
 
     if (argc < 4)
