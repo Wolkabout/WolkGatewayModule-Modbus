@@ -17,6 +17,7 @@
 #include "ModbusClient.h"
 #include "modbus/libmodbus/modbus.h"
 #include "utilities/Logger.h"
+#include <thread>
 
 namespace wolkabout
 {
@@ -27,6 +28,8 @@ ModbusClient::ModbusClient(std::chrono::milliseconds responseTimeout)
 
 bool ModbusClient::connect()
 {
+    m_timeoutIterator = 0;
+
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
     if (!createContext())
     {
@@ -40,11 +43,13 @@ bool ModbusClient::connect()
         return false;
     }
 
-    if (modbus_connect(m_modbus) == -1)
-    {
+    LOG(ERROR) << "LibModbusClient: Attempting to connect";
+    while (modbus_connect(m_modbus) == -1) {
         LOG(ERROR) << "LibModbusClient: Unable to connect - " << modbus_strerror(errno);
-        destroyContext();
-        return false;
+        std::this_thread::sleep_for(std::chrono::seconds(m_timeoutDurations[m_timeoutIterator]));
+        if (m_timeoutIterator < 12) {
+            m_timeoutIterator++;
+        }
     }
 
     auto responseTimeOutSeconds = std::chrono::duration_cast<std::chrono::seconds>(m_responseTimeout);
@@ -65,7 +70,7 @@ bool ModbusClient::connect()
 bool ModbusClient::disconnect()
 {
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
-    return destroyContext();
+    return true;
 }
 
 bool ModbusClient::isConnected()
