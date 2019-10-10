@@ -225,6 +225,9 @@ int main(int argc, char** argv)
                                               .host(deviceConfiguration.getLocalMqttUri())
                                               .build();
 
+    modbusBridge->setWolkConnect([&] {wolk->connect();});
+    modbusBridge->setWolkDisconnect([&] {wolk->disconnect();});
+
     modbusBridge->onSensorReading([&](const std::string& reference, const std::string& value) -> void {
         wolk->addSensorReading(deviceConfiguration.getKey(), reference, value);
         wolk->publish();

@@ -53,6 +53,10 @@ public:
     void start();
     void stop();
 
+    void setWolkConnect(std::function<void()> wolkConnect);
+
+    void setWolkDisconnect(std::function<void()> wolkDisconnect);
+
 protected:
     void handleActuation(const std::string& deviceKey, const std::string& reference, const std::string& value) override;
 
@@ -87,6 +91,9 @@ private:
 
     std::atomic_bool m_readerShouldRun;
     std::unique_ptr<std::thread> m_reader;
+
+    std::function<void()> m_wolkConnect;
+    std::function<void()> m_wolkDisconnect;
 
     std::function<void(const std::string& reference, const std::string& value)> m_onSensorReading;
     std::function<void(const std::string& reference)> m_onActuatorStatusChange;

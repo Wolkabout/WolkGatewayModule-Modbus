@@ -116,7 +116,6 @@ ModbusBridge::ModbusBridge(ModbusClient& modbusClient, std::vector<ModbusRegiste
 ModbusBridge::~ModbusBridge()
 {
     m_modbusClient.disconnect();
-
     stop();
 }
 
@@ -332,6 +331,14 @@ wolkabout::DeviceStatus ModbusBridge::getDeviceStatus(const std::string& /* devi
     return m_modbusClient.isConnected() ? DeviceStatus::CONNECTED : DeviceStatus::OFFLINE;
 }
 
+void ModbusBridge::setWolkConnect(std::function<void()> wolkConnect) {
+    m_wolkConnect = wolkConnect;
+}
+
+void ModbusBridge::setWolkDisconnect(std::function<void()> wolkDisconnect) {
+    m_wolkDisconnect = wolkDisconnect;
+}
+
 void ModbusBridge::start()
 {
     if (m_readerShouldRun)
@@ -363,7 +370,13 @@ void ModbusBridge::run()
         else
         {
             m_modbusClient.disconnect();
+            if (m_wolkDisconnect) {
+                m_wolkDisconnect();
+            }
             m_modbusClient.connect();
+            if (m_wolkConnect) {
+                m_wolkConnect();
+            }
             readAndReportModbusRegistersValues();
         }
 
