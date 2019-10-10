@@ -153,7 +153,7 @@ void makeSensorAndActuatorTemplatesFromModbusRegisterMappings(
 int main(int argc, char** argv)
 {
     auto logger = std::unique_ptr<wolkabout::ConsoleLogger>(new wolkabout::ConsoleLogger());
-    logger->setLogLevel(wolkabout::LogLevel::INFO);
+    logger->setLogLevel(wolkabout::LogLevel::DEBUG);
     wolkabout::Logger::setInstance(std::move(logger));
 
     if (argc < 4)

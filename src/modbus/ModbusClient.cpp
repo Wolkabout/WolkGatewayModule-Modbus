@@ -29,6 +29,7 @@ ModbusClient::ModbusClient(std::chrono::milliseconds responseTimeout)
 bool ModbusClient::connect()
 {
     m_timeoutIterator = 0;
+    m_connected = false;
 
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
     if (!createContext())
@@ -52,6 +53,7 @@ bool ModbusClient::connect()
         }
     }
     LOG(INFO) << "LibModbusClient: Connected successfully.";
+    m_connected = true;
 
     auto responseTimeOutSeconds = std::chrono::duration_cast<std::chrono::seconds>(m_responseTimeout);
     auto responseTimeOutMicrosecondsResidue =
@@ -76,8 +78,9 @@ bool ModbusClient::disconnect()
 
 bool ModbusClient::isConnected()
 {
+    LOG(INFO) << "Asking if connected : " << m_connected;
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
-    return m_modbus != nullptr;
+    return m_connected;
 }
 
 bool ModbusClient::writeHoldingRegister(int slaveAddress, int address, signed short value)

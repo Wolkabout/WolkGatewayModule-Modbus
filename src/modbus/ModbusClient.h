@@ -108,6 +108,7 @@ protected:
     const int m_timeoutDurations[6] = {0, 5, 10, 15, 30, 60};
     int m_timeoutIterator;
 
+    bool m_connected;
     std::mutex m_modbusMutex;
     modbus_t* m_modbus;
 };

@@ -1,6 +1,6 @@
 {
-    "name": "DEVICE_NAME",
-    "key": "DEVICE_KEY",
+    "name": "DEV Modbus reconnect",
+    "key": "DEVMODBUSRECONNECT",
     "protocol": "JsonProtocol",
     "localMqttUri": "tcp://localhost:1883"
 }
