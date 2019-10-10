@@ -105,7 +105,7 @@ protected:
     };
 
     std::chrono::milliseconds m_responseTimeout;
-    const int m_timeoutDurations[13] = {0, 5, 10, 15, 30, 60, 120, 180, 300, 600, 900, 1800, 3600};
+    const int m_timeoutDurations[6] = {0, 5, 10, 15, 30, 60};
     int m_timeoutIterator;
 
     std::mutex m_modbusMutex;

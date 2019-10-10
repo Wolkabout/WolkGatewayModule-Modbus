@@ -47,10 +47,11 @@ bool ModbusClient::connect()
     while (modbus_connect(m_modbus) == -1) {
         LOG(ERROR) << "LibModbusClient: Unable to connect - " << modbus_strerror(errno);
         std::this_thread::sleep_for(std::chrono::seconds(m_timeoutDurations[m_timeoutIterator]));
-        if (m_timeoutIterator < 12) {
+        if (m_timeoutIterator < 6) {
             m_timeoutIterator++;
         }
     }
+    LOG(INFO) << "LibModbusClient: Connected successfully.";
 
     auto responseTimeOutSeconds = std::chrono::duration_cast<std::chrono::seconds>(m_responseTimeout);
     auto responseTimeOutMicrosecondsResidue =
