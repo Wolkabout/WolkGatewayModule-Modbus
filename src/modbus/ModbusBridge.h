@@ -92,9 +92,6 @@ private:
     std::atomic_bool m_readerShouldRun;
     std::unique_ptr<std::thread> m_reader;
 
-    std::function<void()> m_wolkConnect;
-    std::function<void()> m_wolkDisconnect;
-
     std::function<void(const std::string& reference, const std::string& value)> m_onSensorReading;
     std::function<void(const std::string& reference)> m_onActuatorStatusChange;
 };
