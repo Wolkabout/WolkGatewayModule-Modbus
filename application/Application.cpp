@@ -225,13 +225,17 @@ int main(int argc, char** argv)
                                               .host(deviceConfiguration.getLocalMqttUri())
                                               .build();
 
-    modbusBridge->onSensorReading([&](const std::string& reference, const std::string& value) -> void {
+    modbusBridge->onSensorReading([&](const std::string& reference, const std::string& value) {
         wolk->addSensorReading(deviceConfiguration.getKey(), reference, value);
         wolk->publish();
     });
 
-    modbusBridge->onActuatorStatusChange([&](const std::string& reference) -> void {
+    modbusBridge->onActuatorStatusChange([&](const std::string& reference) {
         wolk->publishActuatorStatus(deviceConfiguration.getKey(), reference);
+    });
+
+    modbusBridge->onDeviceStatusChange([&](wolkabout::DeviceStatus::Status status) {
+        wolk->publishDeviceStatus(deviceConfiguration.getKey(), status);
     });
 
     wolk->addDevice(*modbusBridgeDevice);

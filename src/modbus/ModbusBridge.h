@@ -49,13 +49,10 @@ public:
 
     void onSensorReading(std::function<void(const std::string& reference, const std::string& value)> onSensorReading);
     void onActuatorStatusChange(std::function<void(const std::string& reference)> onActuatorStatusChange);
+    void onDeviceStatusChange(std::function<void(wolkabout::DeviceStatus::Status)> onDeviceStatusChange);
 
     void start();
     void stop();
-
-    void setWolkConnect(std::function<void()> wolkConnect);
-
-    void setWolkDisconnect(std::function<void()> wolkDisconnect);
 
 protected:
     void handleActuation(const std::string& deviceKey, const std::string& reference, const std::string& value) override;
@@ -94,6 +91,7 @@ private:
 
     std::function<void(const std::string& reference, const std::string& value)> m_onSensorReading;
     std::function<void(const std::string& reference)> m_onActuatorStatusChange;
+    std::function<void(wolkabout::DeviceStatus::Status status)> m_onDeviceStatusChange;
 };
 }    // namespace wolkabout
 

@@ -1,6 +1,6 @@
 {
     "name": "DEV Modbus reconnect",
-    "key": "DEVMODBUSRECONNECT",
+    "key": "DMR",
     "protocol": "JsonProtocol",
     "localMqttUri": "tcp://localhost:1883"
 }
