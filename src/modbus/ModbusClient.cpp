@@ -78,7 +78,7 @@ bool ModbusClient::disconnect()
 
 bool ModbusClient::isConnected()
 {
-    LOG(INFO) << "Asking if connected : " << m_connected;
+    LOG(DEBUG) << "Asking if connected : " << m_connected;
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
     return m_connected;
 }

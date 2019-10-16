@@ -1,5 +1,5 @@
 {
-    "ip": "10.0.50.52",
+    "ip": "192.168.x.x",
     "port": 502,
 
     "serialPort": "SERIAL_PORT",
@@ -9,7 +9,7 @@
     "bitParity": "NONE",
     "slaveAddress": 1,
 
-    "connectionType": "TCP/IP",
+    "connectionType": "SERIAL/RTU",
 
     "responseTimeoutMs": 200,
     "registerReadPeriodMs": 500

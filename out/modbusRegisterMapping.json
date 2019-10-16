@@ -1,14 +1,46 @@
 {
    "modbusRegisterMapping":[
       {
-         "name":"test1",
-         "reference": "T1",
-         "minimum": 0,
-         "maximum": 1,
+         "name":"mappingName",
+         "reference": "mappingReference",
+
+         "minimum": -32768,
+         "maximum": 32767,
+
          "address": 0,
          "registerType": "INPUT_REGISTER",
          "dataType": "INT16",
          "slaveAddress" : 1
+      },
+      {
+         "name":"mappingName2",
+         "reference": "mappingReference2",
+
+         "minimum": -4000,
+         "maximum": 4000,
+
+         "address": 1,
+         "registerType": "HOLDING_REGISTER_ACTUATOR",
+         "dataType": "REAL32",
+         "slaveAddress" : 1
+      },
+      {
+         "name":"mappingName3",
+         "reference": "mappingReference3",
+
+         "address": 2,
+         "registerType": "INPUT_CONTACT",
+         "dataType": "BOOL",
+         "slaveAddress" : 2
+      },
+      {
+         "name":"mappingName4",
+         "reference": "mappingReference4",
+
+         "address": 3,
+         "registerType": "COIL",
+         "dataType": "BOOL",
+         "slaveAddress" : 2
       }
    ]
 }
