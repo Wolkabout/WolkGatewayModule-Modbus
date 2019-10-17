@@ -58,7 +58,7 @@ protected:
 
     ActuatorStatus getActuatorStatus(const std::string& deviceKey, const std::string& reference) override;
 
-    DeviceStatus getDeviceStatus(const std::string& deviceKey) override;
+    DeviceStatus::Status getDeviceStatus(const std::string& deviceKey) override;
 
 private:
     ActuatorStatus getActuatorStatusFromHoldingRegister(const ModbusRegisterMapping& modbusRegisterMapping,

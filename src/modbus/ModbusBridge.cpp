@@ -327,9 +327,9 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromCoil(
     return ActuatorStatus(value ? "true" : "false", ActuatorStatus::State::READY);
 }
 
-wolkabout::DeviceStatus ModbusBridge::getDeviceStatus(const std::string& /* deviceKey */)
+wolkabout::DeviceStatus::Status ModbusBridge::getDeviceStatus(const std::string& /* deviceKey */)
 {
-    return m_modbusClient.isConnected() ? DeviceStatus::CONNECTED : DeviceStatus::OFFLINE;
+    return m_modbusClient.isConnected() ? DeviceStatus::Status::CONNECTED : DeviceStatus::Status::OFFLINE;
 }
 
 void ModbusBridge::start()
