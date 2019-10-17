@@ -34,7 +34,7 @@ public:
         HOLDING_REGISTER_ACTUATOR
     };
 
-    enum class MappingType 
+    enum class MappingType
     {
         DEFAULT,
         SENSOR,
@@ -51,8 +51,9 @@ public:
         BOOL
     };
 
-    ModbusRegisterMapping(std::string name, std::string reference, std::string description, double minimum, double maximum, int address,
-                          RegisterType registerType, DataType dataType, int slaveAddress, MappingType mappingType);
+    ModbusRegisterMapping(std::string name, std::string reference, std::string description, double minimum,
+                          double maximum, int address, RegisterType registerType, DataType dataType, int slaveAddress,
+                          MappingType mappingType);
 
     const std::string& getName() const;
     const std::string& getReference() const;

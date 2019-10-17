@@ -27,11 +27,10 @@ namespace wolkabout
 {
 using nlohmann::json;
 
-ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string reference, std::string description,
-                                             double minimum, double maximum, int address, 
-                                             wolkabout::ModbusRegisterMapping::RegisterType registerType,
-                                             wolkabout::ModbusRegisterMapping::DataType dataType, int slaveAddress,
-                                             wolkabout::ModbusRegisterMapping::MappingType mappingType = MappingType::DEFAULT)
+ModbusRegisterMapping::ModbusRegisterMapping(
+  std::string name, std::string reference, std::string description, double minimum, double maximum, int address,
+  wolkabout::ModbusRegisterMapping::RegisterType registerType, wolkabout::ModbusRegisterMapping::DataType dataType,
+  int slaveAddress, wolkabout::ModbusRegisterMapping::MappingType mappingType = MappingType::DEFAULT)
 : m_name(std::move(name))
 , m_reference(std::move(reference))
 , m_description(std::move(description))
@@ -90,7 +89,7 @@ int ModbusRegisterMapping::getSlaveAddress() const
     return m_slaveAddress;
 }
 
-ModbusRegisterMapping::MappingType ModbusRegisterMapping::getMappingType() const 
+ModbusRegisterMapping::MappingType ModbusRegisterMapping::getMappingType() const
 {
     return m_mappingType;
 }
@@ -119,9 +118,12 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
 
         // description is optional
         auto description = std::string("");
-        try {
+        try
+        {
             description = modbusRegisterMappingJson.at("description").get<std::string>();
-        } catch (std::exception& e) {
+        }
+        catch (std::exception& e)
+        {
             // it will be empty
         }
 
@@ -134,10 +136,13 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
         const auto dataType = deserializeDataType(dataTypeStr);
 
         auto mappingType = ModbusRegisterMapping::MappingType::DEFAULT;
-        try {
+        try
+        {
             const auto mappingTypeStr = modbusRegisterMappingJson.at("mappingType").get<std::string>();
             mappingType = deserializeMappingType(mappingTypeStr);
-        } catch (std::exception& e) {
+        }
+        catch (std::exception& e)
+        {
             // it will be default
         }
 
@@ -153,10 +158,8 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
             maximum = modbusRegisterMappingJson.at("maximum").get<double>();
         }
 
-        modbusRegisterMappingVector.emplace_back(name, reference, description, 
-                                                    minimum, maximum, address, 
-                                                    registerType, dataType, 
-                                                    slaveAddress, mappingType);
+        modbusRegisterMappingVector.emplace_back(name, reference, description, minimum, maximum, address, registerType,
+                                                 dataType, slaveAddress, mappingType);
     }
 
     return modbusRegisterMappingVector;
@@ -211,17 +214,17 @@ ModbusRegisterMapping::DataType ModbusRegisterMappingFactory::deserializeDataTyp
     throw std::logic_error("Unknown data type: " + dataType);
 }
 
-ModbusRegisterMapping::MappingType ModbusRegisterMappingFactory::deserializeMappingType(const std::string& mappingType) 
+ModbusRegisterMapping::MappingType ModbusRegisterMappingFactory::deserializeMappingType(const std::string& mappingType)
 {
-    if (mappingType == "DEFAULT") 
+    if (mappingType == "DEFAULT")
     {
         return ModbusRegisterMapping::MappingType::DEFAULT;
     }
-    else if (mappingType == "SENSOR") 
+    else if (mappingType == "SENSOR")
     {
         return ModbusRegisterMapping::MappingType::SENSOR;
     }
-    else if (mappingType == "ACTUATOR") 
+    else if (mappingType == "ACTUATOR")
     {
         return ModbusRegisterMapping::MappingType::ACTUATOR;
     }
