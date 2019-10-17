@@ -41,6 +41,9 @@ Generated build system is located inside `out` directory
 WolkGateway Module Modbus library, is built from `out` directory by 
 invoking `make` in terminal
 
+Note: If you're working in CLion, setup the project by importing the project as existing CMake project,
+installing the conan plugin, and setting the CMake generation path in Settings/Build, Execution, Deployment to 'out'
+
 Module Configuration
 --------------------
 Module configuration consists of 3 configurations files

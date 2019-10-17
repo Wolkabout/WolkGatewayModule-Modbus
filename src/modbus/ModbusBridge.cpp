@@ -116,19 +116,23 @@ ModbusBridge::ModbusBridge(ModbusClient& modbusClient, std::vector<ModbusRegiste
 ModbusBridge::~ModbusBridge()
 {
     m_modbusClient.disconnect();
-
     stop();
 }
 
 void ModbusBridge::onSensorReading(
   std::function<void(const std::string& reference, const std::string& value)> onSensorReading)
 {
-    m_onSensorReading = onSensorReading;
+    m_onSensorReading = std::move(onSensorReading);
 }
 
 void ModbusBridge::onActuatorStatusChange(std::function<void(const std::string& reference)> onActuatorStatusChange)
 {
-    m_onActuatorStatusChange = onActuatorStatusChange;
+    m_onActuatorStatusChange = std::move(onActuatorStatusChange);
+}
+
+void ModbusBridge::onDeviceStatusChange(std::function<void(wolkabout::DeviceStatus::Status)> onDeviceStatusChange)
+{
+    m_onDeviceStatusChange = std::move(onDeviceStatusChange);
 }
 
 void ModbusBridge::handleActuation(const std::string& /* deviceKey */, const std::string& reference,
@@ -327,9 +331,9 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromCoil(
     return ActuatorStatus(value ? "true" : "false", ActuatorStatus::State::READY);
 }
 
-wolkabout::DeviceStatus ModbusBridge::getDeviceStatus(const std::string& /* deviceKey */)
+wolkabout::DeviceStatus::Status ModbusBridge::getDeviceStatus(const std::string& /* deviceKey */)
 {
-    return m_modbusClient.isConnected() ? DeviceStatus::CONNECTED : DeviceStatus::OFFLINE;
+    return m_modbusClient.isConnected() ? DeviceStatus::Status::CONNECTED : DeviceStatus::Status::OFFLINE;
 }
 
 void ModbusBridge::start()
@@ -352,37 +356,27 @@ void ModbusBridge::stop()
 
 void ModbusBridge::run()
 {
-    m_timeoutIterator = 0;
     m_shouldReconnect = false;
-    m_lastReconnectTime = static_cast<unsigned long long>(
-      std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 
     while (m_readerShouldRun)
     {
-        unsigned long long currentTime = static_cast<unsigned long long>(
-          std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch())
-            .count());
-
         if (!m_shouldReconnect)
         {
-            m_timeoutIterator = 0;
             readAndReportModbusRegistersValues();
         }
-        else if (m_lastReconnectTime + m_timeoutDurations[m_timeoutIterator] < currentTime)
+        else
         {
-            m_lastReconnectTime = currentTime;
-
             m_modbusClient.disconnect();
-
-            if (m_modbusClient.connect())
+            if (m_onDeviceStatusChange)
             {
-                m_timeoutIterator = 0;
-                readAndReportModbusRegistersValues();
+                m_onDeviceStatusChange(wolkabout::DeviceStatus::Status::OFFLINE);
             }
-            else if (m_timeoutIterator < 12)
+            m_modbusClient.connect();
+            if (m_onDeviceStatusChange)
             {
-                m_timeoutIterator++;
+                m_onDeviceStatusChange(wolkabout::DeviceStatus::Status::CONNECTED);
             }
+            readAndReportModbusRegistersValues();
         }
 
         std::this_thread::sleep_for(m_registerReadPeriod);

@@ -49,6 +49,7 @@ public:
 
     void onSensorReading(std::function<void(const std::string& reference, const std::string& value)> onSensorReading);
     void onActuatorStatusChange(std::function<void(const std::string& reference)> onActuatorStatusChange);
+    void onDeviceStatusChange(std::function<void(wolkabout::DeviceStatus::Status)> onDeviceStatusChange);
 
     void start();
     void stop();
@@ -58,7 +59,7 @@ protected:
 
     ActuatorStatus getActuatorStatus(const std::string& deviceKey, const std::string& reference) override;
 
-    DeviceStatus getDeviceStatus(const std::string& deviceKey) override;
+    DeviceStatus::Status getDeviceStatus(const std::string& deviceKey) override;
 
 private:
     ActuatorStatus getActuatorStatusFromHoldingRegister(const ModbusRegisterMapping& modbusRegisterMapping,
@@ -78,9 +79,6 @@ private:
     ModbusClient& m_modbusClient;
 
     bool m_shouldReconnect;
-    unsigned long long int m_lastReconnectTime;
-    const int m_timeoutDurations[13] = {0, 5, 10, 15, 30, 60, 120, 180, 300, 600, 900, 1800, 3600};
-    int m_timeoutIterator;
 
     std::vector<ModbusRegisterGroup> m_modbusRegisterGroups;
     std::map<std::string, ModbusRegisterMapping> m_referenceToModbusRegisterMapping;
@@ -93,6 +91,7 @@ private:
 
     std::function<void(const std::string& reference, const std::string& value)> m_onSensorReading;
     std::function<void(const std::string& reference)> m_onActuatorStatusChange;
+    std::function<void(wolkabout::DeviceStatus::Status status)> m_onDeviceStatusChange;
 };
 }    // namespace wolkabout
 
