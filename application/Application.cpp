@@ -230,13 +230,11 @@ int main(int argc, char** argv)
         wolk->publish();
     });
 
-    modbusBridge->onActuatorStatusChange([&](const std::string& reference) {
-        wolk->publishActuatorStatus(deviceConfiguration.getKey(), reference);
-    });
+    modbusBridge->onActuatorStatusChange(
+      [&](const std::string& reference) { wolk->publishActuatorStatus(deviceConfiguration.getKey(), reference); });
 
-    modbusBridge->onDeviceStatusChange([&](wolkabout::DeviceStatus::Status status) {
-        wolk->publishDeviceStatus(deviceConfiguration.getKey(), status);
-    });
+    modbusBridge->onDeviceStatusChange(
+      [&](wolkabout::DeviceStatus::Status status) { wolk->publishDeviceStatus(deviceConfiguration.getKey(), status); });
 
     wolk->addDevice(*modbusBridgeDevice);
     wolk->connect();

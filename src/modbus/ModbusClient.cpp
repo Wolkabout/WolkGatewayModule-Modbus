@@ -45,10 +45,12 @@ bool ModbusClient::connect()
     }
 
     LOG(ERROR) << "LibModbusClient: Attempting to connect";
-    while (modbus_connect(m_modbus) == -1) {
+    while (modbus_connect(m_modbus) == -1)
+    {
         LOG(ERROR) << "LibModbusClient: Unable to connect - " << modbus_strerror(errno);
         std::this_thread::sleep_for(std::chrono::seconds(m_timeoutDurations[m_timeoutIterator]));
-        if (m_timeoutIterator < 10) {
+        if (m_timeoutIterator < 10)
+        {
             m_timeoutIterator++;
         }
     }

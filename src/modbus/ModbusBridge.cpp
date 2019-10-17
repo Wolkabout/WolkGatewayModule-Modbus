@@ -130,7 +130,8 @@ void ModbusBridge::onActuatorStatusChange(std::function<void(const std::string& 
     m_onActuatorStatusChange = std::move(onActuatorStatusChange);
 }
 
-void ModbusBridge::onDeviceStatusChange(std::function<void(wolkabout::DeviceStatus::Status)> onDeviceStatusChange) {
+void ModbusBridge::onDeviceStatusChange(std::function<void(wolkabout::DeviceStatus::Status)> onDeviceStatusChange)
+{
     m_onDeviceStatusChange = std::move(onDeviceStatusChange);
 }
 
@@ -356,7 +357,7 @@ void ModbusBridge::stop()
 void ModbusBridge::run()
 {
     m_shouldReconnect = false;
-    
+
     while (m_readerShouldRun)
     {
         if (!m_shouldReconnect)
@@ -366,11 +367,13 @@ void ModbusBridge::run()
         else
         {
             m_modbusClient.disconnect();
-            if (m_onDeviceStatusChange) {
+            if (m_onDeviceStatusChange)
+            {
                 m_onDeviceStatusChange(wolkabout::DeviceStatus::Status::OFFLINE);
             }
             m_modbusClient.connect();
-            if (m_onDeviceStatusChange) {
+            if (m_onDeviceStatusChange)
+            {
                 m_onDeviceStatusChange(wolkabout::DeviceStatus::Status::CONNECTED);
             }
             readAndReportModbusRegistersValues();
