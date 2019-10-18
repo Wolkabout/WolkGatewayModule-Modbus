@@ -1,6 +1,6 @@
 {
     "name": "Development Modbus TCP HMI",
-    "key": "DEVMODBUS",
+    "key": "ACDC",
     "protocol": "JsonProtocol",
     "localMqttUri": "tcp://localhost:1883"
 }
