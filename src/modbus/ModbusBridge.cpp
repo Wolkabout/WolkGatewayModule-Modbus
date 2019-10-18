@@ -399,7 +399,7 @@ void ModbusBridge::run()
 
 void ModbusBridge::readAndReportModbusRegistersValues()
 {
-    LOG(DEBUG) << "ModbusBridge: Reading and reporting register values";
+    //    LOG(DEBUG) << "ModbusBridge: Reading and reporting register values";
 
     std::map<int, bool> slavesRead;
 
