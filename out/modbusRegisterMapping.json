@@ -29,6 +29,18 @@
          "mappingType": "ALARM"
       },
       {
+         "name": "Test Configuration",
+         "reference": "TC",
+         "description": "Test configuration",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 26,
+         "registerType": "HOLDING_REGISTER_ACTUATOR",
+         "dataType": "INT16",
+         "slaveAddress": 1,
+         "mappingType": "CONFIGURATION"
+      },
+      {
          "name": "Machine Running",
          "reference": "RUN",
          "address": 0,
