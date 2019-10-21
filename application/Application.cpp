@@ -319,8 +319,6 @@ int main(int argc, char** argv)
     auto modbusBridgeDevice = std::make_shared<wolkabout::Device>(deviceConfiguration.getName(),
                                                                   deviceConfiguration.getKey(), *modbusBridgeTemplate);
 
-    auto modbusBridgeDevice2 = std::make_shared<wolkabout::Device>("Test Device 2!", "TD2", *modbusBridgeTemplate);
-
     std::unique_ptr<wolkabout::Wolk> wolk = wolkabout::Wolk::newBuilder()
                                               .deviceStatusProvider(modbusBridge)
                                               .actuatorStatusProvider(modbusBridge)
@@ -340,7 +338,6 @@ int main(int argc, char** argv)
       [&](wolkabout::DeviceStatus::Status status) { wolk->publishDeviceStatus(deviceConfiguration.getKey(), status); });
 
     wolk->addDevice(*modbusBridgeDevice);
-    wolk->addDevice(*modbusBridgeDevice2);
     wolk->connect();
 
     modbusBridge->start();
