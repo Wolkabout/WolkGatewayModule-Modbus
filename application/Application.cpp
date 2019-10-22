@@ -323,6 +323,8 @@ int main(int argc, char** argv)
                                               .deviceStatusProvider(modbusBridge)
                                               .actuatorStatusProvider(modbusBridge)
                                               .actuationHandler(modbusBridge)
+                                              .configurationProvider(modbusBridge)
+                                              .configurationHandler(modbusBridge)
                                               .host(deviceConfiguration.getLocalMqttUri())
                                               .build();
 
@@ -333,6 +335,13 @@ int main(int argc, char** argv)
 
     modbusBridge->onActuatorStatusChange(
       [&](const std::string& reference) { wolk->publishActuatorStatus(deviceConfiguration.getKey(), reference); });
+
+    modbusBridge->onAlarmChange([&](const std::string& reference, bool active) {
+        wolk->addAlarm(deviceConfiguration.getKey(), reference, active);
+        wolk->publish();
+    });
+
+    modbusBridge->onConfigurationChange([&]() { wolk->publishConfiguration(deviceConfiguration.getKey()); });
 
     modbusBridge->onDeviceStatusChange(
       [&](wolkabout::DeviceStatus::Status status) { wolk->publishDeviceStatus(deviceConfiguration.getKey(), status); });

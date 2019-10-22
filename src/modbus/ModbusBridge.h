@@ -19,9 +19,12 @@
 
 #include "ActuationHandlerPerDevice.h"
 #include "ActuatorStatusProviderPerDevice.h"
+#include "ConfigurationHandlerPerDevice.h"
+#include "ConfigurationProviderPerDevice.h"
 #include "DeviceStatusProvider.h"
 #include "modbus/ModbusRegisterGroup.h"
 #include "modbus/ModbusRegisterWatcher.h"
+#include <model/ConfigurationItem.h>
 
 #include <atomic>
 #include <chrono>
@@ -39,6 +42,8 @@ class ModbusClient;
 
 class ModbusBridge : public ActuationHandlerPerDevice,
                      public ActuatorStatusProviderPerDevice,
+                     public ConfigurationHandlerPerDevice,
+                     public ConfigurationProviderPerDevice,
                      public DeviceStatusProvider
 {
 public:
@@ -49,6 +54,8 @@ public:
 
     void onSensorReading(std::function<void(const std::string& reference, const std::string& value)> onSensorReading);
     void onActuatorStatusChange(std::function<void(const std::string& reference)> onActuatorStatusChange);
+    void onAlarmChange(std::function<void(const std::string& reference, bool active)> onAlarmChange);
+    void onConfigurationChange(std::function<void()> onConfigurationChange);
     void onDeviceStatusChange(std::function<void(wolkabout::DeviceStatus::Status)> onDeviceStatusChange);
 
     void start();
@@ -57,18 +64,25 @@ public:
 protected:
     void handleActuation(const std::string& deviceKey, const std::string& reference, const std::string& value) override;
 
+    void handleConfiguration(const std::string& deviceKey,
+                             const std::vector<ConfigurationItem>& configuration) override;
+
     ActuatorStatus getActuatorStatus(const std::string& deviceKey, const std::string& reference) override;
+
+    std::vector<ConfigurationItem> getConfiguration(const std::string& deviceKey) override;
 
     DeviceStatus::Status getDeviceStatus(const std::string& deviceKey) override;
 
 private:
     ActuatorStatus getActuatorStatusFromHoldingRegister(const ModbusRegisterMapping& modbusRegisterMapping,
                                                         ModbusRegisterWatcher& modbusRegisterWatcher);
+
     ActuatorStatus getActuatorStatusFromCoil(const ModbusRegisterMapping& modbusRegisterMapping,
                                              ModbusRegisterWatcher& modbusRegisterWatcher);
 
     void handleActuationForHoldingRegister(const ModbusRegisterMapping& modbusRegisterMapping,
                                            ModbusRegisterWatcher& modbusRegisterWatcher, const std::string& value);
+
     void handleActuationForCoil(const ModbusRegisterMapping& modbusRegisterMapping,
                                 ModbusRegisterWatcher& modbusRegisterWatcher, const std::string& value);
 
@@ -93,6 +107,8 @@ private:
 
     std::function<void(const std::string& reference, const std::string& value)> m_onSensorReading;
     std::function<void(const std::string& reference)> m_onActuatorStatusChange;
+    std::function<void(const std::string& reference, bool active)> m_onAlarmChange;
+    std::function<void()> m_onConfigurationChange;
     std::function<void(wolkabout::DeviceStatus::Status status)> m_onDeviceStatusChange;
 };
 }    // namespace wolkabout
