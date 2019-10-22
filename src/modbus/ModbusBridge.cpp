@@ -130,6 +130,16 @@ void ModbusBridge::onActuatorStatusChange(std::function<void(const std::string& 
     m_onActuatorStatusChange = std::move(onActuatorStatusChange);
 }
 
+void ModbusBridge::onAlarmChange(std::function<void(const std::string& reference, bool active)> onAlarmChange)
+{
+    m_onAlarmChange = std::move(onAlarmChange);
+}
+
+void ModbusBridge::onConfigurationChange(std::function<void()> onConfigurationChange)
+{
+    m_onConfigurationChange = std::move(onConfigurationChange);
+}
+
 void ModbusBridge::onDeviceStatusChange(std::function<void(wolkabout::DeviceStatus::Status)> onDeviceStatusChange)
 {
     m_onDeviceStatusChange = std::move(onDeviceStatusChange);
@@ -170,6 +180,12 @@ void ModbusBridge::handleActuation(const std::string& /* deviceKey */, const std
     {
         handleActuationForCoil(modbusRegisterMapping, modbusRegisterWatcher, value);
     }
+}
+
+void ModbusBridge::handleConfiguration(const std::string& deviceKey,
+                                       const std::vector<ConfigurationItem>& configuration)
+{
+    LOG(DEBUG) << "Need2 Handle Configuration!";
 }
 
 void ModbusBridge::handleActuationForHoldingRegister(const wolkabout::ModbusRegisterMapping& modbusRegisterMapping,
@@ -329,6 +345,12 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromCoil(
     modbusRegisterWatcher.update(value);
 
     return ActuatorStatus(value ? "true" : "false", ActuatorStatus::State::READY);
+}
+
+std::vector<ConfigurationItem> ModbusBridge::getConfiguration(const std::string& /* deviceKey */)
+{
+    LOG(DEBUG) << "Was asked for configuration!";
+    return std::vector<ConfigurationItem>();
 }
 
 wolkabout::DeviceStatus::Status ModbusBridge::getDeviceStatus(const std::string& /* deviceKey */)
