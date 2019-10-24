@@ -17,11 +17,15 @@
 #ifndef MODBUSREGISTERMAPPING_H
 #define MODBUSREGISTERMAPPING_H
 
+#include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
 namespace wolkabout
 {
+typedef std::map<std::string, int> LabelMap;
+
 class ModbusRegisterMapping
 {
 public:
@@ -55,6 +59,10 @@ public:
                           double maximum, int address, RegisterType registerType, DataType dataType, int slaveAddress,
                           MappingType mappingType);
 
+    ModbusRegisterMapping(std::string name, std::string reference, std::string description, double minimum,
+                          double maximum, std::shared_ptr<LabelMap> labelsAndAddresses, RegisterType registerType,
+                          DataType dataType, int slaveAddress);
+
     const std::string& getName() const;
     const std::string& getReference() const;
     const std::string& getDescription() const;
@@ -62,6 +70,7 @@ public:
     double getMinimum() const;
     double getMaximum() const;
 
+    std::shared_ptr<LabelMap> getLabelsAndAddresses() const;
     int getAddress() const;
 
     RegisterType getRegisterType() const;
@@ -78,6 +87,7 @@ private:
     double m_maximum;
 
     int m_address;
+    std::shared_ptr<LabelMap> m_labelsAndAddresses{};
 
     RegisterType m_registerType;
     DataType m_dataType;

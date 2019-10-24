@@ -24,7 +24,11 @@
          "description": "Test configuration",
          "minimum": 0,
          "maximum": 20000,
-         "address": 26,
+         "labelMap": {
+            "TC1": 26,
+            "TC2": 27,
+            "TC3": 28
+         },
          "registerType": "HOLDING_REGISTER_ACTUATOR",
          "dataType": "INT16",
          "slaveAddress": 1,

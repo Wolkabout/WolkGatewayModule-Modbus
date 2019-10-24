@@ -228,11 +228,25 @@ void makeTemplatesFromMappings(const std::vector<wolkabout::ModbusRegisterMappin
             {
             case wolkabout::ModbusRegisterMapping::RegisterType::COIL:
             case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
-                configurationTemplates.emplace_back(
-                  modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), dataType,
-                  modbusRegisterMapping.getDescription(), std::string(""),
-                  std::vector<std::string>({"TC1", "TC2", "TC3"}), modbusRegisterMapping.getMinimum(),
-                  modbusRegisterMapping.getMaximum());
+                if (modbusRegisterMapping.getAddress() != -1)
+                {
+                    configurationTemplates.emplace_back(
+                      modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), dataType,
+                      modbusRegisterMapping.getDescription(), std::string(""), modbusRegisterMapping.getMinimum(),
+                      modbusRegisterMapping.getMaximum());
+                }
+                else
+                {
+                    std::vector<std::string> labels;
+                    for (auto const& kvp : *modbusRegisterMapping.getLabelsAndAddresses())
+                    {
+                        labels.push_back(kvp.first);
+                    }
+                    configurationTemplates.emplace_back(
+                      modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), dataType,
+                      modbusRegisterMapping.getDescription(), std::string(""), labels,
+                      modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
+                }
                 break;
             default:
                 LOG(WARN) << "WolkGatewayModbusModule Application: Mapping with reference '"
