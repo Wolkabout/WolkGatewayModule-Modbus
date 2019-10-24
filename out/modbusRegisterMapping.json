@@ -26,8 +26,8 @@
          "maximum": 20000,
          "labelMap": {
             "TC1": 26,
-            "TC2": 27,
-            "TC3": 28
+            "TS2": 27,
+            "TG3": 28
          },
          "registerType": "HOLDING_REGISTER_ACTUATOR",
          "dataType": "INT16",
