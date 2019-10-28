@@ -348,6 +348,29 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromCoil(
     return ActuatorStatus(value ? "true" : "false", ActuatorStatus::State::READY);
 }
 
+template <class T>
+std::vector<wolkabout::ConfigurationItem> ModbusBridge::getConfigurationStatusFromHoldingRegister(
+  const ModbusRegisterMapping& modbusRegisterMapping, ModbusRegisterWatcher& modbusRegisterWatcher)
+{
+    std::vector<T> value;
+    if (!m_modbusClient.readHoldingRegisters(modbusRegisterMapping.getSlaveAddress(),
+                                             modbusRegisterMapping.getAddress(),
+                                             modbusRegisterMapping.getLabelsAndAddresses()->size(), value))
+    {
+        LOG(ERROR) << "ModbusBridge: Unable to read holding registers from address '"
+                   << modbusRegisterMapping.getAddress() << "'";
+
+        modbusRegisterWatcher.setValid(false);
+    }
+    else
+    {
+        // TODO Figure out this, something needs to go in here, but I still have no idea what the watcher is.
+        // modbusRegisterWatcher.update(value);
+    }
+
+    return value;
+}
+
 std::vector<ConfigurationItem> ModbusBridge::getConfiguration(const std::string& /* deviceKey */)
 {
     LOG(DEBUG) << "Was asked for configuration!";

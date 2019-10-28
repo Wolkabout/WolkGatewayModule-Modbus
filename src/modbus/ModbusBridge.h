@@ -80,6 +80,10 @@ private:
     ActuatorStatus getActuatorStatusFromCoil(const ModbusRegisterMapping& modbusRegisterMapping,
                                              ModbusRegisterWatcher& modbusRegisterWatcher);
 
+    template <class T>
+    std::vector<ConfigurationItem> getConfigurationStatusFromHoldingRegister(
+      const ModbusRegisterMapping& modbusRegisterMapping, ModbusRegisterWatcher& modbusRegisterWatcher);
+
     void handleActuationForHoldingRegister(const ModbusRegisterMapping& modbusRegisterMapping,
                                            ModbusRegisterWatcher& modbusRegisterWatcher, const std::string& value);
 
