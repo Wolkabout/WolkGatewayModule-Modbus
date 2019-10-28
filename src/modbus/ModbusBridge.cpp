@@ -185,6 +185,7 @@ void ModbusBridge::handleActuation(const std::string& /* deviceKey */, const std
 void ModbusBridge::handleConfiguration(const std::string& deviceKey,
                                        const std::vector<ConfigurationItem>& configuration)
 {
+    LOG(DEBUG) << "Receiving " << configuration.size() << " configurationItems!";
     LOG(DEBUG) << "Need2 Handle Configuration!";
 }
 
@@ -421,6 +422,7 @@ void ModbusBridge::run()
 
 void ModbusBridge::readAndReportModbusRegistersValues()
 {
+    //    TODO Remove this comment
     //    LOG(DEBUG) << "ModbusBridge: Reading and reporting register values";
 
     std::map<int, bool> slavesRead;
@@ -448,7 +450,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 
             slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
-            for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
+            for (int i = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
             {
                 bool value = values[i];
                 const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
@@ -487,7 +489,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 
             slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
-            for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
+            for (int i = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
             {
                 bool value = values[i];
                 const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
@@ -529,7 +531,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 
                 slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
-                for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
+                for (int i = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
                 {
                     signed short value = values[i];
                     const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
@@ -567,7 +569,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 
                 slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
-                for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
+                for (int i = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
                 {
                     unsigned short value = values[i];
                     const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
@@ -605,7 +607,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 
                 slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
-                for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
+                for (int i = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
                 {
                     float value = values[i];
                     const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
@@ -650,7 +652,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 
                 slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
-                for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
+                for (int i = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
                 {
                     signed short value = values[i];
                     const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
@@ -688,7 +690,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 
                 slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
-                for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
+                for (int i = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
                 {
                     unsigned short value = values[i];
                     const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
@@ -726,7 +728,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 
                 slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
-                for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
+                for (int i = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
                 {
                     float value = values[i];
                     const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
@@ -771,7 +773,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 
                 slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
-                for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
+                for (int i = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
                 {
                     signed short value = values[i];
                     const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
@@ -810,7 +812,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 
                 slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
-                for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
+                for (int i = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
                 {
                     unsigned short value = values[i];
                     const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
@@ -848,7 +850,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 
                 slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
-                for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
+                for (int i = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
                 {
                     float value = values[i];
                     const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
