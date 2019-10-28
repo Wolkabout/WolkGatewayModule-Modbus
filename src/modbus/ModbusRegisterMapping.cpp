@@ -91,6 +91,10 @@ double ModbusRegisterMapping::getMaximum() const
 
 int ModbusRegisterMapping::getAddress() const
 {
+    if (m_address == -1)
+    {
+        return m_labelsAndAddresses->begin()->second;
+    }
     return m_address;
 }
 
