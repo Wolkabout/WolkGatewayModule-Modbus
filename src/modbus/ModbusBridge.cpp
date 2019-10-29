@@ -470,9 +470,25 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                     LOG(INFO) << "ModbusBridge: Actuator value changed - Reference: '"
                               << modbusRegisterMapping.getReference() << "' Value: '"
                               << modbusRegisterWatcher.getValue() << "'";
-                    if (m_onActuatorStatusChange)
+
+                    switch (modbusRegisterMapping.getMappingType())
                     {
-                        m_onActuatorStatusChange(modbusRegisterMapping.getReference());
+                    case ModbusRegisterMapping::MappingType::DEFAULT:
+                    case ModbusRegisterMapping::MappingType::ACTUATOR:
+                        if (m_onActuatorStatusChange)
+                        {
+                            m_onActuatorStatusChange(modbusRegisterMapping.getReference());
+                        }
+                        break;
+                    case ModbusRegisterMapping::MappingType::CONFIGURATION:
+                        if (m_onConfigurationChange)
+                        {
+                            m_onConfigurationChange();
+                        }
+                        break;
+                    default:
+                        LOG(ERROR) << "This mapping wasn\'t declared properly!";
+                        break;
                     }
                 }
             }
@@ -509,9 +525,24 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                     LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << modbusRegisterMapping.getReference()
                               << "' Value: '" << modbusRegisterWatcher.getValue() << "'";
 
-                    if (m_onSensorReading)
+                    switch (modbusRegisterMapping.getMappingType())
                     {
-                        m_onSensorReading(modbusRegisterMapping.getReference(), modbusRegisterWatcher.getValue());
+                    case ModbusRegisterMapping::MappingType::DEFAULT:
+                    case ModbusRegisterMapping::MappingType::SENSOR:
+                        if (m_onSensorReading)
+                        {
+                            m_onSensorReading(modbusRegisterMapping.getReference(), modbusRegisterWatcher.getValue());
+                        }
+                        break;
+                    case ModbusRegisterMapping::MappingType::ALARM:
+                        if (m_onAlarmChange)
+                        {
+                            m_onAlarmChange(modbusRegisterMapping.getReference(), value);
+                        }
+                        break;
+                    default:
+                        LOG(ERROR) << "This mapping wasn\'t declared properly!";
+                        break;
                     }
                 }
             }
@@ -551,6 +582,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                         LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << modbusRegisterMapping.getReference()
                                   << "' Value: '" << modbusRegisterWatcher.getValue() << "'";
 
+                        // This here isn't edited because the input_register can't be anything else than a sensor!
                         if (m_onSensorReading)
                         {
                             m_onSensorReading(modbusRegisterMapping.getReference(), modbusRegisterWatcher.getValue());
@@ -589,6 +621,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                         LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << modbusRegisterMapping.getReference()
                                   << "' Value: '" << modbusRegisterWatcher.getValue() << "'";
 
+                        // This here isn't edited because the input_register can't be anything else than a sensor!
                         if (m_onSensorReading)
                         {
                             m_onSensorReading(modbusRegisterMapping.getReference(), modbusRegisterWatcher.getValue());
@@ -627,6 +660,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                         LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << modbusRegisterMapping.getReference()
                                   << "' Value: '" << modbusRegisterWatcher.getValue() << "'";
 
+                        // This here isn't edited because the input_register can't be anything else than a sensor!
                         if (m_onSensorReading)
                         {
                             m_onSensorReading(modbusRegisterMapping.getReference(), modbusRegisterWatcher.getValue());
@@ -672,6 +706,8 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                         LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << modbusRegisterMapping.getReference()
                                   << "' Value: '" << modbusRegisterWatcher.getValue() << "'";
 
+                        // This here isn't edited because the holding_register_sensor can't be anything else than a
+                        // sensor!
                         if (m_onSensorReading)
                         {
                             m_onSensorReading(modbusRegisterMapping.getReference(), modbusRegisterWatcher.getValue());
@@ -710,6 +746,8 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                         LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << modbusRegisterMapping.getReference()
                                   << "' Value: '" << modbusRegisterWatcher.getValue() << "'";
 
+                        // This here isn't edited because the holding_register_sensor can't be anything else than a
+                        // sensor!
                         if (m_onSensorReading)
                         {
                             m_onSensorReading(modbusRegisterMapping.getReference(), modbusRegisterWatcher.getValue());
@@ -748,6 +786,8 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                         LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << modbusRegisterMapping.getReference()
                                   << "' Value: '" << modbusRegisterWatcher.getValue() << "'";
 
+                        // This here isn't edited because the holding_register_sensor can't be anything else than a
+                        // sensor!
                         if (m_onSensorReading)
                         {
                             m_onSensorReading(modbusRegisterMapping.getReference(), modbusRegisterWatcher.getValue());
@@ -794,9 +834,24 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                                   << modbusRegisterMapping.getReference() << "' Value: '"
                                   << modbusRegisterWatcher.getValue() << "'";
 
-                        if (m_onActuatorStatusChange)
+                        switch (modbusRegisterMapping.getMappingType())
                         {
-                            m_onActuatorStatusChange(modbusRegisterMapping.getReference());
+                        case ModbusRegisterMapping::MappingType::DEFAULT:
+                        case ModbusRegisterMapping::MappingType::ACTUATOR:
+                            if (m_onActuatorStatusChange)
+                            {
+                                m_onActuatorStatusChange(modbusRegisterMapping.getReference());
+                            }
+                            break;
+                        case ModbusRegisterMapping::MappingType::CONFIGURATION:
+                            if (m_onConfigurationChange)
+                            {
+                                m_onConfigurationChange();
+                            }
+                            break;
+                        default:
+                            LOG(ERROR) << "This mapping wasn\'t declared properly!";
+                            break;
                         }
                     }
                 }
@@ -832,9 +887,25 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                         LOG(INFO) << "ModbusBridge: Actuator value changed - Reference: '"
                                   << modbusRegisterMapping.getReference() << "' Value: '"
                                   << modbusRegisterWatcher.getValue() << "'";
-                        if (m_onActuatorStatusChange)
+
+                        switch (modbusRegisterMapping.getMappingType())
                         {
-                            m_onActuatorStatusChange(modbusRegisterMapping.getReference());
+                        case ModbusRegisterMapping::MappingType::DEFAULT:
+                        case ModbusRegisterMapping::MappingType::ACTUATOR:
+                            if (m_onActuatorStatusChange)
+                            {
+                                m_onActuatorStatusChange(modbusRegisterMapping.getReference());
+                            }
+                            break;
+                        case ModbusRegisterMapping::MappingType::CONFIGURATION:
+                            if (m_onConfigurationChange)
+                            {
+                                m_onConfigurationChange();
+                            }
+                            break;
+                        default:
+                            LOG(ERROR) << "This mapping wasn\'t declared properly!";
+                            break;
                         }
                     }
                 }
@@ -871,9 +942,24 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                                   << modbusRegisterMapping.getReference() << "' Value: '"
                                   << modbusRegisterWatcher.getValue() << "'";
 
-                        if (m_onActuatorStatusChange)
+                        switch (modbusRegisterMapping.getMappingType())
                         {
-                            m_onActuatorStatusChange(modbusRegisterMapping.getReference());
+                        case ModbusRegisterMapping::MappingType::DEFAULT:
+                        case ModbusRegisterMapping::MappingType::ACTUATOR:
+                            if (m_onActuatorStatusChange)
+                            {
+                                m_onActuatorStatusChange(modbusRegisterMapping.getReference());
+                            }
+                            break;
+                        case ModbusRegisterMapping::MappingType::CONFIGURATION:
+                            if (m_onConfigurationChange)
+                            {
+                                m_onConfigurationChange();
+                            }
+                            break;
+                        default:
+                            LOG(ERROR) << "This mapping wasn\'t declared properly!";
+                            break;
                         }
                     }
                 }
