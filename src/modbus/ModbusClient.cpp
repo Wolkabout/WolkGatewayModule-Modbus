@@ -372,7 +372,7 @@ bool ModbusClient::readInputContacts(int address, int number, std::vector<bool>&
 {
     std::vector<std::uint8_t> tmpValues(number / 8 + (number % 8 != 0));
 
-    if (modbus_read_bits(m_modbus, address, number, &tmpValues[0]) == -1)
+    if (modbus_read_input_bits(m_modbus, address, number, &tmpValues[0]) == -1)
     {
         LOG(DEBUG) << "LibModbusClient: Unable to read input contacts - " << modbus_strerror(errno);
         return false;
