@@ -191,9 +191,10 @@ void ModbusBridge::handleActuation(const std::string& /* deviceKey */, const std
     }
 }
 
-void ModbusBridge::handleConfiguration(const std::string& deviceKey,
+void ModbusBridge::handleConfiguration(const std::string& /* deviceKey */,
                                        const std::vector<ConfigurationItem>& configuration)
 {
+    // TODO fill this in!
     LOG(DEBUG) << "Receiving " << configuration.size() << " configurationItems!";
     LOG(DEBUG) << "Need2 Handle Configuration!";
 }
@@ -565,8 +566,7 @@ void ModbusBridge::run()
 
 void ModbusBridge::readAndReportModbusRegistersValues()
 {
-    //    TODO Remove this comment
-    //    LOG(DEBUG) << "ModbusBridge: Reading and reporting register values";
+    LOG(DEBUG) << "ModbusBridge: Reading and reporting register values";
 
     std::map<int, bool> slavesRead;
 

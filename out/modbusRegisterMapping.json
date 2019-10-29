@@ -19,6 +19,16 @@
          "mappingType": "ALARM"
       },
       {
+         "name": "Emergency Stop Alarm 2",
+         "reference": "ESTOP2",
+         "description": "Hey, the Emergency Stop button was pressed! 2",
+         "address": 20,
+         "registerType": "INPUT_CONTACT",
+         "dataType": "BOOL",
+         "slaveAddress": 1,
+         "mappingType": "ALARM"
+      },
+      {
          "name": "Test Configuration",
          "reference": "TC",
          "description": "Test configuration",
@@ -31,6 +41,15 @@
          },
          "registerType": "HOLDING_REGISTER_ACTUATOR",
          "dataType": "INT16",
+         "slaveAddress": 1,
+         "mappingType": "CONFIGURATION"
+      },
+      {
+         "name": "Test Configuration Bool",
+         "reference": "TCB",
+         "description": "Test configuration",
+         "registerType": "COIL",
+         "address": 10,
          "slaveAddress": 1,
          "mappingType": "CONFIGURATION"
       },
