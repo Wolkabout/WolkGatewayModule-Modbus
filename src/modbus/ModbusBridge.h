@@ -80,9 +80,11 @@ private:
     ActuatorStatus getActuatorStatusFromCoil(const ModbusRegisterMapping& modbusRegisterMapping,
                                              ModbusRegisterWatcher& modbusRegisterWatcher);
 
-    template <class T>
-    std::vector<ConfigurationItem> getConfigurationStatusFromHoldingRegister(
-      const ModbusRegisterMapping& modbusRegisterMapping, ModbusRegisterWatcher& modbusRegisterWatcher);
+    ConfigurationItem getConfigurationStatusFromCoil(const ModbusRegisterMapping& modbusRegisterMapping,
+                                                     ModbusRegisterWatcher& modbusRegisterWatcher);
+
+    ConfigurationItem getConfigurationStatusFromHoldingRegister(const ModbusRegisterMapping& modbusRegisterMapping,
+                                                                ModbusRegisterWatcher& modbusRegisterWatcher);
 
     void handleActuationForHoldingRegister(const ModbusRegisterMapping& modbusRegisterMapping,
                                            ModbusRegisterWatcher& modbusRegisterWatcher, const std::string& value);
@@ -100,6 +102,7 @@ private:
 
     std::vector<ModbusRegisterGroup> m_modbusRegisterGroups;
     std::map<std::string, ModbusRegisterMapping> m_referenceToModbusRegisterMapping;
+    std::map<std::string, ModbusRegisterMapping> m_referenceToConfigurationModbusRegisterMapping;
     std::map<std::string, ModbusRegisterWatcher> m_referenceToModbusRegisterWatcherMapping;
 
     std::chrono::milliseconds m_registerReadPeriod;
