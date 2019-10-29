@@ -1031,13 +1031,29 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 
                 slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
-                for (int i = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
+                for (int i = 0, j = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
                 {
-                    unsigned short value = values[i];
                     const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
                     ModbusRegisterWatcher& modbusRegisterWatcher =
                       m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
-                    if (modbusRegisterWatcher.update(value))
+
+                    bool updated;
+                    // separate the values of group for each mapping they need to go to
+                    if (modbusRegisterMapping.getLabelsAndAddresses() == nullptr)
+                    {
+                        unsigned short value = values[j++];
+                        updated = modbusRegisterWatcher.update(value);
+                    }
+                    else
+                    {
+                        std::vector<unsigned short> groupValues;
+                        for (int k = 0; k < modbusRegisterMapping.getLabelsAndAddresses()->size(); k++)
+                        {
+                            groupValues.push_back(values[j++]);
+                        }
+                        updated = modbusRegisterWatcher.update(groupValues);
+                    }
+                    if (updated)
                     {
                         LOG(INFO) << "ModbusBridge: Actuator value changed - Reference: '"
                                   << modbusRegisterMapping.getReference() << "' Value: '"
@@ -1085,13 +1101,29 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 
                 slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
-                for (int i = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
+                for (int i = 0, j = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
                 {
-                    float value = values[i];
                     const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
                     ModbusRegisterWatcher& modbusRegisterWatcher =
                       m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
-                    if (modbusRegisterWatcher.update(value))
+
+                    bool updated;
+                    // separate the values of group for each mapping they need to go to
+                    if (modbusRegisterMapping.getLabelsAndAddresses() == nullptr)
+                    {
+                        float value = values[j++];
+                        updated = modbusRegisterWatcher.update(value);
+                    }
+                    else
+                    {
+                        std::vector<float> groupValues;
+                        for (int k = 0; k < modbusRegisterMapping.getLabelsAndAddresses()->size(); k++)
+                        {
+                            groupValues.push_back(values[j++]);
+                        }
+                        updated = modbusRegisterWatcher.update(groupValues);
+                    }
+                    if (updated)
                     {
                         LOG(INFO) << "ModbusBridge: Actuator value changed - Reference: '"
                                   << modbusRegisterMapping.getReference() << "' Value: '"
