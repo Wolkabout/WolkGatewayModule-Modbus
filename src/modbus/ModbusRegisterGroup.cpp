@@ -63,7 +63,7 @@ int ModbusRegisterGroup::getRegisterCount()
     int count = 0;
     for (auto& mappings : m_modbusRegisterMappings)
     {
-        if (mappings.getAddress() == -1)
+        if (mappings.getLabelsAndAddresses() != nullptr)
         {
             count += mappings.getLabelsAndAddresses()->size();
         }
