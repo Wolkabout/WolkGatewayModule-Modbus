@@ -92,6 +92,16 @@ private:
     void handleActuationForCoil(const ModbusRegisterMapping& modbusRegisterMapping,
                                 ModbusRegisterWatcher& modbusRegisterWatcher, const std::string& value);
 
+    void handleConfigurationForHoldingRegister(const ModbusRegisterMapping& modbusRegisterMapping,
+                                               ModbusRegisterWatcher& modbusRegisterWatcher, const std::string& value);
+
+    void handleConfigurationForHoldingRegister(const ModbusRegisterMapping& modbusRegisterMapping,
+                                               ModbusRegisterWatcher& modbusRegisterWatcher,
+                                               std::vector<std::string> value);
+
+    void handleConfigurationForCoil(const ModbusRegisterMapping& modbusRegisterMapping,
+                                    ModbusRegisterWatcher& modbusRegisterWatcher, const std::string& value);
+
     void run();
 
     void readAndReportModbusRegistersValues();

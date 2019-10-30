@@ -41,6 +41,9 @@ public:
     bool writeHoldingRegister(int slaveAddress, int address, signed short value);
     bool writeHoldingRegister(int slaveAddress, int address, unsigned short value);
     bool writeHoldingRegister(int slaveAddress, int address, float value);
+    bool writeHoldingRegisters(int slaveAddress, int address, std::vector<short>& values);
+    bool writeHoldingRegisters(int slaveAddress, int address, std::vector<unsigned short>& values);
+    bool writeHoldingRegisters(int slaveAddress, int address, std::vector<float>& values);
 
     bool writeCoil(int slaveAddress, int address, bool value);
 
@@ -67,6 +70,9 @@ protected:
     virtual bool writeHoldingRegister(int address, signed short value);
     virtual bool writeHoldingRegister(int address, unsigned short value);
     virtual bool writeHoldingRegister(int address, float value);
+    virtual bool writeHoldingRegisters(int address, std::vector<short>& values);
+    virtual bool writeHoldingRegisters(int address, std::vector<unsigned short>& values);
+    virtual bool writeHoldingRegisters(int address, std::vector<float>& values);
 
     virtual bool writeCoil(int address, bool value);
 
