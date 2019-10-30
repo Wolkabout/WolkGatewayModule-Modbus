@@ -118,6 +118,39 @@ bool ModbusClient::writeHoldingRegister(int slaveAddress, int address, float val
     return writeHoldingRegister(address, value);
 }
 
+bool ModbusClient::writeHoldingRegisters(int slaveAddress, int address, std::vector<short>& values)
+{
+    std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
+    if (!changeSlaveAddress(slaveAddress))
+    {
+        return false;
+    }
+
+    return writeHoldingRegisters(address, values);
+}
+
+bool ModbusClient::writeHoldingRegisters(int slaveAddress, int address, std::vector<unsigned short>& values)
+{
+    std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
+    if (!changeSlaveAddress(slaveAddress))
+    {
+        return false;
+    }
+
+    return writeHoldingRegisters(address, values);
+}
+
+bool ModbusClient::writeHoldingRegisters(int slaveAddress, int address, std::vector<float>& values)
+{
+    std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
+    if (!changeSlaveAddress(slaveAddress))
+    {
+        return false;
+    }
+
+    return writeHoldingRegisters(address, values);
+}
+
 bool ModbusClient::writeCoil(int slaveAddress, int address, bool value)
 {
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
@@ -299,6 +332,68 @@ bool ModbusClient::writeHoldingRegister(int address, float value)
         return false;
     }
 
+    return true;
+}
+
+bool ModbusClient::writeHoldingRegisters(int address, std::vector<short>& values)
+{
+    auto* arr = new uint16_t[values.size()];
+    for (int i = 0; i < values.size(); i++)
+    {
+        ModbusValue modbusValue;
+        modbusValue.signedShortValue = values[i];
+        arr[i] = modbusValue.unsignedShortValue;
+    }
+
+    if (modbus_write_registers(m_modbus, address, values.size(), arr) == -1)
+    {
+        LOG(DEBUG) << "LibModbusClient: Unable to write holding registers - " << modbus_strerror(errno);
+        delete[](arr);
+        return false;
+    }
+
+    delete[](arr);
+    return true;
+}
+
+bool ModbusClient::writeHoldingRegisters(int address, std::vector<unsigned short>& values)
+{
+    auto* arr = new uint16_t[values.size()];
+    for (int i = 0; i < values.size(); i++)
+    {
+        arr[i] = values[i];
+    }
+
+    if (modbus_write_registers(m_modbus, address, values.size(), arr) == -1)
+    {
+        LOG(DEBUG) << "LibModbusClient: Unable to write holding registers - " << modbus_strerror(errno);
+        delete[](arr);
+        return false;
+    }
+
+    delete[](arr);
+    return true;
+}
+
+bool ModbusClient::writeHoldingRegisters(int address, std::vector<float>& values)
+{
+    auto* arr = new uint16_t[values.size() * 2];
+    for (int i = 0; i < values.size(); i++)
+    {
+        ModbusValue value;
+        value.floatValue = values[i];
+        arr[i * 2] = value.unsignedShortValues[0];
+        arr[i * 1] = value.unsignedShortValues[1];
+    }
+
+    if (modbus_write_registers(m_modbus, address, values.size() * 2, arr) == -1)
+    {
+        LOG(DEBUG) << "LibModbusClient: Unable to write holding registers - " << modbus_strerror(errno);
+        delete[](arr);
+        return false;
+    }
+
+    delete[](arr);
     return true;
 }
 
