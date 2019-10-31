@@ -287,7 +287,7 @@ void ModbusBridge::handleConfigurationForHoldingRegister(const ModbusRegisterMap
 void ModbusBridge::handleConfigurationForCoil(const ModbusRegisterMapping& modbusRegisterMapping,
                                               ModbusRegisterWatcher& modbusRegisterWatcher, const std::string& value)
 {
-    bool boolValue = atoi(value.c_str());
+    bool boolValue = (value == "true");
     if (!m_modbusClient.writeCoil(modbusRegisterMapping.getSlaveAddress(), modbusRegisterMapping.getAddress(),
                                   boolValue))
     {
@@ -306,15 +306,15 @@ void ModbusBridge::handleConfiguration(const std::string& /* deviceKey */,
         const ModbusRegisterMapping& modbusRegisterMapping = m_referenceToModbusRegisterMapping.at(reference);
         ModbusRegisterWatcher& modbusRegisterWatcher = m_referenceToModbusRegisterWatcherMapping.at(reference);
 
-        if (modbusRegisterMapping.getLabelsAndAddresses() != nullptr)
+        if (modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::COIL)
         {
-            handleConfigurationForHoldingRegister(modbusRegisterMapping, modbusRegisterWatcher, config.getValues());
+            handleConfigurationForCoil(modbusRegisterMapping, modbusRegisterWatcher, config.getValues()[0]);
         }
         else
         {
-            if (modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::COIL)
+            if (modbusRegisterMapping.getLabelsAndAddresses() != nullptr)
             {
-                handleConfigurationForCoil(modbusRegisterMapping, modbusRegisterWatcher, config.getValues()[0]);
+                handleConfigurationForHoldingRegister(modbusRegisterMapping, modbusRegisterWatcher, config.getValues());
             }
             else
             {

@@ -228,7 +228,7 @@ void makeTemplatesFromMappings(const std::vector<wolkabout::ModbusRegisterMappin
             {
             case wolkabout::ModbusRegisterMapping::RegisterType::COIL:
             case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
-                if (modbusRegisterMapping.getAddress() != -1)
+                if (modbusRegisterMapping.getLabelsAndAddresses() == nullptr)
                 {
                     configurationTemplates.emplace_back(
                       modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), dataType,

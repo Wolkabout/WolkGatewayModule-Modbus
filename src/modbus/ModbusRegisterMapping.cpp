@@ -236,7 +236,7 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
             }
         }
 
-        if (address != -1)
+        if (labelMap == nullptr)
         {
             modbusRegisterMappingVector.emplace_back(name, reference, description, minimum, maximum, address,
                                                      registerType, dataType, slaveAddress, mappingType);
