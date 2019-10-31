@@ -44,7 +44,7 @@ ModbusRegisterMapping::DataType ModbusRegisterGroup::getDataType()
 int ModbusRegisterGroup::getStartingRegisterAddress()
 {
     auto& front = m_modbusRegisterMappings.front();
-    if (front.getAddress() != -1)
+    if (front.getLabelsAndAddresses() == nullptr)
     {
         // if it's only a single address
         return front.getAddress();
