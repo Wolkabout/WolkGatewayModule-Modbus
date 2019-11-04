@@ -42,6 +42,11 @@ ModbusBridge::ModbusBridge(ModbusClient& modbusClient, std::vector<ModbusRegiste
                            std::chrono::milliseconds registerReadPeriod)
 : m_modbusClient(modbusClient), m_registerReadPeriod(std::move(registerReadPeriod)), m_readerShouldRun(false)
 {
+    if (modbusRegisterMappings.empty())
+    {
+        throw std::logic_error("You have passed 0 mappings to the bridge.");
+    }
+
     std::sort(modbusRegisterMappings.begin(), modbusRegisterMappings.end(),
               [](const ModbusRegisterMapping& lhs, const ModbusRegisterMapping& rhs) {
                   if (lhs.getSlaveAddress() != rhs.getSlaveAddress())
