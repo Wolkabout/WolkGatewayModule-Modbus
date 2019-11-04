@@ -486,7 +486,6 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromCoil(
 
 std::vector<ConfigurationItem> ModbusBridge::getConfiguration(const std::string& /* deviceKey */)
 {
-    //    LOG(DEBUG) << "Was asked for configuration!";
     std::vector<ConfigurationItem> configurations;
     for (auto& mapping : m_referenceToConfigurationModbusRegisterMapping)
     {
