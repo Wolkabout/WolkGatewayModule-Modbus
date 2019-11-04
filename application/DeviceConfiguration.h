@@ -26,13 +26,11 @@ class DeviceConfiguration
 public:
     DeviceConfiguration() = default;
 
-    DeviceConfiguration(std::string name, std::string key, std::string protocol, std::string localMqttUri);
+    DeviceConfiguration(std::string name, std::string key, std::string localMqttUri);
 
     const std::string& getName() const;
 
     const std::string& getKey() const;
-
-    const std::string& getProtocol() const;
 
     const std::string& getLocalMqttUri() const;
 
@@ -42,8 +40,6 @@ private:
     std::string m_name;
 
     std::string m_key;
-
-    std::string m_protocol;
 
     std::string m_localMqttUri;
 };
