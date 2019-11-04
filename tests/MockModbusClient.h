@@ -15,11 +15,19 @@ public:
     MockModbusClient(std::chrono::milliseconds responseTimeout) : ModbusClient(responseTimeout) { m_connected = false; }
     ~MockModbusClient() override {}
 
-    bool createContext() override {}
-    bool destroyContext() override {}
+    bool createContext() override { return true; }
+    bool destroyContext() override { return true; }
 
-    bool connect() { m_connected = true; }
-    bool disconnect() { m_connected = false; }
+    bool connect()
+    {
+        m_connected = true;
+        return m_connected;
+    }
+    bool disconnect()
+    {
+        m_connected = false;
+        return m_connected;
+    }
     bool isConnected() { return m_connected; }
 
     MOCK_METHOD3(writeHoldingRegister, bool(int, int, signed short));
