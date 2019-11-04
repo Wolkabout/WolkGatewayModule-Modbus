@@ -62,13 +62,13 @@ set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAK
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-Wl,-rpath,./")
 
 # Tests
-include_directories("module-tests")
-include_directories(SYSTEM "${CONAN_INCLUDE_DIRS_GTEST}")
-
 file(GLOB_RECURSE TESTS_HEADER_FILES "tests/*.h" "tests/*.hpp")
 file(GLOB_RECURSE TESTS_SOURCE_FILES "tests/*.cpp")
 
-add_executable(module-tests ${TESTS_SOURCE_FILES} tests/BridgeTest.cpp tests/BridgeTest.cpp)
+include_directories("module-tests")
+include_directories(SYSTEM "${CONAN_INCLUDE_DIRS_GTEST}")
+
+add_executable(module-tests tests/MockModbusClient.h tests/BridgeTest.cpp)
 target_link_libraries(module-tests gmock_main gmock gtest ${PROJECT_NAME})
 set_target_properties(module-tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set_target_properties(module-tests PROPERTIES LINK_FLAGES "-Wl,-rpath,./lib")
