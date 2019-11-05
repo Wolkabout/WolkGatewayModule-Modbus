@@ -234,6 +234,10 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
                     address = modbusRegisterMappingJson.at("address").get<int>();
                 }
             }
+            else
+            {
+                address = modbusRegisterMappingJson.at("address").get<int>();
+            }
         }
 
         if (labelMap == nullptr)
