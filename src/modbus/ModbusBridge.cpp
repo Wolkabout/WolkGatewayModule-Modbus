@@ -541,7 +541,7 @@ ConfigurationItem ModbusBridge::getConfigurationStatusFromHoldingRegister(
         {
             std::vector<short> values;
             if (!m_modbusClient.readHoldingRegisters(modbusRegisterMapping.getSlaveAddress(),
-                                                     modbusRegisterMapping.getLabelsAndAddresses()->begin()->second,
+                                                     modbusRegisterMapping.getAddress(),
                                                      modbusRegisterMapping.getLabelsAndAddresses()->size(), values))
             {
                 LOG(ERROR) << "ModbusBridge: Unable to read holding registers from address '"
@@ -569,11 +569,11 @@ ConfigurationItem ModbusBridge::getConfigurationStatusFromHoldingRegister(
     }
     else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
     {
-        if (modbusRegisterMapping.getAddress() == -1)
+        if (modbusRegisterMapping.getLabelsAndAddresses() != nullptr)
         {
             std::vector<unsigned short> values;
             if (!m_modbusClient.readHoldingRegisters(modbusRegisterMapping.getSlaveAddress(),
-                                                     modbusRegisterMapping.getLabelsAndAddresses()->begin()->second,
+                                                     modbusRegisterMapping.getAddress(),
                                                      modbusRegisterMapping.getLabelsAndAddresses()->size(), values))
             {
                 LOG(ERROR) << "ModbusBridge: Unable to read holding registers from address '"
@@ -601,11 +601,11 @@ ConfigurationItem ModbusBridge::getConfigurationStatusFromHoldingRegister(
     }
     else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
     {
-        if (modbusRegisterMapping.getAddress() == -1)
+        if (modbusRegisterMapping.getLabelsAndAddresses() != nullptr)
         {
             std::vector<float> values;
             if (!m_modbusClient.readHoldingRegisters(modbusRegisterMapping.getSlaveAddress(),
-                                                     modbusRegisterMapping.getLabelsAndAddresses()->begin()->second,
+                                                     modbusRegisterMapping.getAddress(),
                                                      modbusRegisterMapping.getLabelsAndAddresses()->size(), values))
             {
                 LOG(ERROR) << "ModbusBridge: Unable to read holding registers from address '"

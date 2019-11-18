@@ -11,33 +11,35 @@
       {
          "name": "Emergency Stop Alarm",
          "reference": "ESTOPA",
-         "description": "Hey, the Emergency Stop button was pressed!",
+         "minimum": 0,
+         "maximum": 1,
          "address": 24,
          "registerType": "INPUT_CONTACT",
-         "dataType": "BOOL",
+         "dataType": "INT16",
          "slaveAddress": 1,
          "mappingType": "ALARM"
       },
       {
-         "name": "Emergency Stop Alarm 2",
-         "reference": "ESTOP2",
-         "description": "Hey, the Emergency Stop button was pressed! 2",
-         "address": 20,
-         "registerType": "INPUT_CONTACT",
-         "dataType": "BOOL",
-         "slaveAddress": 1,
-         "mappingType": "ALARM"
-      },
-      {
-         "name": "Test Configuration",
-         "reference": "TC",
-         "description": "Test configuration",
+         "name": "Paper Jam Alarm",
+         "reference": "PJAM",
          "minimum": 0,
-         "maximum": 20000,
+         "maximum": 1,
+         "address": 25,
+         "registerType": "INPUT_CONTACT",
+         "dataType": "INT16",
+         "slaveAddress": 1,
+         "mappingType": "ALARM"
+      },
+      {
+         "name": "Default Values",
+         "reference": "DV",
+         "description": "These are default values for Feeder, Tempo, Delivery",
+         "minimum": 0,
+         "maximum": 17000,
          "labelMap": {
-            "TC1": 26,
-            "TS2": 27,
-            "TG3": 28
+            "Feeder": 22,
+            "Tempo": 23,
+            "Delivery": 24
          },
          "registerType": "HOLDING_REGISTER_ACTUATOR",
          "dataType": "INT16",
@@ -45,11 +47,50 @@
          "mappingType": "CONFIGURATION"
       },
       {
-         "name": "Test Configuration Bool",
-         "reference": "TCB",
-         "description": "Test configuration",
-         "registerType": "COIL",
-         "address": 10,
+         "name": "Cyan Default Value",
+         "reference": "DVC",
+         "description": "Default Value for Cyan color",
+         "minimum": 0,
+         "maximum": 10000,
+         "address": 25,
+         "registerType": "HOLDING_REGISTER_ACTUATOR",
+         "dataType": "INT16",
+         "slaveAddress": 1,
+         "mappingType": "CONFIGURATION"
+      },
+      {
+         "name": "Magenta Default Value",
+         "reference": "DVM",
+         "description": "Default Value for Magenta color",
+         "minimum": 0,
+         "maximum": 10000,
+         "address": 26,
+         "registerType": "HOLDING_REGISTER_ACTUATOR",
+         "dataType": "INT16",
+         "slaveAddress": 1,
+         "mappingType": "CONFIGURATION"
+      },
+      {
+         "name": "Yellow Default Value",
+         "reference": "DVY",
+         "description": "Default Value for Yellow color",
+         "minimum": 0,
+         "maximum": 10000,
+         "address": 27,
+         "registerType": "HOLDING_REGISTER_ACTUATOR",
+         "dataType": "INT16",
+         "slaveAddress": 1,
+         "mappingType": "CONFIGURATION"
+      },
+      {
+         "name": "Black Default Value",
+         "reference": "DVB",
+         "description": "Default Value for Cyan color",
+         "minimum": 0,
+         "maximum": 10000,
+         "address": 28,
+         "registerType": "HOLDING_REGISTER_ACTUATOR",
+         "dataType": "INT16",
          "slaveAddress": 1,
          "mappingType": "CONFIGURATION"
       },
@@ -59,6 +100,286 @@
          "address": 0,
          "registerType": "COIL",
          "dataType": "BOOL",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Conveyor Max Prints Per Hour",
+         "reference": "MAXPPH",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 1,
+         "registerType": "INPUT_REGISTER",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Conveyor Min Prints Per Hour",
+         "reference": "MINPPH",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 2,
+         "registerType": "INPUT_REGISTER",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Conveyor Current Prints Per Hour",
+         "reference": "CPPH",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 3,
+         "registerType": "INPUT_REGISTER",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Conveyor Prints Per Hour",
+         "reference": "PPH",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 3,
+         "registerType": "HOLDING_REGISTER_ACTUATOR",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Feeder Capacity",
+         "reference": "FCAP",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 4,
+         "registerType": "INPUT_REGISTER",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Feeder Percentage Full",
+         "reference": "FPER",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 5,
+         "registerType": "INPUT_REGISTER",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Feeder Current Count",
+         "reference": "FCC",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 6,
+         "registerType": "INPUT_REGISTER",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Feeder Count",
+         "reference": "FC",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 6,
+         "registerType": "HOLDING_REGISTER_ACTUATOR",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Delivery Capacity",
+         "reference": "DCAP",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 7,
+         "registerType": "INPUT_REGISTER",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Delivery Percentage Full",
+         "reference": "DPER",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 8,
+         "registerType": "INPUT_REGISTER",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Delivery Current Count",
+         "reference": "DCC",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 9,
+         "registerType": "INPUT_REGISTER",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Delivery Count",
+         "reference": "DC",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 9,
+         "registerType": "HOLDING_REGISTER_ACTUATOR",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Paint Station Cyan Capacity",
+         "reference": "PSCCAP",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 10,
+         "registerType": "INPUT_REGISTER",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Paint Station Cyan Percentage Full",
+         "reference": "PSCPER",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 11,
+         "registerType": "INPUT_REGISTER",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Paint Station Cyan Current Count",
+         "reference": "PSCCC",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 12,
+         "registerType": "INPUT_REGISTER",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Paint Station Cyan Count",
+         "reference": "PSCC",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 12,
+         "registerType": "HOLDING_REGISTER_ACTUATOR",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Paint Station Magenta Capacity",
+         "reference": "PSMCAP",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 13,
+         "registerType": "INPUT_REGISTER",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Paint Station Magenta Percentage Full",
+         "reference": "PSMPER",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 14,
+         "registerType": "INPUT_REGISTER",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Paint Station Magenta Current Count",
+         "reference": "PSMCC",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 15,
+         "registerType": "INPUT_REGISTER",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Paint Station Magenta Count",
+         "reference": "PSMC",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 15,
+         "registerType": "HOLDING_REGISTER_ACTUATOR",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Paint Station Yellow Capacity",
+         "reference": "PSYCAP",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 16,
+         "registerType": "INPUT_REGISTER",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Paint Station Yellow Percentage Full",
+         "reference": "PSYPER",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 17,
+         "registerType": "INPUT_REGISTER",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Paint Station Yellow Current Count",
+         "reference": "PSYCC",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 18,
+         "registerType": "INPUT_REGISTER",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Paint Station Yellow Count",
+         "reference": "PSYC",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 18,
+         "registerType": "HOLDING_REGISTER_ACTUATOR",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Paint Station Black Capacity",
+         "reference": "PSKCAP",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 19,
+         "registerType": "INPUT_REGISTER",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Paint Station Black Percentage Full",
+         "reference": "PSKPER",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 20,
+         "registerType": "INPUT_REGISTER",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Paint Station Black Current Count",
+         "reference": "PSKCC",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 21,
+         "registerType": "INPUT_REGISTER",
+         "dataType": "INT16",
+         "slaveAddress": 1
+      },
+      {
+         "name": "Paint Station Black Count",
+         "reference": "PSKC",
+         "minimum": 0,
+         "maximum": 20000,
+         "address": 21,
+         "registerType": "HOLDING_REGISTER_ACTUATOR",
+         "dataType": "INT16",
          "slaveAddress": 1
       }
    ]
