@@ -1,6 +1,6 @@
 {
     "ip": "10.0.50.52",
-    "port": 502,
+    "port": 2222,
 
     "serialPort": "SERIAL_PORT",
     "baudRate": 115200,

@@ -17,6 +17,7 @@
 #include "ModbusRegisterGroup.h"
 
 #include <algorithm>
+#include <iostream>
 
 namespace wolkabout
 {
@@ -49,8 +50,16 @@ int ModbusRegisterGroup::getStartingRegisterAddress()
         // if it's only a single address
         return front.getAddress();
     }
-    // if the addresses are in a labelMap
-    return front.getLabelsAndAddresses()->begin()->second;
+    // if the addresses are in a labelMap, get the minimum
+    int min = front.getLabelsAndAddresses()->begin()->second;
+    for (auto& label : *front.getLabelsAndAddresses())
+    {
+        if (label.second < min)
+        {
+            min = label.second;
+        }
+    }
+    return min;
 }
 
 int ModbusRegisterGroup::getMappingsCount()

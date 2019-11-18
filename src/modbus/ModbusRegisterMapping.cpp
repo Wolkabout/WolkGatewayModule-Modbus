@@ -18,6 +18,7 @@
 #include "utilities/FileSystemUtils.h"
 #include "utilities/json.hpp"
 
+#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -93,7 +94,15 @@ int ModbusRegisterMapping::getAddress() const
 {
     if (m_address == -1)
     {
-        return m_labelsAndAddresses->begin()->second;
+        int min = m_labelsAndAddresses->begin()->second;
+        for (auto& label : *m_labelsAndAddresses)
+        {
+            if (label.second < min)
+            {
+                min = label.second;
+            }
+        }
+        return min;
     }
     return m_address;
 }

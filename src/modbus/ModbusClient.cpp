@@ -516,6 +516,7 @@ bool ModbusClient::readHoldingRegister(int address, short& value)
 
 bool ModbusClient::readHoldingRegisters(int address, int number, std::vector<signed short>& values)
 {
+    LOG(DEBUG) << "Reading HR " << address << " " << number;
     std::vector<unsigned short> tmpValues(number);
 
     if (modbus_read_registers(m_modbus, address, number, &tmpValues[0]) == -1)

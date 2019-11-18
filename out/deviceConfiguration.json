@@ -1,5 +1,5 @@
 {
-    "name": "Development Modbus TCP HMI",
-    "key": "RAWRXD",
+    "name": "Modbus TCP HMI",
+    "key": "MODBUSHMI",
     "localMqttUri": "tcp://localhost:1883"
 }
