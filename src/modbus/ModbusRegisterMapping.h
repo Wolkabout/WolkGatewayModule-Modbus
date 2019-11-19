@@ -24,7 +24,7 @@
 
 namespace wolkabout
 {
-typedef std::map<std::string, int> LabelMap;
+typedef std::vector<std::pair<std::string, int>> LabelMap;
 
 class ModbusRegisterMapping
 {
