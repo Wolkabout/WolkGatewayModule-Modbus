@@ -11,8 +11,6 @@
       {
          "name": "Emergency Stop Alarm",
          "reference": "ESTOPA",
-         "minimum": 0,
-         "maximum": 1,
          "address": 24,
          "registerType": "INPUT_CONTACT",
          "dataType": "INT16",
@@ -22,8 +20,6 @@
       {
          "name": "Paper Jam Alarm",
          "reference": "PJAM",
-         "minimum": 0,
-         "maximum": 1,
          "address": 25,
          "registerType": "INPUT_CONTACT",
          "dataType": "INT16",
