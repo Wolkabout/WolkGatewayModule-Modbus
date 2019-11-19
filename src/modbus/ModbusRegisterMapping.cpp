@@ -19,6 +19,7 @@
 #include "utilities/json.hpp"
 
 #include <iostream>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -213,7 +214,21 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
                     }
                     try
                     {
-                        labelMap = std::make_shared<LabelMap>(modbusRegisterMappingJson.at("labelMap").get<LabelMap>());
+                        auto tempLabelMap = std::make_shared<std::map<std::string, int>>(
+                          modbusRegisterMappingJson.at("labelMap").get<std::map<std::string, int>>());
+                        typedef std::function<bool(std::pair<std::string, int>, std::pair<std::string, int>)>
+                          Comparator;
+                        Comparator compFunctor = [](std::pair<std::string, int> elem1,
+                                                    std::pair<std::string, int> elem2) {
+                            return elem1.second < elem2.second;
+                        };
+                        std::set<std::pair<std::string, int>, Comparator> setOfWords(tempLabelMap->begin(),
+                                                                                     tempLabelMap->end(), compFunctor);
+                        labelMap = std::make_shared<LabelMap>();
+                        for (std::pair<std::string, int> element : setOfWords)
+                        {
+                            labelMap->emplace_back(element);
+                        }
                         gotLabelMap = true;
                     }
                     catch (std::exception&)

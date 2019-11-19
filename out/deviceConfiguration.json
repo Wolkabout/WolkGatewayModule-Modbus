@@ -1,5 +1,5 @@
 {
     "name": "Modbus TCP HMI",
-    "key": "MODBUSHMI",
+    "key": "Modbus",
     "localMqttUri": "tcp://localhost:1883"
 }
