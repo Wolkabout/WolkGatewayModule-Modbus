@@ -82,6 +82,7 @@ bool LibModbusSerialRtuClient::destroyContext()
         disconnect();
         modbus_free(m_modbus);
         m_modbus = nullptr;
+        m_contextCreated = false;
     }
 
     return true;
