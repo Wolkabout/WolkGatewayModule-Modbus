@@ -28,7 +28,6 @@ ModbusClient::ModbusClient(std::chrono::milliseconds responseTimeout)
 
 bool ModbusClient::connect()
 {
-    m_timeoutIterator = 0;
     m_connected = false;
 
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
@@ -45,15 +44,10 @@ bool ModbusClient::connect()
         return false;
     }
 
-    LOG(ERROR) << "LibModbusClient: Attempting to connect";
-    while (modbus_connect(m_modbus) == -1)
+    if (modbus_connect(m_modbus) == -1)
     {
         LOG(ERROR) << "LibModbusClient: Unable to connect - " << modbus_strerror(errno);
-        std::this_thread::sleep_for(std::chrono::seconds(m_timeoutDurations[m_timeoutIterator]));
-        if (m_timeoutIterator < 9)
-        {
-            m_timeoutIterator++;
-        }
+        return false;
     }
     LOG(INFO) << "LibModbusClient: Connected successfully.";
     m_connected = true;
