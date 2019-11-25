@@ -654,7 +654,6 @@ void ModbusBridge::start()
         return;
     }
 
-    m_modbusClient.connect();
     m_readerShouldRun = true;
     m_reader = std::unique_ptr<std::thread>(new std::thread(&ModbusBridge::run, this));
 }
@@ -667,7 +666,7 @@ void ModbusBridge::stop()
 
 void ModbusBridge::run()
 {
-    m_shouldReconnect = false;
+    m_shouldReconnect = true;
 
     while (m_readerShouldRun)
     {
@@ -677,12 +676,26 @@ void ModbusBridge::run()
         }
         else
         {
+            // just disconnecting
             m_modbusClient.disconnect();
             if (m_onDeviceStatusChange)
             {
                 m_onDeviceStatusChange(wolkabout::DeviceStatus::Status::OFFLINE);
             }
-            m_modbusClient.connect();
+
+            // attempting to connect
+            LOG(INFO) << "ModbusBridge: Attempting to connect";
+            while (!m_modbusClient.connect())
+            {
+                std::this_thread::sleep_for(std::chrono::seconds(m_timeoutDurations[m_timeoutIterator]));
+                if ((uint)m_timeoutIterator < m_timeoutDurations.size() - 1)
+                {
+                    m_timeoutIterator++;
+                }
+            }
+            m_shouldReconnect = false;
+            m_timeoutIterator = 0;
+
             if (m_onDeviceStatusChange)
             {
                 m_onDeviceStatusChange(wolkabout::DeviceStatus::Status::CONNECTED);
