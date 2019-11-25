@@ -69,6 +69,8 @@ bool ModbusClient::connect()
 bool ModbusClient::disconnect()
 {
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
+    modbus_flush(m_modbus);
+    modbus_close(m_modbus);
     return true;
 }
 
