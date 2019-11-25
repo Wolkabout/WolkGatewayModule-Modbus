@@ -49,6 +49,7 @@ bool LibModbusTcpIpClient::createContext()
         return false;
     }
 
+    m_contextCreated = true;
     return true;
 }
 
@@ -63,6 +64,7 @@ bool LibModbusTcpIpClient::destroyContext()
         modbus_close(m_modbus);
         modbus_free(m_modbus);
         m_modbus = nullptr;
+        m_contextCreated = false;
     }
 
     return true;
