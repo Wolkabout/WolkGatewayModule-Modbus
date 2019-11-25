@@ -37,6 +37,7 @@ bool ModbusClient::connect()
     {
         return false;
     }
+    m_contextCreated = true;
 
     if (modbus_set_response_timeout(m_modbus, 2, 0) == -1)
     {
