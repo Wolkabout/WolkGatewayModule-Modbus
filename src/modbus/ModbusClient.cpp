@@ -29,14 +29,16 @@ ModbusClient::ModbusClient(std::chrono::milliseconds responseTimeout)
 
 bool ModbusClient::connect()
 {
-    m_connected = false;
+    if (m_connected)
+    {
+        return true;
+    }
 
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
     if (!m_contextCreated && !createContext())
     {
         return false;
     }
-    m_contextCreated = true;
 
     if (modbus_set_response_timeout(m_modbus, 2, 0) == -1)
     {
@@ -71,6 +73,9 @@ bool ModbusClient::connect()
 bool ModbusClient::disconnect()
 {
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
+    modbus_flush(m_modbus);
+    modbus_close(m_modbus);
+    m_connected = false;
     return true;
 }
 
