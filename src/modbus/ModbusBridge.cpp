@@ -356,6 +356,7 @@ void ModbusBridge::stop()
 void ModbusBridge::run()
 {
     m_shouldReconnect = true;
+    m_timeoutIterator = 0;
 
     while (m_readerShouldRun)
     {
