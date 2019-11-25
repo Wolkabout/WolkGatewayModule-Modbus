@@ -109,6 +109,7 @@ protected:
     int m_timeoutIterator;
 
     bool m_connected;
+    bool m_contextCreated;
     std::mutex m_modbusMutex;
     modbus_t* m_modbus;
 };

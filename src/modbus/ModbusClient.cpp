@@ -32,10 +32,11 @@ bool ModbusClient::connect()
     m_connected = false;
 
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
-    if (!createContext())
+    if (!m_contextCreated && !createContext())
     {
         return false;
     }
+    m_contextCreated = true;
 
     if (modbus_set_response_timeout(m_modbus, 2, 0) == -1)
     {
