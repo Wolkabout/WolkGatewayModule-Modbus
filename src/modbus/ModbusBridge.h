@@ -79,7 +79,7 @@ private:
     ModbusClient& m_modbusClient;
 
     int m_timeoutIterator;
-    std::vector<int> m_timeoutDurations = {1, 5, 10, 15, 30, 60, 300, 600, 1800, 3600};
+    const std::vector<int> m_timeoutDurations = {1, 5, 10, 15, 30, 60, 300, 600, 1800, 3600};
     bool m_shouldReconnect;
 
     std::vector<ModbusRegisterGroup> m_modbusRegisterGroups;
