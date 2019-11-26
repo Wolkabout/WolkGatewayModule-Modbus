@@ -49,6 +49,7 @@ bool LibModbusTcpIpClient::createContext()
         return false;
     }
 
+    m_contextCreated = true;
     return true;
 }
 
@@ -59,10 +60,10 @@ bool LibModbusTcpIpClient::destroyContext()
         LOG(INFO) << "LibModbusClient: Disconnecting from " << m_ipAddress << ":" << m_port;
 
         std::lock_guard<decltype(m_modbusMutex)> l(m_modbusMutex);
-        modbus_flush(m_modbus);
-        modbus_close(m_modbus);
+        disconnect();
         modbus_free(m_modbus);
         m_modbus = nullptr;
+        m_contextCreated = false;
     }
 
     return true;
