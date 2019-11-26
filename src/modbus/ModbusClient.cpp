@@ -27,8 +27,13 @@ ModbusClient::ModbusClient(std::chrono::milliseconds responseTimeout)
 
 bool ModbusClient::connect()
 {
+    if (m_connected)
+    {
+        return true;
+    }
+
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
-    if (!createContext())
+    if (!m_contextCreated && !createContext())
     {
         return false;
     }
@@ -43,9 +48,10 @@ bool ModbusClient::connect()
     if (modbus_connect(m_modbus) == -1)
     {
         LOG(ERROR) << "LibModbusClient: Unable to connect - " << modbus_strerror(errno);
-        destroyContext();
         return false;
     }
+    LOG(INFO) << "LibModbusClient: Connected successfully.";
+    m_connected = true;
 
     auto responseTimeOutSeconds = std::chrono::duration_cast<std::chrono::seconds>(m_responseTimeout);
     auto responseTimeOutMicrosecondsResidue =
@@ -65,13 +71,17 @@ bool ModbusClient::connect()
 bool ModbusClient::disconnect()
 {
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
-    return destroyContext();
+    modbus_flush(m_modbus);
+    modbus_close(m_modbus);
+    m_connected = false;
+    return true;
 }
 
 bool ModbusClient::isConnected()
 {
+    LOG(DEBUG) << "Asking if connected : " << m_connected;
     std::lock_guard<decltype(m_modbusMutex)> l{m_modbusMutex};
-    return m_modbus != nullptr;
+    return m_connected;
 }
 
 bool ModbusClient::writeHoldingRegister(int slaveAddress, int address, signed short value)

@@ -70,6 +70,7 @@ bool LibModbusSerialRtuClient::createContext()
         return false;
     }
 
+    m_contextCreated = true;
     return true;
 }
 
@@ -78,11 +79,10 @@ bool LibModbusSerialRtuClient::destroyContext()
     if (m_modbus)
     {
         LOG(INFO) << "LibModbusClient: Closing serial port '" << m_serialPort << "'";
-
-        modbus_flush(m_modbus);
-        modbus_close(m_modbus);
+        disconnect();
         modbus_free(m_modbus);
         m_modbus = nullptr;
+        m_contextCreated = false;
     }
 
     return true;

@@ -106,6 +106,8 @@ protected:
 
     std::chrono::milliseconds m_responseTimeout;
 
+    bool m_connected;
+    bool m_contextCreated;
     std::mutex m_modbusMutex;
     modbus_t* m_modbus;
 };

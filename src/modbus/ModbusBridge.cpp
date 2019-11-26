@@ -33,6 +33,7 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 namespace wolkabout
@@ -115,19 +116,23 @@ ModbusBridge::ModbusBridge(ModbusClient& modbusClient, std::vector<ModbusRegiste
 ModbusBridge::~ModbusBridge()
 {
     m_modbusClient.disconnect();
-
     stop();
 }
 
 void ModbusBridge::onSensorReading(
   std::function<void(const std::string& reference, const std::string& value)> onSensorReading)
 {
-    m_onSensorReading = onSensorReading;
+    m_onSensorReading = std::move(onSensorReading);
 }
 
 void ModbusBridge::onActuatorStatusChange(std::function<void(const std::string& reference)> onActuatorStatusChange)
 {
-    m_onActuatorStatusChange = onActuatorStatusChange;
+    m_onActuatorStatusChange = std::move(onActuatorStatusChange);
+}
+
+void ModbusBridge::onDeviceStatusChange(std::function<void(wolkabout::DeviceStatus::Status)> onDeviceStatusChange)
+{
+    m_onDeviceStatusChange = std::move(onDeviceStatusChange);
 }
 
 void ModbusBridge::handleActuation(const std::string& /* deviceKey */, const std::string& reference,
@@ -326,9 +331,9 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromCoil(
     return ActuatorStatus(value ? "true" : "false", ActuatorStatus::State::READY);
 }
 
-wolkabout::DeviceStatus ModbusBridge::getDeviceStatus(const std::string& /* deviceKey */)
+wolkabout::DeviceStatus::Status ModbusBridge::getDeviceStatus(const std::string& /* deviceKey */)
 {
-    return m_modbusClient.isConnected() ? DeviceStatus::CONNECTED : DeviceStatus::OFFLINE;
+    return m_modbusClient.isConnected() ? DeviceStatus::Status::CONNECTED : DeviceStatus::Status::OFFLINE;
 }
 
 void ModbusBridge::start()
@@ -338,7 +343,6 @@ void ModbusBridge::start()
         return;
     }
 
-    m_modbusClient.connect();
     m_readerShouldRun = true;
     m_reader = std::unique_ptr<std::thread>(new std::thread(&ModbusBridge::run, this));
 }
@@ -351,9 +355,43 @@ void ModbusBridge::stop()
 
 void ModbusBridge::run()
 {
+    m_shouldReconnect = true;
+    m_timeoutIterator = 0;
+
     while (m_readerShouldRun)
     {
-        readAndReportModbusRegistersValues();
+        if (!m_shouldReconnect)
+        {
+            readAndReportModbusRegistersValues();
+        }
+        else
+        {
+            // just disconnecting
+            m_modbusClient.disconnect();
+            if (m_onDeviceStatusChange)
+            {
+                m_onDeviceStatusChange(wolkabout::DeviceStatus::Status::OFFLINE);
+            }
+
+            // attempting to connect
+            LOG(INFO) << "ModbusBridge: Attempting to connect";
+            while (!m_modbusClient.connect())
+            {
+                std::this_thread::sleep_for(std::chrono::seconds(m_timeoutDurations[m_timeoutIterator]));
+                if ((uint)m_timeoutIterator < m_timeoutDurations.size() - 1)
+                {
+                    m_timeoutIterator++;
+                }
+            }
+            m_shouldReconnect = false;
+            m_timeoutIterator = 0;
+
+            if (m_onDeviceStatusChange)
+            {
+                m_onDeviceStatusChange(wolkabout::DeviceStatus::Status::CONNECTED);
+            }
+            readAndReportModbusRegistersValues();
+        }
 
         std::this_thread::sleep_for(m_registerReadPeriod);
     }
@@ -362,6 +400,8 @@ void ModbusBridge::run()
 void ModbusBridge::readAndReportModbusRegistersValues()
 {
     LOG(DEBUG) << "ModbusBridge: Reading and reporting register values";
+
+    std::map<int, bool> slavesRead;
 
     for (ModbusRegisterGroup& modbusRegisterGroup : m_modbusRegisterGroups)
     {
@@ -376,8 +416,15 @@ void ModbusBridge::readAndReportModbusRegistersValues()
             {
                 LOG(ERROR) << "ModbusBridge: Unable to read coils on slave " << modbusRegisterGroup.getSlaveAddress()
                            << " from address '" << modbusRegisterGroup.getStartingRegisterAddress() << "'";
+
+                if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
+                {
+                    slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), false));
+                }
                 continue;
             }
+
+            slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
             for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
             {
@@ -409,8 +456,14 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                 LOG(ERROR) << "ModbusBridge: Unable to read input contacts on slave "
                            << modbusRegisterGroup.getSlaveAddress() << " from address '"
                            << modbusRegisterGroup.getStartingRegisterAddress() << "'";
+                if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
+                {
+                    slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), false));
+                }
                 continue;
             }
+
+            slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
             for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
             {
@@ -445,8 +498,14 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                     LOG(ERROR) << "ModbusBridge: Unable to read input registers on slave "
                                << modbusRegisterGroup.getSlaveAddress() << " from address '"
                                << modbusRegisterGroup.getStartingRegisterAddress() << "'";
+                    if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
+                    {
+                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), false));
+                    }
                     continue;
                 }
+
+                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
@@ -477,8 +536,14 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                     LOG(ERROR) << "ModbusBridge: Unable to read input registers on slave "
                                << modbusRegisterGroup.getSlaveAddress() << " from address '"
                                << modbusRegisterGroup.getStartingRegisterAddress() << "'";
+                    if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
+                    {
+                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), false));
+                    }
                     continue;
                 }
+
+                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
@@ -509,8 +574,14 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                     LOG(ERROR) << "ModbusBridge: Unable to read input registers on slave "
                                << modbusRegisterGroup.getSlaveAddress() << " from address '"
                                << modbusRegisterGroup.getStartingRegisterAddress() << "'";
+                    if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
+                    {
+                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), false));
+                    }
                     continue;
                 }
+
+                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
@@ -548,8 +619,15 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                     LOG(ERROR) << "ModbusBridge: Unable to read holding registers on slave "
                                << modbusRegisterGroup.getSlaveAddress() << " from address '"
                                << modbusRegisterGroup.getStartingRegisterAddress() << "'";
+                    if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
+                    {
+                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), false));
+                    }
                     continue;
                 }
+
+                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
+
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
                     signed short value = values[i];
@@ -579,8 +657,14 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                     LOG(ERROR) << "ModbusBridge: Unable to read holding registers on slave "
                                << modbusRegisterGroup.getSlaveAddress() << " from address '"
                                << modbusRegisterGroup.getStartingRegisterAddress() << "'";
+                    if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
+                    {
+                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), false));
+                    }
                     continue;
                 }
+
+                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
@@ -611,8 +695,14 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                     LOG(ERROR) << "ModbusBridge: Unable to read holding registers on slave "
                                << modbusRegisterGroup.getSlaveAddress() << " from address '"
                                << modbusRegisterGroup.getStartingRegisterAddress() << "'";
+                    if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
+                    {
+                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), false));
+                    }
                     continue;
                 }
+
+                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
 
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
@@ -650,8 +740,15 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                     LOG(ERROR) << "ModbusBridge: Unable to read holding registers on slave "
                                << modbusRegisterGroup.getSlaveAddress() << " from address '"
                                << modbusRegisterGroup.getStartingRegisterAddress() << "'";
+                    if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
+                    {
+                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), false));
+                    }
                     continue;
                 }
+
+                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
+
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
                     signed short value = values[i];
@@ -682,8 +779,15 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                     LOG(ERROR) << "ModbusBridge: Unable to read holding registers on slave "
                                << modbusRegisterGroup.getSlaveAddress() << " from address '"
                                << modbusRegisterGroup.getStartingRegisterAddress() << "'";
+                    if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
+                    {
+                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), false));
+                    }
                     continue;
                 }
+
+                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
+
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
                     unsigned short value = values[i];
@@ -713,8 +817,15 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                     LOG(ERROR) << "ModbusBridge: Unable to read holding registers on slave "
                                << modbusRegisterGroup.getSlaveAddress() << " from address '"
                                << modbusRegisterGroup.getStartingRegisterAddress() << "'";
+                    if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
+                    {
+                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), false));
+                    }
                     continue;
                 }
+
+                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
+
                 for (int i = 0; i < modbusRegisterGroup.getRegisterCount(); ++i)
                 {
                     float value = values[i];
@@ -739,6 +850,11 @@ void ModbusBridge::readAndReportModbusRegistersValues()
             break;
         }
         }
+    }
+
+    if (slavesRead.size() == 1)
+    {
+        m_shouldReconnect = !slavesRead.begin()->second;
     }
 }
 }    // namespace wolkabout
