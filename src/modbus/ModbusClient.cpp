@@ -17,7 +17,6 @@
 #include "ModbusClient.h"
 #include "modbus/libmodbus/modbus.h"
 #include "utilities/Logger.h"
-#include <thread>
 
 namespace wolkabout
 {
