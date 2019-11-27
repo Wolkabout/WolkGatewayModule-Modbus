@@ -3,7 +3,6 @@ dependencies/
 .idea/
 cmake-build-debug/
 .vscode/
-
 *.config
 *.creator
 *.files
