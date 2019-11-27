@@ -42,7 +42,7 @@ bool LibModbusTcpIpClient::createContext()
 {
     LOG(INFO) << "LibModbusClient: Connecting to " << m_ipAddress << ":" << m_port;
 
-    m_modbus = modbus_new_tcp(nullptr, m_port);
+    m_modbus = modbus_new_tcp(m_ipAddress.c_str(), m_port);
     if (m_modbus == nullptr)
     {
         LOG(ERROR) << "LibModbusClient: Unable to create modbus context - " << modbus_strerror(errno);
