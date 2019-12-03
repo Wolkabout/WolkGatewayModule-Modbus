@@ -1,5 +1,6 @@
 {
-    "name": "Modbus TCP HMI",
-    "key": "Modbus",
+    "name": "DEVICE_NAME",
+    "key": "DEVICE_KEY",
+    "protocol": "JsonProtocol",
     "localMqttUri": "tcp://localhost:1883"
 }
