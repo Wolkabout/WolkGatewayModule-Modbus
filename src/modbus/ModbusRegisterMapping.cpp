@@ -156,7 +156,14 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
         const auto reference = modbusRegisterMappingJson.at("reference").get<std::string>();
         const auto registerType =
           deserializeRegisterType(modbusRegisterMappingJson.at("registerType").get<std::string>());
-        const auto slaveAddress = modbusRegisterMappingJson.at("slaveAddress").get<int>();
+        int slaveAddress = 1;
+        try
+        {
+            slaveAddress = modbusRegisterMappingJson.at("slaveAddress").get<int>();
+        }
+        catch (std::exception&)
+        {
+        }
 
         // description is optional
         auto description = std::string("");
