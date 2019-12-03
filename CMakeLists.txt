@@ -68,14 +68,13 @@ include_directories(SYSTEM "${CONAN_INCLUDE_DIRS_GTEST}")
 file(GLOB_RECURSE TESTS_HEADER_FILES "tests/*.h" "tests/*.hpp")
 file(GLOB_RECURSE TESTS_SOURCE_FILES "tests/*.cpp")
 
-add_executable(module-tests tests/MockModbusClient.h tests/BridgeTest.cpp)
-target_link_libraries(module-tests gmock_main gmock gtest ${PROJECT_NAME})
-set_target_properties(module-tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-set_target_properties(module-tests PROPERTIES LINK_FLAGES "-Wl,-rpath,./lib")
+add_executable(modbusModuleTests tests/MockModbusClient.h tests/BridgeTest.cpp)
+target_link_libraries(modbusModuleTests gmock_main gmock gtest ${PROJECT_NAME})
+set_target_properties(modbusModuleTests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set_target_properties(modbusModuleTests PROPERTIES LINK_FLAGES "-Wl,-rpath,./lib")
 
 # Example
 include_directories("application")
-
 file(GLOB_RECURSE EXAMPLE_HEADER_FILES "application/*.h")
 file(GLOB_RECURSE EXAMPLE_SOURCE_FILES "application/*.cpp")
 
