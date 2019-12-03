@@ -18,6 +18,7 @@ public:
     {
         const uint16_t clientTimeout = 250;
         const uint16_t readPeriod = 1000;
+        std::vector<wolkabout::ModbusRegisterMapping> mappings;
         mappings.emplace_back(
           "TEST_SENSOR_BOOL", "TSB", "", 0, 1, 0, wolkabout::ModbusRegisterMapping::RegisterType::INPUT_CONTACT,
           wolkabout::ModbusRegisterMapping::DataType::BOOL, 1, wolkabout::ModbusRegisterMapping::MappingType::DEFAULT);
@@ -25,19 +26,13 @@ public:
           "TEST_SENSOR_INT16", "TSI", "", 0, 65535, 0, wolkabout::ModbusRegisterMapping::RegisterType::INPUT_REGISTER,
           wolkabout::ModbusRegisterMapping::DataType::INT16, 1, wolkabout::ModbusRegisterMapping::MappingType::DEFAULT);
 
-        modbusClient =
-          std::unique_ptr<MockModbusClient>(new MockModbusClient(std::chrono::milliseconds(clientTimeout)));
-        modbusBridge = std::make_shared<wolkabout::ModbusBridge>(*modbusClient, std::move(mappings),
-                                                                 std::chrono::milliseconds(readPeriod));
+        MockModbusClient modbusClient((std::chrono::milliseconds(clientTimeout)));
+        modbusBridge =
+          std::make_shared<wolkabout::ModbusBridge>(modbusClient, mappings, std::chrono::milliseconds(readPeriod));
     }
 
-    std::vector<wolkabout::ModbusRegisterMapping> mappings;
-    std::unique_ptr<MockModbusClient> modbusClient;
+public:
     std::shared_ptr<wolkabout::ModbusBridge> modbusBridge;
 };
 
-TEST_F(BridgeTest, SimpleTest)
-{
-    std::cerr << "Hello!" << std::endl;
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-}
+TEST_F(BridgeTest, SimpleTest) {}

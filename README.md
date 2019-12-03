@@ -62,7 +62,7 @@ Device configuration
 --------------------
 Device configuration file contains settings that relate to communication with WolkGateway Module.
 
-```javascript
+```
 {
     "name": "DEVICE_NAME",                  // Device name
     "key": "DEVICE_KEY",                    // Device key
@@ -81,7 +81,7 @@ Here one can select between two modes of modbus communication:
 
 * TCP/IP modbus - supports only one device, use additional WolkGateway-ModbusModules for more devices.
 
-```javascript
+```
 {
     // TCP/IP Configuration
     "ip": "192.168.x.x",          // Slave IP address
