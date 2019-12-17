@@ -17,6 +17,8 @@
 #include "ModbusClient.h"
 #include "modbus/libmodbus/modbus.h"
 #include "utilities/Logger.h"
+#include <iostream>
+#include <thread>
 
 namespace wolkabout
 {
@@ -465,36 +467,19 @@ bool ModbusClient::readInputRegisters(int address, int number, std::vector<float
 
 bool ModbusClient::readInputContacts(int address, int number, std::vector<bool>& values)
 {
-    std::vector<std::uint8_t> tmpValues(number / 8 + (number % 8 != 0));
+    int size = (number / 8 + (number % 8 != 0));
+    std::vector<std::uint8_t> tmpValues(size);
 
-    if (modbus_read_input_bits(m_modbus, address, number, &tmpValues[0]) == -1)
+    int bits_read = modbus_read_input_bits(m_modbus, address, number, &tmpValues[0]);
+    if (bits_read == -1)
     {
         LOG(DEBUG) << "LibModbusClient: Unable to read input contacts - " << modbus_strerror(errno);
         return false;
     }
 
-    for (unsigned short i = 0; i < tmpValues.size(); ++i)
+    for (int i = 0; i < bits_read; i++)
     {
-        int bits;
-        if (i == tmpValues.size() - 1)
-        {
-            bits = number % 8;
-            if (bits == 0)
-            {
-                bits = 8;
-            }
-        }
-        else
-        {
-            bits = 8;
-        }
-        std::uint8_t mask = 1;
-        for (int j = 0; j < bits; ++j)
-        {
-            std::uint8_t tmpValue = mask & tmpValues[i];
-            values.push_back(static_cast<bool>(tmpValue));
-            mask << 1;
-        }
+        values.push_back(static_cast<bool>(tmpValues[i]));
     }
     return true;
 }
