@@ -34,6 +34,7 @@ public:
     ModbusRegisterMapping::DataType getDataType();
     int getStartingRegisterAddress();
     int getRegisterCount();
+    int getMappingsCount();
     void addRegister(ModbusRegisterMapping modbusRegisterMapping);
     const std::vector<ModbusRegisterMapping>& getRegisters() const;
 

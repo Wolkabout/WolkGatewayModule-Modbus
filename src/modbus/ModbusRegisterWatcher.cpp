@@ -16,6 +16,7 @@
 
 #include "modbus/ModbusRegisterWatcher.h"
 
+#include <iostream>
 #include <string>
 
 namespace wolkabout
@@ -24,6 +25,7 @@ ModbusRegisterWatcher::ModbusRegisterWatcher() : m_isInitialized(false), m_isVal
 
 bool ModbusRegisterWatcher::update(const std::string& newValue)
 {
+    //    std::cout << m_value << " != " << newValue << " = " << (m_value != newValue) << '\n';
     bool isValueUpdated = m_value != newValue;
     m_value = newValue;
 
@@ -67,6 +69,62 @@ bool ModbusRegisterWatcher::update(float newRegisterValue)
 bool ModbusRegisterWatcher::update(bool newRegisterValue)
 {
     const auto newRegisterValueStr = std::to_string(newRegisterValue);
+    return update(newRegisterValueStr);
+}
+
+bool ModbusRegisterWatcher::update(std::vector<bool> newRegisterValue)
+{
+    std::string newRegisterValueStr;
+    for (int i = 0; i < newRegisterValue.size(); i++)
+    {
+        newRegisterValueStr += newRegisterValue[i] ? "true" : "false";
+        if (i < newRegisterValue.size() - 1)
+        {
+            newRegisterValueStr += ',';
+        }
+    }
+    return update(newRegisterValueStr);
+}
+
+bool ModbusRegisterWatcher::update(std::vector<short> newRegisterValue)
+{
+    std::string newRegisterValueStr;
+    for (int i = 0; i < newRegisterValue.size(); i++)
+    {
+        newRegisterValueStr += std::to_string(newRegisterValue[i]);
+        if (i < newRegisterValue.size() - 1)
+        {
+            newRegisterValueStr += ',';
+        }
+    }
+    return update(newRegisterValueStr);
+}
+
+bool ModbusRegisterWatcher::update(std::vector<unsigned short> newRegisterValue)
+{
+    std::string newRegisterValueStr;
+    for (int i = 0; i < newRegisterValue.size(); i++)
+    {
+        newRegisterValueStr += std::to_string(newRegisterValue[i]);
+        if (i < newRegisterValue.size() - 1)
+        {
+            newRegisterValueStr += ',';
+        }
+    }
+    return update(newRegisterValueStr);
+}
+
+bool ModbusRegisterWatcher::update(std::vector<float> newRegisterValue)
+{
+    std::string newRegisterValueStr;
+    for (int i = 0; i < newRegisterValue.size(); i++)
+    {
+        newRegisterValueStr += std::to_string(newRegisterValue[i]);
+        if (i < newRegisterValue.size() - 1)
+        {
+            newRegisterValueStr += ',';
+        }
+    }
     return update(newRegisterValueStr);
 }
 }    // namespace wolkabout

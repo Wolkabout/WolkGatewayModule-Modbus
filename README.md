@@ -62,7 +62,7 @@ Device configuration
 --------------------
 Device configuration file contains settings that relate to communication with WolkGateway Module.
 
-```javascript
+```
 {
     "name": "DEVICE_NAME",                  // Device name
     "key": "DEVICE_KEY",                    // Device key
@@ -81,7 +81,7 @@ Here one can select between two modes of modbus communication:
 
 * TCP/IP modbus - supports only one device, use additional WolkGateway-ModbusModules for more devices.
 
-```javascript
+```
 {
     // TCP/IP Configuration
     "ip": "192.168.x.x",          // Slave IP address
@@ -125,6 +125,19 @@ Modbus register mapping file contains settings that map modbus registers to Wolk
     - `HOLDING_REGISTER_SENSOR`
     - `INPUT_REGISTER`
     - `INPUT_CONTACT`
+    
+Mappings are by default registered as:
+- Sensors for read only types
+- Actuator for read & write types
+
+You can override this behaviour by adding a field to the mapping, stating one of the next types:
+- `SENSOR`
+- `ACTUATOR`
+- `ALARM` - only for `INPUT_CONTACT`
+- `CONFIGURATION` - only for `COIL` and `HOLDING_REGISTER_ACTUATOR` (can be also multi value)
+
+A mapping that has the register type `HOLDING_REGISTER_ACTUATOR` and is a `CONFIGURATION` can be multi value.
+What that means, is that it can combine multiple 
 
 ```javascript
 {

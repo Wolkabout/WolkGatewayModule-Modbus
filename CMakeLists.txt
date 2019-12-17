@@ -61,10 +61,8 @@ target_link_libraries(${PROJECT_NAME} WolkGatewayModule modbus)
 set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-Wl,-rpath,./")
 
-
 # Example
 include_directories("application")
-
 file(GLOB_RECURSE EXAMPLE_HEADER_FILES "application/*.h")
 file(GLOB_RECURSE EXAMPLE_SOURCE_FILES "application/*.cpp")
 

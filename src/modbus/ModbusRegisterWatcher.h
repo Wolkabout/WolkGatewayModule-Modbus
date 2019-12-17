@@ -34,6 +34,10 @@ public:
     bool update(unsigned short newRegisterValue);
     bool update(float newRegisterValue);
     bool update(bool newRegisterValue);
+    bool update(std::vector<bool> newRegisterValue);
+    bool update(std::vector<short> newRegisterValue);
+    bool update(std::vector<unsigned short> newRegisterValue);
+    bool update(std::vector<float> newRegisterValue);
 
     const std::string& getValue() const;
 
