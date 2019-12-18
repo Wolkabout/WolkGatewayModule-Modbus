@@ -18,6 +18,7 @@
 #include "utilities/FileSystemUtils.h"
 #include "utilities/json.hpp"
 
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -27,16 +28,38 @@ namespace wolkabout
 {
 using nlohmann::json;
 
-ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string reference, double minimum, double maximum,
-                                             int address, wolkabout::ModbusRegisterMapping::RegisterType registerType,
-                                             wolkabout::ModbusRegisterMapping::DataType dataType, int slaveAddress)
+ModbusRegisterMapping::ModbusRegisterMapping(
+  std::string name, std::string reference, std::string description, double minimum, double maximum, int address,
+  wolkabout::ModbusRegisterMapping::RegisterType registerType, wolkabout::ModbusRegisterMapping::DataType dataType,
+  int slaveAddress, wolkabout::ModbusRegisterMapping::MappingType mappingType = MappingType::DEFAULT)
 : m_name(std::move(name))
 , m_reference(std::move(reference))
+, m_description(std::move(description))
 , m_minimum(minimum)
 , m_maximum(maximum)
 , m_address(address)
+, m_labelsAndAddresses()
 , m_registerType(registerType)
 , m_dataType(dataType)
+, m_mappingType(mappingType)
+, m_slaveAddress(slaveAddress)
+{
+}
+
+ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string reference, std::string description,
+                                             double minimum, double maximum, const LabelMap& labelsAndAddresses,
+                                             ModbusRegisterMapping::RegisterType registerType,
+                                             ModbusRegisterMapping::DataType dataType, int slaveAddress)
+: m_name(std::move(name))
+, m_reference(std::move(reference))
+, m_description(std::move(description))
+, m_minimum(minimum)
+, m_maximum(maximum)
+, m_address(-1)
+, m_labelsAndAddresses(labelsAndAddresses)
+, m_registerType(registerType)
+, m_dataType(dataType)
+, m_mappingType(MappingType::CONFIGURATION)
 , m_slaveAddress(slaveAddress)
 {
 }
@@ -51,6 +74,11 @@ const std::string& ModbusRegisterMapping::getReference() const
     return m_reference;
 }
 
+const std::string& ModbusRegisterMapping::getDescription() const
+{
+    return m_description;
+}
+
 double ModbusRegisterMapping::getMinimum() const
 {
     return m_minimum;
@@ -63,6 +91,18 @@ double ModbusRegisterMapping::getMaximum() const
 
 int ModbusRegisterMapping::getAddress() const
 {
+    if (m_address == -1)
+    {
+        int min = m_labelsAndAddresses.begin()->second;
+        for (auto& label : m_labelsAndAddresses)
+        {
+            if (label.second < min)
+            {
+                min = label.second;
+            }
+        }
+        return min;
+    }
     return m_address;
 }
 
@@ -79,6 +119,16 @@ ModbusRegisterMapping::DataType ModbusRegisterMapping::getDataType() const
 int ModbusRegisterMapping::getSlaveAddress() const
 {
     return m_slaveAddress;
+}
+
+ModbusRegisterMapping::MappingType ModbusRegisterMapping::getMappingType() const
+{
+    return m_mappingType;
+}
+
+LabelMap ModbusRegisterMapping::getLabelsAndAddresses() const
+{
+    return m_labelsAndAddresses;
 }
 
 std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::fromJsonFile(
@@ -102,29 +152,141 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
     {
         const auto name = modbusRegisterMappingJson.at("name").get<std::string>();
         const auto reference = modbusRegisterMappingJson.at("reference").get<std::string>();
+        const auto registerType =
+          deserializeRegisterType(modbusRegisterMappingJson.at("registerType").get<std::string>());
+        int slaveAddress;
+        try
+        {
+            slaveAddress = modbusRegisterMappingJson.at("slaveAddress").get<int>();
+        }
+        catch (std::exception&)
+        {
+            slaveAddress = 1;
+        }
 
-        const auto address = modbusRegisterMappingJson.at("address").get<int>();
+        std::string description;
+        try
+        {
+            description = modbusRegisterMappingJson.at("description").get<std::string>();
+        }
+        catch (std::exception&)
+        {
+            description = std::string("");
+        }
 
-        const auto registerTypeStr = modbusRegisterMappingJson.at("registerType").get<std::string>();
-        const auto registerType = deserializeRegisterType(registerTypeStr);
+        ModbusRegisterMapping::MappingType mappingType;
+        try
+        {
+            const auto mappingTypeStr = modbusRegisterMappingJson.at("mappingType").get<std::string>();
+            mappingType = deserializeMappingType(mappingTypeStr);
+        }
+        catch (std::exception&)
+        {
+            mappingType = ModbusRegisterMapping::MappingType::DEFAULT;
+        }
 
-        const auto dataTypeStr = modbusRegisterMappingJson.at("dataType").get<std::string>();
-        const auto dataType = deserializeDataType(dataTypeStr);
-
-        const auto slaveAddress = modbusRegisterMappingJson.at("slaveAddress").get<int>();
-
+        int address = -1;
+        LabelMap labelMap;
+        ModbusRegisterMapping::DataType dataType;
         double minimum = 0.0;
         double maximum = 1.0;
 
-        if (dataType == ModbusRegisterMapping::DataType::INT16 || dataType == ModbusRegisterMapping::DataType::UINT16 ||
-            dataType == ModbusRegisterMapping::DataType::REAL32)
+        if (registerType == ModbusRegisterMapping::RegisterType::COIL ||
+            registerType == ModbusRegisterMapping::RegisterType::INPUT_CONTACT)
         {
+            // this is obligatory here, we don't support multi-value boolean configurations
+            address = modbusRegisterMappingJson.at("address").get<int>();
+            dataType = ModbusRegisterMapping::DataType::BOOL;
+            // we ignore dataType and min/max
+        }
+        else
+        {
+            dataType = deserializeDataType(modbusRegisterMappingJson.at("dataType").get<std::string>());
             minimum = modbusRegisterMappingJson.at("minimum").get<double>();
             maximum = modbusRegisterMappingJson.at("maximum").get<double>();
+            if (registerType == ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR)
+            {
+                if (mappingType == ModbusRegisterMapping::MappingType::CONFIGURATION)
+                {
+                    // or LabelMap or address
+                    // if both, make an error, or if none, make an error
+                    bool gotAddress, gotLabelMap;
+
+                    try
+                    {
+                        address = modbusRegisterMappingJson.at("address").get<int>();
+                        gotAddress = true;
+                    }
+                    catch (std::exception&)
+                    {
+                        gotAddress = false;
+                    }
+
+                    try
+                    {
+                        auto tempLabelMap = std::map<std::string, int>(
+                          modbusRegisterMappingJson.at("labelMap").get<std::map<std::string, int>>());
+                        typedef std::function<bool(std::pair<std::string, int>, std::pair<std::string, int>)>
+                          Comparator;
+                        Comparator compFunctor = [](const std::pair<std::string, int>& elem1,
+                                                    const std::pair<std::string, int>& elem2) {
+                            return elem1.second < elem2.second;
+                        };
+                        std::set<std::pair<std::string, int>, Comparator> setOfWords(tempLabelMap.begin(),
+                                                                                     tempLabelMap.end(), compFunctor);
+
+                        // labelMap was already initialized
+                        for (std::pair<std::string, int> element : setOfWords)
+                        {
+                            labelMap.emplace_back(element);
+                        }
+                        gotLabelMap = true;
+                    }
+                    catch (std::exception&)
+                    {
+                        gotLabelMap = false;
+                    }
+
+                    if (gotAddress == gotLabelMap)
+                    {
+                        if (gotAddress)
+                        {
+                            throw std::logic_error("You cannot set both address and a labelMap for " + name +
+                                                   " !"
+                                                   " Choose only address to make configuration single-value, or "
+                                                   "labelMap to make configuration multi-value!");
+                        }
+                        else
+                        {
+                            throw std::logic_error("You have to put either address or labelMap for " + name +
+                                                   " !"
+                                                   " Choose either address to make configuration single-value, or"
+                                                   "labelMap to make configuration multi-value!");
+                        }
+                    }
+                }
+                else
+                {
+                    // if it's not a configuration, we need the address no matter what
+                    address = modbusRegisterMappingJson.at("address").get<int>();
+                }
+            }
+            else
+            {
+                address = modbusRegisterMappingJson.at("address").get<int>();
+            }
         }
 
-        modbusRegisterMappingVector.emplace_back(name, reference, minimum, maximum, address, registerType, dataType,
-                                                 slaveAddress);
+        if (labelMap.empty())
+        {
+            modbusRegisterMappingVector.emplace_back(name, reference, description, minimum, maximum, address,
+                                                     registerType, dataType, slaveAddress, mappingType);
+        }
+        else
+        {
+            modbusRegisterMappingVector.emplace_back(name, reference, description, minimum, maximum, labelMap,
+                                                     registerType, dataType, slaveAddress);
+        }
     }
 
     return modbusRegisterMappingVector;
@@ -178,4 +340,30 @@ ModbusRegisterMapping::DataType ModbusRegisterMappingFactory::deserializeDataTyp
 
     throw std::logic_error("Unknown data type: " + dataType);
 }
+
+ModbusRegisterMapping::MappingType ModbusRegisterMappingFactory::deserializeMappingType(const std::string& mappingType)
+{
+    if (mappingType == "DEFAULT")
+    {
+        return ModbusRegisterMapping::MappingType::DEFAULT;
+    }
+    else if (mappingType == "SENSOR")
+    {
+        return ModbusRegisterMapping::MappingType::SENSOR;
+    }
+    else if (mappingType == "ACTUATOR")
+    {
+        return ModbusRegisterMapping::MappingType::ACTUATOR;
+    }
+    else if (mappingType == "ALARM")
+    {
+        return ModbusRegisterMapping::MappingType::ALARM;
+    }
+    else if (mappingType == "CONFIGURATION")
+    {
+        return ModbusRegisterMapping::MappingType::CONFIGURATION;
+    }
+    throw std::logic_error("Unknown data type: " + mappingType);
+}
+
 }    // namespace wolkabout

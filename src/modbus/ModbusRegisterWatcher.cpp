@@ -69,4 +69,60 @@ bool ModbusRegisterWatcher::update(bool newRegisterValue)
     const auto newRegisterValueStr = std::to_string(newRegisterValue);
     return update(newRegisterValueStr);
 }
+
+bool ModbusRegisterWatcher::update(const std::vector<bool>& newRegisterValue)
+{
+    std::string newRegisterValueStr;
+    for (int i = 0; i < newRegisterValue.size(); i++)
+    {
+        newRegisterValueStr += newRegisterValue[i] ? "true" : "false";
+        if (i < newRegisterValue.size() - 1)
+        {
+            newRegisterValueStr += ',';
+        }
+    }
+    return update(newRegisterValueStr);
+}
+
+bool ModbusRegisterWatcher::update(const std::vector<short>& newRegisterValue)
+{
+    std::string newRegisterValueStr;
+    for (int i = 0; i < newRegisterValue.size(); i++)
+    {
+        newRegisterValueStr += std::to_string(newRegisterValue[i]);
+        if (i < newRegisterValue.size() - 1)
+        {
+            newRegisterValueStr += ',';
+        }
+    }
+    return update(newRegisterValueStr);
+}
+
+bool ModbusRegisterWatcher::update(const std::vector<unsigned short>& newRegisterValue)
+{
+    std::string newRegisterValueStr;
+    for (int i = 0; i < newRegisterValue.size(); i++)
+    {
+        newRegisterValueStr += std::to_string(newRegisterValue[i]);
+        if (i < newRegisterValue.size() - 1)
+        {
+            newRegisterValueStr += ',';
+        }
+    }
+    return update(newRegisterValueStr);
+}
+
+bool ModbusRegisterWatcher::update(const std::vector<float>& newRegisterValue)
+{
+    std::string newRegisterValueStr;
+    for (int i = 0; i < newRegisterValue.size(); i++)
+    {
+        newRegisterValueStr += std::to_string(newRegisterValue[i]);
+        if (i < newRegisterValue.size() - 1)
+        {
+            newRegisterValueStr += ',';
+        }
+    }
+    return update(newRegisterValueStr);
+}
 }    // namespace wolkabout

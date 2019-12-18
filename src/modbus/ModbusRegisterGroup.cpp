@@ -16,8 +16,6 @@
 
 #include "ModbusRegisterGroup.h"
 
-#include <algorithm>
-
 namespace wolkabout
 {
 ModbusRegisterGroup::ModbusRegisterGroup(int slaveAddress, ModbusRegisterMapping::RegisterType registerType,
@@ -43,12 +41,44 @@ ModbusRegisterMapping::DataType ModbusRegisterGroup::getDataType()
 
 int ModbusRegisterGroup::getStartingRegisterAddress()
 {
-    return m_modbusRegisterMappings.front().getAddress();
+    auto& front = m_modbusRegisterMappings.front();
+    if (front.getLabelsAndAddresses().empty())
+    {
+        // if it's only a single address
+        return front.getAddress();
+    }
+    // if the addresses are in a labelMap, get the minimum
+    int min = front.getLabelsAndAddresses().begin()->second;
+    for (auto& label : front.getLabelsAndAddresses())
+    {
+        if (label.second < min)
+        {
+            min = label.second;
+        }
+    }
+    return min;
+}
+
+int ModbusRegisterGroup::getMappingsCount()
+{
+    return static_cast<int>(m_modbusRegisterMappings.size());
 }
 
 int ModbusRegisterGroup::getRegisterCount()
 {
-    return m_modbusRegisterMappings.size();
+    int count = 0;
+    for (auto& mappings : m_modbusRegisterMappings)
+    {
+        if (!mappings.getLabelsAndAddresses().empty())
+        {
+            count += mappings.getLabelsAndAddresses().size();
+        }
+        else
+        {
+            count++;
+        }
+    }
+    return count;
 }
 
 const std::vector<ModbusRegisterMapping>& ModbusRegisterGroup::getRegisters() const

@@ -25,17 +25,45 @@
          "slaveAddress" : 1
       },
       {
-         "name":"mappingName3",
+         "name": "mappingName3",
          "reference": "mappingReference3",
 
-         "address": 2,
+         "address": 1,
          "registerType": "INPUT_CONTACT",
          "dataType": "BOOL",
-         "slaveAddress" : 2
+         "mappingType": "ALARM",
+         "slaveAddress" : 1
       },
       {
          "name":"mappingName4",
          "reference": "mappingReference4",
+
+         "address": 2,
+         "registerType": "COIL",
+         "dataType": "BOOL",
+         "mappingType": "CONFIGURATION",
+         "slaveAddress" : 2
+      },
+      {
+         "name": "mappingName5",
+         "reference": "mappingReference5",
+
+         "minimum": 0,
+         "maximum": 1000,
+
+         "labelMap": {
+            "firstConfig": 0,
+            "secondConfig": 1,
+            "thirdConfig": 2
+         },
+         "registerType": "HOLDING_REGISTER_ACTUATOR",
+         "dataType": "INT16",
+         "mappingType": "CONFIGURATION",
+         "slaveAddress": 2
+      },
+      {
+         "name":"mappingName6",
+         "reference": "mappingReference6",
 
          "address": 3,
          "registerType": "COIL",

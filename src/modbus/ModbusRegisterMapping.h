@@ -17,11 +17,15 @@
 #ifndef MODBUSREGISTERMAPPING_H
 #define MODBUSREGISTERMAPPING_H
 
+#include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
 namespace wolkabout
 {
+typedef std::vector<std::pair<std::string, int>> LabelMap;
+
 class ModbusRegisterMapping
 {
 public:
@@ -34,6 +38,15 @@ public:
         HOLDING_REGISTER_ACTUATOR
     };
 
+    enum class MappingType
+    {
+        DEFAULT,
+        SENSOR,
+        ACTUATOR,
+        ALARM,
+        CONFIGURATION
+    };
+
     enum class DataType
     {
         INT16 = 0,
@@ -42,32 +55,43 @@ public:
         BOOL
     };
 
-    ModbusRegisterMapping(std::string name, std::string reference, double minimum, double maximum, int address,
-                          RegisterType registerType, DataType dataType, int slaveAddress);
+    ModbusRegisterMapping(std::string name, std::string reference, std::string description, double minimum,
+                          double maximum, int address, RegisterType registerType, DataType dataType, int slaveAddress,
+                          MappingType mappingType);
+
+    ModbusRegisterMapping(std::string name, std::string reference, std::string description, double minimum,
+                          double maximum, const LabelMap& labelsAndAddresses, RegisterType registerType,
+                          DataType dataType, int slaveAddress);
 
     const std::string& getName() const;
     const std::string& getReference() const;
+    const std::string& getDescription() const;
 
     double getMinimum() const;
     double getMaximum() const;
 
+    LabelMap getLabelsAndAddresses() const;
     int getAddress() const;
 
     RegisterType getRegisterType() const;
     DataType getDataType() const;
+    MappingType getMappingType() const;
     int getSlaveAddress() const;
 
 private:
     std::string m_name;
     std::string m_reference;
+    std::string m_description;
 
     double m_minimum;
     double m_maximum;
 
     int m_address;
+    LabelMap m_labelsAndAddresses{};
 
     RegisterType m_registerType;
     DataType m_dataType;
+    MappingType m_mappingType;
     int m_slaveAddress;
 };
 
@@ -79,6 +103,7 @@ public:
 private:
     static ModbusRegisterMapping::RegisterType deserializeRegisterType(const std::string& registerType);
     static ModbusRegisterMapping::DataType deserializeDataType(const std::string& dataType);
+    static ModbusRegisterMapping::MappingType deserializeMappingType(const std::string& mappingType);
 };
 }    // namespace wolkabout
 

@@ -62,14 +62,13 @@ Device configuration
 --------------------
 Device configuration file contains settings that relate to communication with WolkGateway Module.
 
-```javascript
+```json5
 {
     "name": "DEVICE_NAME",                  // Device name
     "key": "DEVICE_KEY",                    // Device key
     "protocol": "JsonProtocol",             // Protocol used on WolkGateway
     "localMqttUri": "tcp://localhost:1883"  // WolkGateway Bus
 }
-
 ```
 
 Modbus configuration
@@ -81,7 +80,7 @@ Here one can select between two modes of modbus communication:
 
 * TCP/IP modbus - supports only one device, use additional WolkGateway-ModbusModules for more devices.
 
-```javascript
+```json5
 {
     // TCP/IP Configuration
     "ip": "192.168.x.x",          // Slave IP address
@@ -90,20 +89,19 @@ Here one can select between two modes of modbus communication:
 
 * Serial RTU - supports communication with multiple slaves
 
-```javascript
+```json5
     // SERIAL/RTU Configuration
     "serialPort": "SERIAL_PORT",    // Serial port
     "baudRate": BAUD_RATE,          // Baud rate
     "dataBits": 8,                  // Number of data bits
     "stopBits": 1,                  // Number of stop bits
     "bitParity": "NONE",            // Bit parity - "NONE" or "EVEN" or "ODD"
-    "slaveAddress" : 1,             // Initial slave address
+    "slaveAddress" : 1              // Initial slave address
 ```
 
 Select preferred connection type and register read parameters
 
-```javascript
-
+```json5
     // Modbus connection type configuration
     "connectionType": "SERIAL/RTU", // Connection type - "SERIAL/RTU" or "TCP/IP"
 
@@ -111,12 +109,11 @@ Select preferred connection type and register read parameters
     "responseTimeoutMs": 200,       // Register read/write timeout
     "registerReadPeriodMs": 500     // Register pool period
 }
-
 ```
 
 Modbus register mapping
 -----------------------
-Modbus register mapping file contains settings that map modbus registers to WolkAbout IoT Platform sensors/actuators.
+Modbus register mapping file contains settings that map modbus registers to WolkAbout IoT Platform sensors/actuators/alarms/configurations.
 
 * Actuators (read & write):
     - `COIL`
@@ -125,8 +122,23 @@ Modbus register mapping file contains settings that map modbus registers to Wolk
     - `HOLDING_REGISTER_SENSOR`
     - `INPUT_REGISTER`
     - `INPUT_CONTACT`
+    
+Mappings are by default registered as:
+- Sensors for read only types
+- Actuator for read & write types
 
-```javascript
+You can override this behaviour by adding a field to the mapping, stating one of the next types:
+- `SENSOR`
+- `ACTUATOR`
+- `ALARM` - only for `INPUT_CONTACT`
+- `CONFIGURATION` - only for `COIL` and `HOLDING_REGISTER_ACTUATOR` (can be also multi value)
+
+A mapping that has the register type `HOLDING_REGISTER_ACTUATOR` and is a `CONFIGURATION` can be multi-value.
+What that means, is that it can combine multiple registers into a single configuration. That configuration has label
+for each of its values, which you assign in the `labelMap`.
+*Note that you can have a total maximum of <b>3</b> values inside a multi-value configuration*
+
+```json5
 {
    "modbusRegisterMapping":[
       {
@@ -139,7 +151,7 @@ Modbus register mapping file contains settings that map modbus registers to Wolk
          "address": 0,                      // Register address
          "registerType": "INPUT_REGISTER",  // Register type - "INPUT_REGISTER" or "HOLDING_REGISTER_ACTUATOR" or "HOLDING_REGISTER_SENSOR" or "INPUT_CONTACT" or "COIL"
          "dataType": "INT16",               // Data type stored in register - "INT16" or "UINT16" or "REAL32" for "INPUT_REGISTER"/"HOLDING_REGISTER_ACTUATOR"/"HOLDING_REGISTER_SENSOR" register type, and "BOOL" for "COIL"/"INPUT_CONTACT"
-         "slaveAddress": 1                  // Slave address where the register is located - Ignored for TCP/IP
+         "slaveAddress": 1                  // Slave address where the register is located - Ignored for TCP/IP (by default set to 1)
       },
       {
          "name":"mappingName2",
@@ -154,17 +166,45 @@ Modbus register mapping file contains settings that map modbus registers to Wolk
          "slaveAddress" : 1
       },
       {
-         "name":"mappingName3",
+         "name": "mappingName3",
          "reference": "mappingReference3",
 
-         "address": 2,
+         "address": 1,
          "registerType": "INPUT_CONTACT",
          "dataType": "BOOL",
-         "slaveAddress" : 2
+         "mappingType": "ALARM",             // This is where for the first time, we override the default Mapping type
+         "slaveAddress" : 1
       },
       {
          "name":"mappingName4",
          "reference": "mappingReference4",
+
+         "address": 2,
+         "registerType": "COIL",
+         "dataType": "BOOL",
+         "mappingType": "CONFIGURATION",
+         "slaveAddress" : 2
+      },
+      {
+         "name": "mappingName5",
+         "reference": "mappingReference5",
+
+         "minimum": 0,
+         "maximum": 1000,
+
+         "labelMap": {                       // If you want to use a multi-value numeric configuration
+            "firstConfig": 0,                // You can use the label map, to name the labels inside the configuration
+            "secondConfig": 1,               // And assign a register address to each of them
+            "thirdConfig": 2                 // Multi-value is only available for HOLDING_REGISTER_ACTUATOR 
+         },
+         "registerType": "HOLDING_REGISTER_ACTUATOR",
+         "dataType": "INT16",
+         "mappingType": "CONFIGURATION",
+         "slaveAddress": 2
+      },
+      {
+         "name":"mappingName6",
+         "reference": "mappingReference6",
 
          "address": 3,
          "registerType": "COIL",
