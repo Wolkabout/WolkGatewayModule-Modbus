@@ -60,8 +60,8 @@ public:
                           MappingType mappingType);
 
     ModbusRegisterMapping(std::string name, std::string reference, std::string description, double minimum,
-                          double maximum, LabelMap& labelsAndAddresses, RegisterType registerType, DataType dataType,
-                          int slaveAddress);
+                          double maximum, const LabelMap& labelsAndAddresses, RegisterType registerType,
+                          DataType dataType, int slaveAddress);
 
     const std::string& getName() const;
     const std::string& getReference() const;

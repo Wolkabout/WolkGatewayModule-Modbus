@@ -47,7 +47,7 @@ ModbusRegisterMapping::ModbusRegisterMapping(
 }
 
 ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string reference, std::string description,
-                                             double minimum, double maximum, LabelMap& labelsAndAddresses,
+                                             double minimum, double maximum, const LabelMap& labelsAndAddresses,
                                              ModbusRegisterMapping::RegisterType registerType,
                                              ModbusRegisterMapping::DataType dataType, int slaveAddress)
 : m_name(std::move(name))

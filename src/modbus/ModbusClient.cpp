@@ -336,7 +336,7 @@ bool ModbusClient::writeHoldingRegister(int address, float value)
 
 bool ModbusClient::writeHoldingRegisters(int address, std::vector<short>& values)
 {
-    auto arr = std::vector<uint16_t>();
+    auto arr = std::vector<uint16_t>(values.size());
     for (int i = 0; i < values.size(); i++)
     {
         ModbusValue modbusValue;
@@ -366,7 +366,7 @@ bool ModbusClient::writeHoldingRegisters(int address, std::vector<unsigned short
 
 bool ModbusClient::writeHoldingRegisters(int address, std::vector<float>& values)
 {
-    auto arr = std::vector<uint16_t>();
+    auto arr = std::vector<uint16_t>(values.size());
     for (int i = 0; i < values.size(); i++)
     {
         ModbusValue value;
