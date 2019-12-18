@@ -42,14 +42,14 @@ ModbusRegisterMapping::DataType ModbusRegisterGroup::getDataType()
 int ModbusRegisterGroup::getStartingRegisterAddress()
 {
     auto& front = m_modbusRegisterMappings.front();
-    if (front.getLabelsAndAddresses() == nullptr)
+    if (front.getLabelsAndAddresses().empty())
     {
         // if it's only a single address
         return front.getAddress();
     }
     // if the addresses are in a labelMap, get the minimum
-    int min = front.getLabelsAndAddresses()->begin()->second;
-    for (auto& label : *front.getLabelsAndAddresses())
+    int min = front.getLabelsAndAddresses().begin()->second;
+    for (auto& label : front.getLabelsAndAddresses())
     {
         if (label.second < min)
         {
@@ -61,7 +61,7 @@ int ModbusRegisterGroup::getStartingRegisterAddress()
 
 int ModbusRegisterGroup::getMappingsCount()
 {
-    return m_modbusRegisterMappings.size();
+    return static_cast<int>(m_modbusRegisterMappings.size());
 }
 
 int ModbusRegisterGroup::getRegisterCount()
@@ -69,9 +69,9 @@ int ModbusRegisterGroup::getRegisterCount()
     int count = 0;
     for (auto& mappings : m_modbusRegisterMappings)
     {
-        if (mappings.getLabelsAndAddresses() != nullptr)
+        if (!mappings.getLabelsAndAddresses().empty())
         {
-            count += mappings.getLabelsAndAddresses()->size();
+            count += mappings.getLabelsAndAddresses().size();
         }
         else
         {

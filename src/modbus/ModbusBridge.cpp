@@ -319,7 +319,7 @@ void ModbusBridge::handleConfiguration(const std::string& /* deviceKey */,
         }
         else
         {
-            if (modbusRegisterMapping.getLabelsAndAddresses() != nullptr)
+            if (!modbusRegisterMapping.getLabelsAndAddresses().empty())
             {
                 handleConfigurationForHoldingRegister(modbusRegisterMapping, modbusRegisterWatcher, config.getValues());
             }
@@ -375,7 +375,7 @@ void ModbusBridge::handleActuationForCoil(const wolkabout::ModbusRegisterMapping
                                           ModbusRegisterWatcher& modbusRegisterWatcher, const std::string& value)
 {
     if (!m_modbusClient.writeCoil(modbusRegisterMapping.getSlaveAddress(), modbusRegisterMapping.getAddress(),
-                                  value == "true" ? true : false))
+                                  value == "true"))
     {
         LOG(ERROR) << "ModbusBridge: Unable to write coil value - Register address: "
                    << modbusRegisterMapping.getAddress() << " Value: " << value;
@@ -539,12 +539,12 @@ ConfigurationItem ModbusBridge::getConfigurationStatusFromHoldingRegister(
     std::vector<std::string> configurationValues;
     if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::INT16)
     {
-        if (modbusRegisterMapping.getLabelsAndAddresses() != nullptr)
+        if (!modbusRegisterMapping.getLabelsAndAddresses().empty())
         {
             std::vector<short> values;
-            if (!m_modbusClient.readHoldingRegisters(modbusRegisterMapping.getSlaveAddress(),
-                                                     modbusRegisterMapping.getAddress(),
-                                                     modbusRegisterMapping.getLabelsAndAddresses()->size(), values))
+            if (!m_modbusClient.readHoldingRegisters(
+                  modbusRegisterMapping.getSlaveAddress(), modbusRegisterMapping.getAddress(),
+                  static_cast<int>(modbusRegisterMapping.getLabelsAndAddresses().size()), values))
             {
                 LOG(ERROR) << "ModbusBridge: Unable to read holding registers from address '"
                            << modbusRegisterMapping.getAddress() << "'";
@@ -571,12 +571,12 @@ ConfigurationItem ModbusBridge::getConfigurationStatusFromHoldingRegister(
     }
     else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
     {
-        if (modbusRegisterMapping.getLabelsAndAddresses() != nullptr)
+        if (!modbusRegisterMapping.getLabelsAndAddresses().empty())
         {
             std::vector<unsigned short> values;
-            if (!m_modbusClient.readHoldingRegisters(modbusRegisterMapping.getSlaveAddress(),
-                                                     modbusRegisterMapping.getAddress(),
-                                                     modbusRegisterMapping.getLabelsAndAddresses()->size(), values))
+            if (!m_modbusClient.readHoldingRegisters(
+                  modbusRegisterMapping.getSlaveAddress(), modbusRegisterMapping.getAddress(),
+                  static_cast<int>(modbusRegisterMapping.getLabelsAndAddresses().size()), values))
             {
                 LOG(ERROR) << "ModbusBridge: Unable to read holding registers from address '"
                            << modbusRegisterMapping.getAddress() << "'";
@@ -603,12 +603,12 @@ ConfigurationItem ModbusBridge::getConfigurationStatusFromHoldingRegister(
     }
     else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
     {
-        if (modbusRegisterMapping.getLabelsAndAddresses() != nullptr)
+        if (!modbusRegisterMapping.getLabelsAndAddresses().empty())
         {
             std::vector<float> values;
-            if (!m_modbusClient.readHoldingRegisters(modbusRegisterMapping.getSlaveAddress(),
-                                                     modbusRegisterMapping.getAddress(),
-                                                     modbusRegisterMapping.getLabelsAndAddresses()->size(), values))
+            if (!m_modbusClient.readHoldingRegisters(
+                  modbusRegisterMapping.getSlaveAddress(), modbusRegisterMapping.getAddress(),
+                  static_cast<int>(modbusRegisterMapping.getLabelsAndAddresses().size()), values))
             {
                 LOG(ERROR) << "ModbusBridge: Unable to read holding registers from address '"
                            << modbusRegisterMapping.getAddress() << "'";
@@ -1111,7 +1111,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 
                     bool updated;
                     // separate the values of group for each mapping they need to go to
-                    if (modbusRegisterMapping.getLabelsAndAddresses() == nullptr)
+                    if (modbusRegisterMapping.getLabelsAndAddresses().empty())
                     {
                         signed short value = values[j++];
                         updated = modbusRegisterWatcher.update(value);
@@ -1119,7 +1119,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                     else
                     {
                         std::vector<short> groupValues;
-                        for (int k = 0; k < modbusRegisterMapping.getLabelsAndAddresses()->size(); k++)
+                        for (int k = 0; k < modbusRegisterMapping.getLabelsAndAddresses().size(); k++)
                         {
                             groupValues.push_back(values[j++]);
                         }
@@ -1186,7 +1186,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 
                     bool updated;
                     // separate the values of group for each mapping they need to go to
-                    if (modbusRegisterMapping.getLabelsAndAddresses() == nullptr)
+                    if (modbusRegisterMapping.getLabelsAndAddresses().empty())
                     {
                         unsigned short value = values[j++];
                         updated = modbusRegisterWatcher.update(value);
@@ -1194,7 +1194,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                     else
                     {
                         std::vector<unsigned short> groupValues;
-                        for (int k = 0; k < modbusRegisterMapping.getLabelsAndAddresses()->size(); k++)
+                        for (int k = 0; k < modbusRegisterMapping.getLabelsAndAddresses().size(); k++)
                         {
                             groupValues.push_back(values[j++]);
                         }
@@ -1256,7 +1256,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 
                     bool updated;
                     // separate the values of group for each mapping they need to go to
-                    if (modbusRegisterMapping.getLabelsAndAddresses() == nullptr)
+                    if (modbusRegisterMapping.getLabelsAndAddresses().empty())
                     {
                         float value = values[j++];
                         updated = modbusRegisterWatcher.update(value);
@@ -1264,7 +1264,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                     else
                     {
                         std::vector<float> groupValues;
-                        for (int k = 0; k < modbusRegisterMapping.getLabelsAndAddresses()->size(); k++)
+                        for (int k = 0; k < modbusRegisterMapping.getLabelsAndAddresses().size(); k++)
                         {
                             groupValues.push_back(values[j++]);
                         }

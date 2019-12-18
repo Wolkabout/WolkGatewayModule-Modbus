@@ -60,8 +60,8 @@ public:
                           MappingType mappingType);
 
     ModbusRegisterMapping(std::string name, std::string reference, std::string description, double minimum,
-                          double maximum, std::shared_ptr<LabelMap> labelsAndAddresses, RegisterType registerType,
-                          DataType dataType, int slaveAddress);
+                          double maximum, LabelMap& labelsAndAddresses, RegisterType registerType, DataType dataType,
+                          int slaveAddress);
 
     const std::string& getName() const;
     const std::string& getReference() const;
@@ -70,7 +70,7 @@ public:
     double getMinimum() const;
     double getMaximum() const;
 
-    std::shared_ptr<LabelMap> getLabelsAndAddresses() const;
+    LabelMap getLabelsAndAddresses() const;
     int getAddress() const;
 
     RegisterType getRegisterType() const;
@@ -87,7 +87,7 @@ private:
     double m_maximum;
 
     int m_address;
-    std::shared_ptr<LabelMap> m_labelsAndAddresses{};
+    LabelMap m_labelsAndAddresses{};
 
     RegisterType m_registerType;
     DataType m_dataType;

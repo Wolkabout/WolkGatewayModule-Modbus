@@ -228,7 +228,7 @@ void makeTemplatesFromMappings(const std::vector<wolkabout::ModbusRegisterMappin
             {
             case wolkabout::ModbusRegisterMapping::RegisterType::COIL:
             case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
-                if (modbusRegisterMapping.getLabelsAndAddresses() == nullptr)
+                if (modbusRegisterMapping.getLabelsAndAddresses().empty())
                 {
                     configurationTemplates.emplace_back(
                       modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), dataType,
@@ -238,7 +238,7 @@ void makeTemplatesFromMappings(const std::vector<wolkabout::ModbusRegisterMappin
                 else
                 {
                     std::vector<std::string> labels;
-                    for (auto const& kvp : *modbusRegisterMapping.getLabelsAndAddresses())
+                    for (auto const& kvp : modbusRegisterMapping.getLabelsAndAddresses())
                     {
                         labels.push_back(kvp.first);
                     }

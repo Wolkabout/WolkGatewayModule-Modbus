@@ -38,7 +38,7 @@ ModbusRegisterMapping::ModbusRegisterMapping(
 , m_minimum(minimum)
 , m_maximum(maximum)
 , m_address(address)
-, m_labelsAndAddresses(nullptr)
+, m_labelsAndAddresses()
 , m_registerType(registerType)
 , m_dataType(dataType)
 , m_mappingType(mappingType)
@@ -47,8 +47,7 @@ ModbusRegisterMapping::ModbusRegisterMapping(
 }
 
 ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string reference, std::string description,
-                                             double minimum, double maximum,
-                                             std::shared_ptr<LabelMap> labelsAndAddresses,
+                                             double minimum, double maximum, LabelMap& labelsAndAddresses,
                                              ModbusRegisterMapping::RegisterType registerType,
                                              ModbusRegisterMapping::DataType dataType, int slaveAddress)
 : m_name(std::move(name))
@@ -57,7 +56,7 @@ ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string refer
 , m_minimum(minimum)
 , m_maximum(maximum)
 , m_address(-1)
-, m_labelsAndAddresses(std::move(labelsAndAddresses))
+, m_labelsAndAddresses(labelsAndAddresses)
 , m_registerType(registerType)
 , m_dataType(dataType)
 , m_mappingType(MappingType::CONFIGURATION)
@@ -94,8 +93,8 @@ int ModbusRegisterMapping::getAddress() const
 {
     if (m_address == -1)
     {
-        int min = m_labelsAndAddresses->begin()->second;
-        for (auto& label : *m_labelsAndAddresses)
+        int min = m_labelsAndAddresses.begin()->second;
+        for (auto& label : m_labelsAndAddresses)
         {
             if (label.second < min)
             {
@@ -127,7 +126,7 @@ ModbusRegisterMapping::MappingType ModbusRegisterMapping::getMappingType() const
     return m_mappingType;
 }
 
-std::shared_ptr<LabelMap> ModbusRegisterMapping::getLabelsAndAddresses() const
+LabelMap ModbusRegisterMapping::getLabelsAndAddresses() const
 {
     return m_labelsAndAddresses;
 }
@@ -187,7 +186,7 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
         }
 
         int address = -1;
-        std::shared_ptr<LabelMap> labelMap;
+        LabelMap labelMap;
         ModbusRegisterMapping::DataType dataType;
         double minimum = 0.0;
         double maximum = 1.0;
@@ -225,7 +224,7 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
 
                     try
                     {
-                        auto tempLabelMap = std::make_shared<std::map<std::string, int>>(
+                        auto tempLabelMap = std::map<std::string, int>(
                           modbusRegisterMappingJson.at("labelMap").get<std::map<std::string, int>>());
                         typedef std::function<bool(std::pair<std::string, int>, std::pair<std::string, int>)>
                           Comparator;
@@ -233,12 +232,13 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
                                                     const std::pair<std::string, int>& elem2) {
                             return elem1.second < elem2.second;
                         };
-                        std::set<std::pair<std::string, int>, Comparator> setOfWords(tempLabelMap->begin(),
-                                                                                     tempLabelMap->end(), compFunctor);
-                        labelMap = std::make_shared<LabelMap>();
+                        std::set<std::pair<std::string, int>, Comparator> setOfWords(tempLabelMap.begin(),
+                                                                                     tempLabelMap.end(), compFunctor);
+
+                        // labelMap was already initialized
                         for (std::pair<std::string, int> element : setOfWords)
                         {
-                            labelMap->emplace_back(element);
+                            labelMap.emplace_back(element);
                         }
                         gotLabelMap = true;
                     }
@@ -277,15 +277,15 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
             }
         }
 
-        if (labelMap == nullptr)
+        if (labelMap.empty())
         {
             modbusRegisterMappingVector.emplace_back(name, reference, description, minimum, maximum, address,
                                                      registerType, dataType, slaveAddress, mappingType);
         }
         else
         {
-            modbusRegisterMappingVector.emplace_back(name, reference, description, minimum, maximum,
-                                                     std::move(labelMap), registerType, dataType, slaveAddress);
+            modbusRegisterMappingVector.emplace_back(name, reference, description, minimum, maximum, labelMap,
+                                                     registerType, dataType, slaveAddress);
         }
     }
 
