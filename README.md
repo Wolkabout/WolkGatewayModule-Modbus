@@ -113,7 +113,7 @@ Select preferred connection type and register read parameters
 
 Modbus register mapping
 -----------------------
-Modbus register mapping file contains settings that map modbus registers to WolkAbout IoT Platform sensors/actuators.
+Modbus register mapping file contains settings that map modbus registers to WolkAbout IoT Platform sensors/actuators/alarms/configurations.
 
 * Actuators (read & write):
     - `COIL`
