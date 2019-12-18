@@ -23,7 +23,7 @@
 namespace wolkabout
 {
 ModbusClient::ModbusClient(std::chrono::milliseconds responseTimeout)
-: m_responseTimeout(std::move(responseTimeout)), m_modbus(nullptr)
+: m_responseTimeout(responseTimeout), m_connected(false), m_contextCreated(false), m_modbus(nullptr)
 {
 }
 
