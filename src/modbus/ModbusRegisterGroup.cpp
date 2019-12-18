@@ -16,9 +16,6 @@
 
 #include "ModbusRegisterGroup.h"
 
-#include <algorithm>
-#include <iostream>
-
 namespace wolkabout
 {
 ModbusRegisterGroup::ModbusRegisterGroup(int slaveAddress, ModbusRegisterMapping::RegisterType registerType,

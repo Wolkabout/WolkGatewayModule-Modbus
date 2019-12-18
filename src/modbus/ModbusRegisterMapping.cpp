@@ -18,7 +18,6 @@
 #include "utilities/FileSystemUtils.h"
 #include "utilities/json.hpp"
 
-#include <iostream>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -156,26 +155,27 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
         const auto reference = modbusRegisterMappingJson.at("reference").get<std::string>();
         const auto registerType =
           deserializeRegisterType(modbusRegisterMappingJson.at("registerType").get<std::string>());
-        int slaveAddress = 1;
+        int slaveAddress;
         try
         {
             slaveAddress = modbusRegisterMappingJson.at("slaveAddress").get<int>();
         }
         catch (std::exception&)
         {
+            slaveAddress = 1;
         }
 
-        // description is optional
-        auto description = std::string("");
+        std::string description;
         try
         {
             description = modbusRegisterMappingJson.at("description").get<std::string>();
         }
         catch (std::exception&)
         {
-        }    // it will be empty
+            description = std::string("");
+        }
 
-        auto mappingType = ModbusRegisterMapping::MappingType::DEFAULT;
+        ModbusRegisterMapping::MappingType mappingType;
         try
         {
             const auto mappingTypeStr = modbusRegisterMappingJson.at("mappingType").get<std::string>();
@@ -183,7 +183,8 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
         }
         catch (std::exception&)
         {
-        }    // it will be default
+            mappingType = ModbusRegisterMapping::MappingType::DEFAULT;
+        }
 
         int address = -1;
         std::shared_ptr<LabelMap> labelMap;
@@ -210,7 +211,8 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
                 {
                     // or LabelMap or address
                     // if both, make an error, or if none, make an error
-                    bool gotAddress = false, gotLabelMap = false;
+                    bool gotAddress, gotLabelMap;
+
                     try
                     {
                         address = modbusRegisterMappingJson.at("address").get<int>();
@@ -218,15 +220,17 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
                     }
                     catch (std::exception&)
                     {
+                        gotAddress = false;
                     }
+
                     try
                     {
                         auto tempLabelMap = std::make_shared<std::map<std::string, int>>(
                           modbusRegisterMappingJson.at("labelMap").get<std::map<std::string, int>>());
                         typedef std::function<bool(std::pair<std::string, int>, std::pair<std::string, int>)>
                           Comparator;
-                        Comparator compFunctor = [](std::pair<std::string, int> elem1,
-                                                    std::pair<std::string, int> elem2) {
+                        Comparator compFunctor = [](const std::pair<std::string, int>& elem1,
+                                                    const std::pair<std::string, int>& elem2) {
                             return elem1.second < elem2.second;
                         };
                         std::set<std::pair<std::string, int>, Comparator> setOfWords(tempLabelMap->begin(),
@@ -240,7 +244,9 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
                     }
                     catch (std::exception&)
                     {
+                        gotLabelMap = false;
                     }
+
                     if (gotAddress == gotLabelMap)
                     {
                         if (gotAddress)
@@ -261,7 +267,7 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
                 }
                 else
                 {
-                    // if it's not a configuration, we need the address
+                    // if it's not a configuration, we need the address no matter what
                     address = modbusRegisterMappingJson.at("address").get<int>();
                 }
             }

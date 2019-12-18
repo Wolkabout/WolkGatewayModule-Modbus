@@ -17,8 +17,6 @@
 #include "ModbusClient.h"
 #include "modbus/libmodbus/modbus.h"
 #include "utilities/Logger.h"
-#include <iostream>
-#include <thread>
 
 namespace wolkabout
 {
@@ -338,7 +336,7 @@ bool ModbusClient::writeHoldingRegister(int address, float value)
 
 bool ModbusClient::writeHoldingRegisters(int address, std::vector<short>& values)
 {
-    auto* arr = new uint16_t[values.size()];
+    auto arr = std::vector<uint16_t>();
     for (int i = 0; i < values.size(); i++)
     {
         ModbusValue modbusValue;
@@ -346,39 +344,29 @@ bool ModbusClient::writeHoldingRegisters(int address, std::vector<short>& values
         arr[i] = modbusValue.unsignedShortValue;
     }
 
-    if (modbus_write_registers(m_modbus, address, values.size(), arr) == -1)
+    if (modbus_write_registers(m_modbus, address, static_cast<int>(arr.size()), arr.data()) == -1)
     {
         LOG(DEBUG) << "LibModbusClient: Unable to write holding registers - " << modbus_strerror(errno);
-        delete[](arr);
         return false;
     }
 
-    delete[](arr);
     return true;
 }
 
 bool ModbusClient::writeHoldingRegisters(int address, std::vector<unsigned short>& values)
 {
-    auto* arr = new uint16_t[values.size()];
-    for (int i = 0; i < values.size(); i++)
-    {
-        arr[i] = values[i];
-    }
-
-    if (modbus_write_registers(m_modbus, address, values.size(), arr) == -1)
+    if (modbus_write_registers(m_modbus, address, static_cast<int>(values.size()), values.data()) == -1)
     {
         LOG(DEBUG) << "LibModbusClient: Unable to write holding registers - " << modbus_strerror(errno);
-        delete[](arr);
         return false;
     }
 
-    delete[](arr);
     return true;
 }
 
 bool ModbusClient::writeHoldingRegisters(int address, std::vector<float>& values)
 {
-    auto* arr = new uint16_t[values.size() * 2];
+    auto arr = std::vector<uint16_t>();
     for (int i = 0; i < values.size(); i++)
     {
         ModbusValue value;
@@ -387,14 +375,12 @@ bool ModbusClient::writeHoldingRegisters(int address, std::vector<float>& values
         arr[i * 1] = value.unsignedShortValues[1];
     }
 
-    if (modbus_write_registers(m_modbus, address, values.size() * 2, arr) == -1)
+    if (modbus_write_registers(m_modbus, address, static_cast<int>(arr.size()), arr.data()) == -1)
     {
         LOG(DEBUG) << "LibModbusClient: Unable to write holding registers - " << modbus_strerror(errno);
-        delete[](arr);
         return false;
     }
 
-    delete[](arr);
     return true;
 }
 
@@ -588,13 +574,13 @@ bool ModbusClient::readCoil(int address, bool& value)
         return false;
     }
 
-    value = tmpValue != 0 ? true : false;
+    value = tmpValue != 0;
     return true;
 }
 
 bool ModbusClient::readCoils(int address, int number, std::vector<bool>& values)
 {
-    std::vector<std::uint8_t> tmpValues(number);
+    std::vector<std::uint8_t> tmpValues(static_cast<std::vector<std::uint8_t>::size_type>(number));
     int bits_read = 0;
     bits_read = modbus_read_bits(m_modbus, address, number, &tmpValues[0]);
     if (bits_read == -1)

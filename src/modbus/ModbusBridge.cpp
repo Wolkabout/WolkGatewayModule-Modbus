@@ -23,6 +23,7 @@
 #include "modbus/ModbusRegisterMapping.h"
 #include "modbus/libmodbus/modbus.h"
 #include "utilities/Logger.h"
+#include "utilities/StringUtils.h"
 
 #include <algorithm>
 #include <atomic>
@@ -224,7 +225,7 @@ void ModbusBridge::handleConfigurationForHoldingRegister(const ModbusRegisterMap
     }
     else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
     {
-        float floatValue = static_cast<float>(atoi(value.c_str()));
+        float floatValue = atof(value.c_str());
         if (!m_modbusClient.writeHoldingRegister(modbusRegisterMapping.getSlaveAddress(),
                                                  modbusRegisterMapping.getAddress(), floatValue))
         {
@@ -292,7 +293,8 @@ void ModbusBridge::handleConfigurationForHoldingRegister(const ModbusRegisterMap
 void ModbusBridge::handleConfigurationForCoil(const ModbusRegisterMapping& modbusRegisterMapping,
                                               ModbusRegisterWatcher& modbusRegisterWatcher, const std::string& value)
 {
-    bool boolValue = (value == "true");
+    std::vector<std::string> trueValues = {"true", "1", "1.0", "ON"};
+    bool boolValue = std::find(trueValues.begin(), trueValues.end(), value) != trueValues.end();
     if (!m_modbusClient.writeCoil(modbusRegisterMapping.getSlaveAddress(), modbusRegisterMapping.getAddress(),
                                   boolValue))
     {
@@ -632,11 +634,10 @@ ConfigurationItem ModbusBridge::getConfigurationStatusFromHoldingRegister(
         }
     }
 
-    std::string s;
-    std::stringstream stream(modbusRegisterWatcher.getValue());
-    while (getline(stream, s, ','))
+    auto values = StringUtils::tokenize(modbusRegisterWatcher.getValue(), ",");
+    for (auto& value : values)
     {
-        configurationValues.emplace_back(s);
+        configurationValues.emplace_back(value);
     }
 
     return ConfigurationItem(configurationValues, modbusRegisterMapping.getReference());
@@ -765,7 +766,9 @@ void ModbusBridge::readAndReportModbusRegistersValues()
                         }
                         break;
                     default:
-                        LOG(ERROR) << "This mapping wasn\'t declared properly!";
+                        LOG(ERROR) << "Mapping " << modbusRegisterMapping.getName()
+                                   << " (address: " << modbusRegisterMapping.getAddress() << ") "
+                                   << "can't be that mapping type!";
                         break;
                     }
                 }

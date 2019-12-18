@@ -16,7 +16,6 @@
 
 #include "modbus/ModbusRegisterWatcher.h"
 
-#include <iostream>
 #include <string>
 
 namespace wolkabout
@@ -25,7 +24,6 @@ ModbusRegisterWatcher::ModbusRegisterWatcher() : m_isInitialized(false), m_isVal
 
 bool ModbusRegisterWatcher::update(const std::string& newValue)
 {
-    //    std::cout << m_value << " != " << newValue << " = " << (m_value != newValue) << '\n';
     bool isValueUpdated = m_value != newValue;
     m_value = newValue;
 
@@ -72,7 +70,7 @@ bool ModbusRegisterWatcher::update(bool newRegisterValue)
     return update(newRegisterValueStr);
 }
 
-bool ModbusRegisterWatcher::update(std::vector<bool> newRegisterValue)
+bool ModbusRegisterWatcher::update(const std::vector<bool>& newRegisterValue)
 {
     std::string newRegisterValueStr;
     for (int i = 0; i < newRegisterValue.size(); i++)
@@ -86,7 +84,7 @@ bool ModbusRegisterWatcher::update(std::vector<bool> newRegisterValue)
     return update(newRegisterValueStr);
 }
 
-bool ModbusRegisterWatcher::update(std::vector<short> newRegisterValue)
+bool ModbusRegisterWatcher::update(const std::vector<short>& newRegisterValue)
 {
     std::string newRegisterValueStr;
     for (int i = 0; i < newRegisterValue.size(); i++)
@@ -100,7 +98,7 @@ bool ModbusRegisterWatcher::update(std::vector<short> newRegisterValue)
     return update(newRegisterValueStr);
 }
 
-bool ModbusRegisterWatcher::update(std::vector<unsigned short> newRegisterValue)
+bool ModbusRegisterWatcher::update(const std::vector<unsigned short>& newRegisterValue)
 {
     std::string newRegisterValueStr;
     for (int i = 0; i < newRegisterValue.size(); i++)
@@ -114,7 +112,7 @@ bool ModbusRegisterWatcher::update(std::vector<unsigned short> newRegisterValue)
     return update(newRegisterValueStr);
 }
 
-bool ModbusRegisterWatcher::update(std::vector<float> newRegisterValue)
+bool ModbusRegisterWatcher::update(const std::vector<float>& newRegisterValue)
 {
     std::string newRegisterValueStr;
     for (int i = 0; i < newRegisterValue.size(); i++)
