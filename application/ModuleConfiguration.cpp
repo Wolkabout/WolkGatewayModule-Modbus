@@ -23,10 +23,26 @@ namespace wolkabout
 using nlohmann::json;
 
 ModuleConfiguration::ModuleConfiguration(std::string mqttHost, ConnectionType connectionType,
+                                         std::unique_ptr<SerialRtuConfiguration> serialRtuConfiguration,
                                          std::chrono::milliseconds responseTimeout,
                                          std::chrono::milliseconds registerReadPeriod)
 : m_mqttHost(std::move(mqttHost))
 , m_connectionType(connectionType)
+, m_serialRtuConfiguration(std::move(serialRtuConfiguration))
+, m_tcpIpConfiguration(nullptr)
+, m_responseTimeout(responseTimeout)
+, m_registerReadPeriod(registerReadPeriod)
+{
+}
+
+ModuleConfiguration::ModuleConfiguration(std::string mqttHost, ConnectionType connectionType,
+                                         std::unique_ptr<TcpIpConfiguration> tcpIpConfiguration,
+                                         std::chrono::milliseconds responseTimeout,
+                                         std::chrono::milliseconds registerReadPeriod)
+: m_mqttHost(std::move(mqttHost))
+, m_connectionType(connectionType)
+, m_serialRtuConfiguration(nullptr)
+, m_tcpIpConfiguration(std::move(tcpIpConfiguration))
 , m_responseTimeout(responseTimeout)
 , m_registerReadPeriod(registerReadPeriod)
 {
@@ -110,7 +126,8 @@ wolkabout::ModuleConfiguration ModuleConfiguration::fromJsonFile(const std::stri
         registerReadPeriod = 500;
     }
 
-    return ModuleConfiguration(mqttHost, connectionType, std::chrono::milliseconds(responseTimeout),
+    return ModuleConfiguration(mqttHost, connectionType, (std::unique_ptr<TcpIpConfiguration>)nullptr,
+                               std::chrono::milliseconds(responseTimeout),
                                std::chrono::milliseconds(registerReadPeriod));
 }
 }    // namespace wolkabout

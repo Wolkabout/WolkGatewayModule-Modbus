@@ -17,7 +17,11 @@
 #ifndef MODULECONFIGURATION_H
 #define MODULECONFIGURATION_H
 
+#include "SerialRtuConfiguration.h"
+#include "TcpIpConfiguration.h"
+
 #include <chrono>
+#include <memory>
 #include <string>
 
 namespace wolkabout
@@ -33,12 +37,21 @@ public:
 
     ModuleConfiguration() = default;
 
-    ModuleConfiguration(std::string mqttHost, ConnectionType connectionType, std::chrono::milliseconds responseTimeout,
-                        std::chrono::milliseconds registerReadPeriod);
+    ModuleConfiguration(std::string mqttHost, ConnectionType connectionType,
+                        std::unique_ptr<SerialRtuConfiguration> serialRtuConfiguration,
+                        std::chrono::milliseconds responseTimeout, std::chrono::milliseconds registerReadPeriod);
+
+    ModuleConfiguration(std::string mqttHost, ConnectionType connectionType,
+                        std::unique_ptr<TcpIpConfiguration> tcpIpConfiguration,
+                        std::chrono::milliseconds responseTimeout, std::chrono::milliseconds registerReadPeriod);
 
     const std::string& getMqttHost() const;
 
     ModuleConfiguration::ConnectionType getConnectionType() const;
+
+    const SerialRtuConfiguration& getSerialRtuConfiguration() const;
+
+    const TcpIpConfiguration& getTcpIpConfiguration() const;
 
     const std::chrono::milliseconds& getResponseTimeout() const;
 
@@ -50,6 +63,9 @@ private:
     std::string m_mqttHost;
 
     ConnectionType m_connectionType;
+
+    std::unique_ptr<SerialRtuConfiguration> m_serialRtuConfiguration;
+    std::unique_ptr<TcpIpConfiguration> m_tcpIpConfiguration;
 
     std::chrono::milliseconds m_responseTimeout;
     std::chrono::milliseconds m_registerReadPeriod;
