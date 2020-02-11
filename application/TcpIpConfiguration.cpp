@@ -25,7 +25,7 @@ const std::string& TcpIpConfiguration::getIp() const
     return m_ip;
 }
 
-const int TcpIpConfiguration::getPort() const
+int TcpIpConfiguration::getPort() const
 {
     return m_port;
 }

@@ -58,6 +58,16 @@ ModuleConfiguration::ConnectionType ModuleConfiguration::getConnectionType() con
     return m_connectionType;
 }
 
+const std::unique_ptr<SerialRtuConfiguration> ModuleConfiguration::getSerialRtuConfiguration()
+{
+    return std::move(m_serialRtuConfiguration);
+}
+
+const std::unique_ptr<TcpIpConfiguration> ModuleConfiguration::getTcpIpConfiguration()
+{
+    return std::move(m_tcpIpConfiguration);
+}
+
 const std::chrono::milliseconds& ModuleConfiguration::getResponseTimeout() const
 {
     return m_responseTimeout;

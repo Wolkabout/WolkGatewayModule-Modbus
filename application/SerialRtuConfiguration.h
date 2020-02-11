@@ -35,11 +35,11 @@ public:
 
     const std::string& getSerialPort() const;
 
-    const uint getBaudRate() const;
+    uint getBaudRate() const;
 
-    const short getDataBits() const;
+    short getDataBits() const;
 
-    const short getStopBits() const;
+    short getStopBits() const;
 
     SerialRtuConfiguration::BitParity getBitParity() const;
 

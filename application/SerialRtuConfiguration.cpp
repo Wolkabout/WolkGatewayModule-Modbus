@@ -29,17 +29,17 @@ const std::string& SerialRtuConfiguration::getSerialPort() const
     return m_serialPort;
 }
 
-const uint SerialRtuConfiguration::getBaudRate() const
+uint SerialRtuConfiguration::getBaudRate() const
 {
     return m_baudRate;
 }
 
-const short SerialRtuConfiguration::getDataBits() const
+short SerialRtuConfiguration::getDataBits() const
 {
     return m_dataBits;
 }
 
-const short SerialRtuConfiguration::getStopBits() const
+short SerialRtuConfiguration::getStopBits() const
 {
     return m_stopBits;
 }

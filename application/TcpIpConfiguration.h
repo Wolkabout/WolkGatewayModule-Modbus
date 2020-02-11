@@ -27,7 +27,7 @@ public:
 
     const std::string& getIp() const;
 
-    const int getPort() const;
+    int getPort() const;
 
 private:
     std::string m_ip;
