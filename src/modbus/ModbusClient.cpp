@@ -367,12 +367,12 @@ bool ModbusClient::writeHoldingRegisters(int address, std::vector<unsigned short
 bool ModbusClient::writeHoldingRegisters(int address, std::vector<float>& values)
 {
     auto arr = std::vector<uint16_t>(values.size());
-    for (int i = 0; i < values.size(); i++)
+    for (int i = 0; i < values.size(); i += 2)
     {
         ModbusValue value;
         value.floatValue = values[i];
-        arr[i * 2] = value.unsignedShortValues[0];
-        arr[i * 1] = value.unsignedShortValues[1];
+        arr[i + 1] = value.unsignedShortValues[0];
+        arr[i] = value.unsignedShortValues[1];
     }
 
     if (modbus_write_registers(m_modbus, address, static_cast<int>(arr.size()), arr.data()) == -1)
