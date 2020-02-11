@@ -51,7 +51,7 @@ add_subdirectory(WolkGatewayModule-SDK-Cpp lib)
 # WolkAbout Modbus Module
 include_directories("src")
 
-file(GLOB_RECURSE HEADER_FILES "src/*.h" "src/*.hpp")
+file(GLOB_RECURSE HEADER_FILES "src/*.h" "application/*.h")
 file(GLOB_RECURSE SOURCE_FILES "src/*.cpp" "application/*.cpp")
 
 link_directories(${PROJECT_SOURCE_DIR}/out/lib)
