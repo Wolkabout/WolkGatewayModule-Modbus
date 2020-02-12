@@ -1,0 +1,69 @@
+{
+    "templates": {
+        "TEMPLATE_NAME": [
+            {
+                "name":"mappingName",
+                "reference": "mappingReference",
+                "minimum": -32768,
+                "maximum": 32767,
+                "address": 0,
+                "registerType": "INPUT_REGISTER",
+                "dataType": "INT16"
+            },
+            {
+                "name":"mappingName2",
+                "reference": "mappingReference2",
+                "minimum": -4000,
+                "maximum": 4000,
+                "address": 1,
+                "registerType": "HOLDING_REGISTER_ACTUATOR",
+                "dataType": "REAL32"
+            },
+            {
+                "name": "mappingName3",
+                "reference": "mappingReference3",
+                "address": 1,
+                "registerType": "INPUT_CONTACT",
+                "dataType": "BOOL",
+                "mappingType": "ALARM"
+            },
+            {
+                "name":"mappingName4",
+                "reference": "mappingReference4",
+                "address": 2,
+                "registerType": "COIL",
+                "dataType": "BOOL",
+                "mappingType": "CONFIGURATION"
+            },
+            {
+                "name": "mappingName5",
+                "reference": "mappingReference5",
+                "minimum": 0,
+                "maximum": 1000,
+                "labelMap": {
+                    "firstConfig": 0,
+                    "secondConfig": 1,
+                    "thirdConfig": 2
+                },
+                "registerType": "HOLDING_REGISTER_ACTUATOR",
+                "dataType": "INT16",
+                "mappingType": "CONFIGURATION"
+            },
+            {
+                "name":"mappingName6",
+                "reference": "mappingReference6",
+                "address": 3,
+                "registerType": "COIL",
+                "dataType": "BOOL"
+            }
+        ]
+    },
+    "devices": [
+        {
+            "name": "DEVICE_NAME",
+            "key": "DEVICE_KEY",
+            "slaveAddress": 1,
+            "template": "TEMPLATE_NAME"
+        }
+    ]
+}
