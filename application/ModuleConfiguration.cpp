@@ -18,6 +18,8 @@
 #include "utilities/FileSystemUtils.h"
 #include "utilities/json.hpp"
 
+#include <iostream>
+
 namespace wolkabout
 {
 using nlohmann::json;
@@ -58,12 +60,12 @@ ModuleConfiguration::ConnectionType ModuleConfiguration::getConnectionType() con
     return m_connectionType;
 }
 
-const std::unique_ptr<SerialRtuConfiguration> ModuleConfiguration::getSerialRtuConfiguration()
+std::unique_ptr<SerialRtuConfiguration> ModuleConfiguration::getSerialRtuConfiguration()
 {
     return std::move(m_serialRtuConfiguration);
 }
 
-const std::unique_ptr<TcpIpConfiguration> ModuleConfiguration::getTcpIpConfiguration()
+std::unique_ptr<TcpIpConfiguration> ModuleConfiguration::getTcpIpConfiguration()
 {
     return std::move(m_tcpIpConfiguration);
 }
@@ -76,6 +78,16 @@ const std::chrono::milliseconds& ModuleConfiguration::getResponseTimeout() const
 const std::chrono::milliseconds& ModuleConfiguration::getRegisterReadPeriod() const
 {
     return m_registerReadPeriod;
+}
+
+void ModuleConfiguration::setSerialRtuConfiguration(std::unique_ptr<SerialRtuConfiguration> serialRtuConfiguration)
+{
+    m_serialRtuConfiguration = std::move(serialRtuConfiguration);
+}
+
+void ModuleConfiguration::setTcpIpConfiguration(std::unique_ptr<TcpIpConfiguration> tcpIpConfiguration)
+{
+    m_tcpIpConfiguration = std::move(tcpIpConfiguration);
 }
 
 wolkabout::ModuleConfiguration ModuleConfiguration::fromJsonFile(const std::string& moduleConfigurationFile)
@@ -102,17 +114,30 @@ wolkabout::ModuleConfiguration ModuleConfiguration::fromJsonFile(const std::stri
         mqttHost = "tcp://localhost:1883";
     }
 
-    const auto connectionTypeStr = j.at("connectionType").get<std::string>();
+    std::string connectionTypeStr;
+    try
+    {
+        connectionTypeStr = j.at("connectionType").get<std::string>();
+    }
+    catch (std::exception&)
+    {
+        throw std::logic_error("Missing configuration field : connectionType");
+    }
+
+    std::unique_ptr<SerialRtuConfiguration> serialRtuConfig;
+    std::unique_ptr<TcpIpConfiguration> tcpIpConfig;
+
     const auto connectionType = [&]() -> ConnectionType {
         if (connectionTypeStr == "TCP/IP")
         {
+            tcpIpConfig = std::unique_ptr<TcpIpConfiguration>(new TcpIpConfiguration(j["tcp/ip"]));
             return ConnectionType::TCP_IP;
         }
         else if (connectionTypeStr == "SERIAL/RTU")
         {
+            serialRtuConfig = std::unique_ptr<SerialRtuConfiguration>(new SerialRtuConfiguration(j["serial/rtu"]));
             return ConnectionType::SERIAL_RTU;
         }
-
         throw std::logic_error("Unknown modbus connection type : " + connectionTypeStr);
     }();
 
@@ -129,15 +154,24 @@ wolkabout::ModuleConfiguration ModuleConfiguration::fromJsonFile(const std::stri
     long long registerReadPeriod;
     try
     {
-        registerReadPeriod = j.at("registerReadPeridMs").get<long long>();
+        registerReadPeriod = j.at("registerReadPeriodMs").get<long long>();
     }
     catch (std::exception&)
     {
         registerReadPeriod = 500;
     }
 
-    return ModuleConfiguration(mqttHost, connectionType, (std::unique_ptr<TcpIpConfiguration>)nullptr,
-                               std::chrono::milliseconds(responseTimeout),
-                               std::chrono::milliseconds(registerReadPeriod));
+    if (connectionTypeStr == "SERIAL/RTU")
+    {
+        return ModuleConfiguration(mqttHost, connectionType, std::move(serialRtuConfig),
+                                   std::chrono::milliseconds(responseTimeout),
+                                   std::chrono::milliseconds(registerReadPeriod));
+    }
+    else
+    {
+        return ModuleConfiguration(mqttHost, connectionType, std::move(tcpIpConfig),
+                                   std::chrono::milliseconds(responseTimeout),
+                                   std::chrono::milliseconds(registerReadPeriod));
+    }
 }
 }    // namespace wolkabout

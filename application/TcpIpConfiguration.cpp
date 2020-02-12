@@ -15,10 +15,32 @@
  */
 
 #include "TcpIpConfiguration.h"
+#include "utilities/FileSystemUtils.h"
 
 namespace wolkabout
 {
 TcpIpConfiguration::TcpIpConfiguration(std::string ip, int port) : m_ip(ip), m_port(port) {}
+
+TcpIpConfiguration::TcpIpConfiguration(nlohmann::json j)
+{
+    try
+    {
+        m_ip = j.at("host").get<std::string>();
+    }
+    catch (std::exception&)
+    {
+        throw std::logic_error("Missing configuration field : ip");
+    }
+
+    try
+    {
+        m_port = j.at("port").get<int>();
+    }
+    catch (std::exception&)
+    {
+        m_port = 502;
+    }
+}
 
 const std::string& TcpIpConfiguration::getIp() const
 {

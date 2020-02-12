@@ -49,9 +49,13 @@ public:
 
     ModuleConfiguration::ConnectionType getConnectionType() const;
 
-    const std::unique_ptr<SerialRtuConfiguration> getSerialRtuConfiguration();
+    std::unique_ptr<SerialRtuConfiguration> getSerialRtuConfiguration();
 
-    const std::unique_ptr<TcpIpConfiguration> getTcpIpConfiguration();
+    std::unique_ptr<TcpIpConfiguration> getTcpIpConfiguration();
+
+    void setSerialRtuConfiguration(std::unique_ptr<SerialRtuConfiguration> serialRtuConfiguration);
+
+    void setTcpIpConfiguration(std::unique_ptr<TcpIpConfiguration> tcpIpConfiguration);
 
     const std::chrono::milliseconds& getResponseTimeout() const;
 

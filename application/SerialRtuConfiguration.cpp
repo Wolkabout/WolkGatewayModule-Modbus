@@ -15,6 +15,7 @@
  */
 
 #include "SerialRtuConfiguration.h"
+#include "utilities/FileSystemUtils.h"
 
 namespace wolkabout
 {
@@ -22,6 +23,69 @@ SerialRtuConfiguration::SerialRtuConfiguration(std::string& serialPort, uint bau
                                                SerialRtuConfiguration::BitParity bitParity)
 : m_serialPort(serialPort), m_baudRate(baudRate), m_dataBits(dataBits), m_stopBits(stopBits), m_bitParity(bitParity)
 {
+}
+
+SerialRtuConfiguration::SerialRtuConfiguration(nlohmann::json j)
+{
+    try
+    {
+        m_serialPort = j.at("serialPort").get<std::string>();
+    }
+    catch (std::exception&)
+    {
+        throw std::logic_error("Missing configuration field : serialPort");
+    }
+
+    try
+    {
+        m_baudRate = j.at("baudRate").get<uint>();
+    }
+    catch (std::exception&)
+    {
+        m_baudRate = 115200;
+    }
+
+    try
+    {
+        m_dataBits = j.at("dataBits").get<short>();
+    }
+    catch (std::exception&)
+    {
+        m_dataBits = 8;
+    }
+
+    try
+    {
+        m_stopBits = j.at("stopBits").get<short>();
+    }
+    catch (std::exception&)
+    {
+        m_stopBits = 1;
+    }
+
+    try
+    {
+        std::string bitParityStr = j.at("bitParity").get<std::string>();
+        m_bitParity = [&]() -> SerialRtuConfiguration::BitParity {
+            if (bitParityStr == "NONE")
+            {
+                return SerialRtuConfiguration::BitParity::NONE;
+            }
+            else if (bitParityStr == "EVEN")
+            {
+                return SerialRtuConfiguration::BitParity::EVEN;
+            }
+            else if (bitParityStr == "ODD")
+            {
+                return SerialRtuConfiguration::BitParity::ODD;
+            }
+            throw std::logic_error("Unknown bit parity: " + bitParityStr);
+        }();
+    }
+    catch (std::exception&)
+    {
+        m_bitParity = SerialRtuConfiguration::BitParity::NONE;
+    }
 }
 
 const std::string& SerialRtuConfiguration::getSerialPort() const

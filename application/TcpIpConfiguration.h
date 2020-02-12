@@ -13,17 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "utilities/json.hpp"
 
 #include <string>
 
 namespace wolkabout
 {
+using nlohmann::json;
+
 class TcpIpConfiguration
 {
 public:
     TcpIpConfiguration() = default;
 
     TcpIpConfiguration(std::string ip, int port);
+
+    TcpIpConfiguration(nlohmann::json j);
 
     const std::string& getIp() const;
 

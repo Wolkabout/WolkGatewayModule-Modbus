@@ -13,11 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "utilities/json.hpp"
 
 #include <string>
 
 namespace wolkabout
 {
+using nlohmann::json;
+
 class SerialRtuConfiguration
 {
 public:
@@ -32,6 +35,8 @@ public:
 
     SerialRtuConfiguration(std::string& serialPort, uint baudRate, short dataBits, short stopBits,
                            SerialRtuConfiguration::BitParity bitParity);
+
+    SerialRtuConfiguration(nlohmann::json j);
 
     const std::string& getSerialPort() const;
 
