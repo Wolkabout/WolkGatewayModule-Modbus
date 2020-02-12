@@ -62,6 +62,116 @@ ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string refer
 {
 }
 
+ModbusRegisterMapping::ModbusRegisterMapping(nlohmann::json j)
+{
+    m_name = j.at("name").get<std::string>();
+    m_reference = j.at("reference").get<std::string>();
+    m_registerType = MappingTypeConversion::deserializeRegisterType(j.at("registerType").get<std::string>());
+
+    try
+    {
+        m_description = j.at("description").get<std::string>();
+    }
+    catch (std::exception&)
+    {
+        m_description = std::string("");
+    }
+
+    try
+    {
+        const auto mappingTypeStr = j.at("mappingType").get<std::string>();
+        m_mappingType = MappingTypeConversion::deserializeMappingType(mappingTypeStr);
+    }
+    catch (std::exception&)
+    {
+        m_mappingType = ModbusRegisterMapping::MappingType::DEFAULT;
+    }
+
+    if (m_registerType == ModbusRegisterMapping::RegisterType::COIL ||
+        m_registerType == ModbusRegisterMapping::RegisterType::INPUT_CONTACT)
+    {
+        // this is obligatory here, we don't support multi-value boolean configurations
+        m_address = j.at("address").get<int>();
+        m_dataType = ModbusRegisterMapping::DataType::BOOL;
+        // we ignore dataType and min/max
+    }
+    else
+    {
+        m_dataType = MappingTypeConversion::deserializeDataType(j.at("dataType").get<std::string>());
+        m_minimum = j.at("minimum").get<double>();
+        m_maximum = j.at("maximum").get<double>();
+        if (m_registerType == ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR)
+        {
+            if (m_mappingType == ModbusRegisterMapping::MappingType::CONFIGURATION)
+            {
+                // or LabelMap or address
+                // if both, make an error, or if none, make an error
+                bool gotAddress, gotLabelMap;
+
+                try
+                {
+                    m_address = j.at("address").get<int>();
+                    gotAddress = true;
+                }
+                catch (std::exception&)
+                {
+                    gotAddress = false;
+                }
+
+                try
+                {
+                    auto tempLabelMap = std::map<std::string, int>(j.at("labelMap").get<std::map<std::string, int>>());
+                    typedef std::function<bool(std::pair<std::string, int>, std::pair<std::string, int>)> Comparator;
+                    Comparator compFunctor = [](const std::pair<std::string, int>& elem1,
+                                                const std::pair<std::string, int>& elem2) {
+                        return elem1.second < elem2.second;
+                    };
+                    std::set<std::pair<std::string, int>, Comparator> setOfWords(tempLabelMap.begin(),
+                                                                                 tempLabelMap.end(), compFunctor);
+
+                    // labelMap was already initialized
+                    for (std::pair<std::string, int> element : setOfWords)
+                    {
+                        m_labelsAndAddresses.emplace_back(element);
+                    }
+                    gotLabelMap = true;
+                }
+                catch (std::exception&)
+                {
+                    gotLabelMap = false;
+                }
+
+                if (gotAddress == gotLabelMap)
+                {
+                    if (gotAddress)
+                    {
+                        throw std::logic_error("You cannot set both address and a labelMap for " + m_name +
+                                               " !"
+                                               " Choose only address to make configuration single-value, or "
+                                               "labelMap to make configuration multi-value!");
+                    }
+                    else
+                    {
+                        throw std::logic_error("You have to put either address or labelMap for " + m_name +
+                                               " !"
+                                               " Choose either address to make configuration single-value, or"
+                                               "labelMap to make configuration multi-value!");
+                    }
+                }
+            }
+            else
+            {
+                // if it's not a configuration, we need the address no matter what
+                m_address = j.at("address").get<int>();
+            }
+        }
+        else
+        {
+            m_address = j.at("address").get<int>();
+        }
+    }
+}
+
 const std::string& ModbusRegisterMapping::getName() const
 {
     return m_name;
@@ -124,160 +234,7 @@ LabelMap ModbusRegisterMapping::getLabelsAndAddresses() const
     return m_labelsAndAddresses;
 }
 
-std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::fromJsonFile(
-  const std::string& modbusRegisterMappingFile)
-{
-    if (!FileSystemUtils::isFilePresent(modbusRegisterMappingFile))
-    {
-        throw std::logic_error("Given modbus configuration file does not exist.");
-    }
-
-    std::string modbusRegisterMappingJsonStr;
-    if (!FileSystemUtils::readFileContent(modbusRegisterMappingFile, modbusRegisterMappingJsonStr))
-    {
-        throw std::logic_error("Unable to read modbus configuration file.");
-    }
-
-    std::vector<wolkabout::ModbusRegisterMapping> modbusRegisterMappingVector;
-
-    auto j = json::parse(modbusRegisterMappingJsonStr);
-    for (const auto& modbusRegisterMappingJson : j["modbusRegisterMapping"].get<json::array_t>())
-    {
-        const auto name = modbusRegisterMappingJson.at("name").get<std::string>();
-        const auto reference = modbusRegisterMappingJson.at("reference").get<std::string>();
-        const auto registerType =
-          deserializeRegisterType(modbusRegisterMappingJson.at("registerType").get<std::string>());
-
-        std::string description;
-        try
-        {
-            description = modbusRegisterMappingJson.at("description").get<std::string>();
-        }
-        catch (std::exception&)
-        {
-            description = std::string("");
-        }
-
-        ModbusRegisterMapping::MappingType mappingType;
-        try
-        {
-            const auto mappingTypeStr = modbusRegisterMappingJson.at("mappingType").get<std::string>();
-            mappingType = deserializeMappingType(mappingTypeStr);
-        }
-        catch (std::exception&)
-        {
-            mappingType = ModbusRegisterMapping::MappingType::DEFAULT;
-        }
-
-        int address = -1;
-        LabelMap labelMap;
-        ModbusRegisterMapping::DataType dataType;
-        double minimum = 0.0;
-        double maximum = 1.0;
-
-        if (registerType == ModbusRegisterMapping::RegisterType::COIL ||
-            registerType == ModbusRegisterMapping::RegisterType::INPUT_CONTACT)
-        {
-            // this is obligatory here, we don't support multi-value boolean configurations
-            address = modbusRegisterMappingJson.at("address").get<int>();
-            dataType = ModbusRegisterMapping::DataType::BOOL;
-            // we ignore dataType and min/max
-        }
-        else
-        {
-            dataType = deserializeDataType(modbusRegisterMappingJson.at("dataType").get<std::string>());
-            minimum = modbusRegisterMappingJson.at("minimum").get<double>();
-            maximum = modbusRegisterMappingJson.at("maximum").get<double>();
-            if (registerType == ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR)
-            {
-                if (mappingType == ModbusRegisterMapping::MappingType::CONFIGURATION)
-                {
-                    // or LabelMap or address
-                    // if both, make an error, or if none, make an error
-                    bool gotAddress, gotLabelMap;
-
-                    try
-                    {
-                        address = modbusRegisterMappingJson.at("address").get<int>();
-                        gotAddress = true;
-                    }
-                    catch (std::exception&)
-                    {
-                        gotAddress = false;
-                    }
-
-                    try
-                    {
-                        auto tempLabelMap = std::map<std::string, int>(
-                          modbusRegisterMappingJson.at("labelMap").get<std::map<std::string, int>>());
-                        typedef std::function<bool(std::pair<std::string, int>, std::pair<std::string, int>)>
-                          Comparator;
-                        Comparator compFunctor = [](const std::pair<std::string, int>& elem1,
-                                                    const std::pair<std::string, int>& elem2) {
-                            return elem1.second < elem2.second;
-                        };
-                        std::set<std::pair<std::string, int>, Comparator> setOfWords(tempLabelMap.begin(),
-                                                                                     tempLabelMap.end(), compFunctor);
-
-                        // labelMap was already initialized
-                        for (std::pair<std::string, int> element : setOfWords)
-                        {
-                            labelMap.emplace_back(element);
-                        }
-                        gotLabelMap = true;
-                    }
-                    catch (std::exception&)
-                    {
-                        gotLabelMap = false;
-                    }
-
-                    if (gotAddress == gotLabelMap)
-                    {
-                        if (gotAddress)
-                        {
-                            throw std::logic_error("You cannot set both address and a labelMap for " + name +
-                                                   " !"
-                                                   " Choose only address to make configuration single-value, or "
-                                                   "labelMap to make configuration multi-value!");
-                        }
-                        else
-                        {
-                            throw std::logic_error("You have to put either address or labelMap for " + name +
-                                                   " !"
-                                                   " Choose either address to make configuration single-value, or"
-                                                   "labelMap to make configuration multi-value!");
-                        }
-                    }
-                }
-                else
-                {
-                    // if it's not a configuration, we need the address no matter what
-                    address = modbusRegisterMappingJson.at("address").get<int>();
-                }
-            }
-            else
-            {
-                address = modbusRegisterMappingJson.at("address").get<int>();
-            }
-        }
-
-        if (labelMap.empty())
-        {
-            modbusRegisterMappingVector.emplace_back(name, reference, description, minimum, maximum, address,
-                                                     registerType, dataType, mappingType);
-        }
-        else
-        {
-            modbusRegisterMappingVector.emplace_back(name, reference, description, minimum, maximum, labelMap,
-                                                     registerType, dataType);
-        }
-    }
-
-    return modbusRegisterMappingVector;
-}
-
-ModbusRegisterMapping::RegisterType ModbusRegisterMappingFactory::deserializeRegisterType(
-  const std::string& registerType)
+ModbusRegisterMapping::RegisterType MappingTypeConversion::deserializeRegisterType(const std::string& registerType)
 {
     if (registerType == "INPUT_REGISTER")
     {
@@ -303,7 +260,7 @@ ModbusRegisterMapping::RegisterType ModbusRegisterMappingFactory::deserializeReg
     throw std::logic_error("Unknown modbus register type: " + registerType);
 }
 
-ModbusRegisterMapping::DataType ModbusRegisterMappingFactory::deserializeDataType(const std::string& dataType)
+ModbusRegisterMapping::DataType MappingTypeConversion::deserializeDataType(const std::string& dataType)
 {
     if (dataType == "INT16")
     {
@@ -325,7 +282,7 @@ ModbusRegisterMapping::DataType ModbusRegisterMappingFactory::deserializeDataTyp
     throw std::logic_error("Unknown data type: " + dataType);
 }
 
-ModbusRegisterMapping::MappingType ModbusRegisterMappingFactory::deserializeMappingType(const std::string& mappingType)
+ModbusRegisterMapping::MappingType MappingTypeConversion::deserializeMappingType(const std::string& mappingType)
 {
     if (mappingType == "DEFAULT")
     {

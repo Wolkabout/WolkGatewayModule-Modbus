@@ -63,6 +63,8 @@ public:
                           double maximum, const LabelMap& labelsAndAddresses, RegisterType registerType,
                           DataType dataType);
 
+    ModbusRegisterMapping(nlohmann::json j);
+
     const std::string& getName() const;
     const std::string& getReference() const;
     const std::string& getDescription() const;
@@ -82,10 +84,10 @@ private:
     std::string m_reference;
     std::string m_description;
 
-    double m_minimum;
-    double m_maximum;
+    double m_minimum = 0.0;
+    double m_maximum = 1.0;
 
-    int m_address;
+    int m_address = -1;
     LabelMap m_labelsAndAddresses{};
 
     RegisterType m_registerType;
@@ -93,12 +95,9 @@ private:
     MappingType m_mappingType;
 };
 
-class ModbusRegisterMappingFactory
+class MappingTypeConversion
 {
 public:
-    static std::vector<wolkabout::ModbusRegisterMapping> fromJsonFile(const std::string& modbusRegisterMappingFile);
-
-private:
     static ModbusRegisterMapping::RegisterType deserializeRegisterType(const std::string& registerType);
     static ModbusRegisterMapping::DataType deserializeDataType(const std::string& dataType);
     static ModbusRegisterMapping::MappingType deserializeMappingType(const std::string& mappingType);
