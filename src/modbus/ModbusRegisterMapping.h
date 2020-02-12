@@ -56,12 +56,12 @@ public:
     };
 
     ModbusRegisterMapping(std::string name, std::string reference, std::string description, double minimum,
-                          double maximum, int address, RegisterType registerType, DataType dataType, int slaveAddress,
+                          double maximum, int address, RegisterType registerType, DataType dataType,
                           MappingType mappingType);
 
     ModbusRegisterMapping(std::string name, std::string reference, std::string description, double minimum,
                           double maximum, const LabelMap& labelsAndAddresses, RegisterType registerType,
-                          DataType dataType, int slaveAddress);
+                          DataType dataType);
 
     const std::string& getName() const;
     const std::string& getReference() const;
@@ -76,7 +76,6 @@ public:
     RegisterType getRegisterType() const;
     DataType getDataType() const;
     MappingType getMappingType() const;
-    int getSlaveAddress() const;
 
 private:
     std::string m_name;
@@ -92,7 +91,6 @@ private:
     RegisterType m_registerType;
     DataType m_dataType;
     MappingType m_mappingType;
-    int m_slaveAddress;
 };
 
 class ModbusRegisterMappingFactory

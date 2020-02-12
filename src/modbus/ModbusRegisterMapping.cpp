@@ -31,7 +31,7 @@ using nlohmann::json;
 ModbusRegisterMapping::ModbusRegisterMapping(
   std::string name, std::string reference, std::string description, double minimum, double maximum, int address,
   wolkabout::ModbusRegisterMapping::RegisterType registerType, wolkabout::ModbusRegisterMapping::DataType dataType,
-  int slaveAddress, wolkabout::ModbusRegisterMapping::MappingType mappingType = MappingType::DEFAULT)
+  wolkabout::ModbusRegisterMapping::MappingType mappingType = MappingType::DEFAULT)
 : m_name(std::move(name))
 , m_reference(std::move(reference))
 , m_description(std::move(description))
@@ -42,14 +42,13 @@ ModbusRegisterMapping::ModbusRegisterMapping(
 , m_registerType(registerType)
 , m_dataType(dataType)
 , m_mappingType(mappingType)
-, m_slaveAddress(slaveAddress)
 {
 }
 
 ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string reference, std::string description,
                                              double minimum, double maximum, const LabelMap& labelsAndAddresses,
                                              ModbusRegisterMapping::RegisterType registerType,
-                                             ModbusRegisterMapping::DataType dataType, int slaveAddress)
+                                             ModbusRegisterMapping::DataType dataType)
 : m_name(std::move(name))
 , m_reference(std::move(reference))
 , m_description(std::move(description))
@@ -60,7 +59,6 @@ ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string refer
 , m_registerType(registerType)
 , m_dataType(dataType)
 , m_mappingType(MappingType::CONFIGURATION)
-, m_slaveAddress(slaveAddress)
 {
 }
 
@@ -116,11 +114,6 @@ ModbusRegisterMapping::DataType ModbusRegisterMapping::getDataType() const
     return m_dataType;
 }
 
-int ModbusRegisterMapping::getSlaveAddress() const
-{
-    return m_slaveAddress;
-}
-
 ModbusRegisterMapping::MappingType ModbusRegisterMapping::getMappingType() const
 {
     return m_mappingType;
@@ -154,15 +147,6 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
         const auto reference = modbusRegisterMappingJson.at("reference").get<std::string>();
         const auto registerType =
           deserializeRegisterType(modbusRegisterMappingJson.at("registerType").get<std::string>());
-        int slaveAddress;
-        try
-        {
-            slaveAddress = modbusRegisterMappingJson.at("slaveAddress").get<int>();
-        }
-        catch (std::exception&)
-        {
-            slaveAddress = 1;
-        }
 
         std::string description;
         try
@@ -280,12 +264,12 @@ std::vector<wolkabout::ModbusRegisterMapping> ModbusRegisterMappingFactory::from
         if (labelMap.empty())
         {
             modbusRegisterMappingVector.emplace_back(name, reference, description, minimum, maximum, address,
-                                                     registerType, dataType, slaveAddress, mappingType);
+                                                     registerType, dataType, mappingType);
         }
         else
         {
             modbusRegisterMappingVector.emplace_back(name, reference, description, minimum, maximum, labelMap,
-                                                     registerType, dataType, slaveAddress);
+                                                     registerType, dataType);
         }
     }
 
