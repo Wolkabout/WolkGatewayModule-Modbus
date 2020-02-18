@@ -15,7 +15,6 @@
  */
 
 #include "DevicesConfiguration.h"
-#include "utilities/FileSystemUtils.h"
 #include "utilities/json.hpp"
 
 #include <string>
@@ -24,47 +23,42 @@ namespace wolkabout
 {
 using nlohmann::json;
 
-DevicesConfiguration::DevicesConfiguration(std::map<std::string, DeviceTemplate>& templates,
-                                           std::map<std::string, DeviceInformation>& devices)
+DevicesConfiguration::DevicesConfiguration(std::map<std::string, std::unique_ptr<DeviceTemplateModule>>& templates,
+                                           std::map<std::string, std::unique_ptr<DeviceInformation>>& devices)
 : m_templates(templates), m_devices(devices)
 {
 }
 
-std::map<std::string, DeviceTemplate>& DevicesConfiguration::getTemplates()
+DevicesConfiguration::DevicesConfiguration(nlohmann::json j) : m_templates(), m_devices()
+{
+    for (auto const& deviceTemplate : j["templates"].get<json::array_t>())
+    {
+        std::unique_ptr<DeviceTemplateModule> templatePointer(new DeviceTemplateModule(deviceTemplate));
+        m_templates.emplace(templatePointer->getName(), std::move(templatePointer));
+    }
+
+    for (json::object_t deviceInformation : j["devices"].get<json::array_t>())
+    {
+        std::unique_ptr<DeviceInformation> deviceInfo(new DeviceInformation(deviceInformation));
+        if (m_templates.find(deviceInfo->getTemplateString()) != m_templates.end())
+        {
+            deviceInfo->setTemplate(&(m_templates.at(deviceInfo->getTemplateString())));
+        }
+        else
+        {
+            throw std::logic_error("Invalid template found for device " + deviceInfo->getName() + " (" +
+                                   deviceInfo->getTemplateString() + ").");
+        }
+    }
+}
+
+std::map<std::string, std::unique_ptr<DeviceTemplateModule>>& DevicesConfiguration::getTemplates()
 {
     return m_templates;
 }
 
-std::map<std::string, DeviceInformation>& DevicesConfiguration::getInformation()
+std::map<std::string, std::unique_ptr<DeviceInformation>>& DevicesConfiguration::getInformation()
 {
     return m_devices;
-}
-
-wolkabout::DevicesConfiguration DevicesConfiguration::fromJsonFile(const std::string& devicesConfigurationPath)
-{
-    if (!FileSystemUtils::isFilePresent(devicesConfigurationPath))
-    {
-        throw std::logic_error("Given devices configuration file does not exist.");
-    }
-
-    std::string devicesConfigurationJson;
-    if (!FileSystemUtils::readFileContent(devicesConfigurationPath, devicesConfigurationJson))
-    {
-        throw std::logic_error("Unable to read module configuration file.");
-    }
-
-    auto j = json::parse(devicesConfigurationJson);
-
-    std::map<std::string, DeviceTemplate> templates;
-    for (auto const& deviceTemplate : j["templates"].get<json::array_t>)
-    {
-        DeviceTemplate dt(deviceTemplate);
-        templates.emplace(dt.getName(), dt);
-    }
-
-    for (auto const& deviceInformation : j["devices"].get<json::array_t>)
-    {
-        std::string templateName = deviceInformation.at("template").get<std::string>();
-    }
 }
 }    // namespace wolkabout

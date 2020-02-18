@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+#ifndef WOLKGATEWAYMODBUSMODULE_DEVICETEMPLATEMODULE_H
+#define WOLKGATEWAYMODBUSMODULE_DEVICETEMPLATEMODULE_H
+
 #include "modbus/ModbusRegisterMapping.h"
 #include "utilities/json.hpp"
 
@@ -23,16 +26,16 @@ namespace wolkabout
 {
 using nlohmann::json;
 
-class DeviceTemplate
+class DeviceTemplateModule
 {
 public:
-    DeviceTemplate() = default;
+    DeviceTemplateModule() = default;
 
-    DeviceTemplate(std::string name, std::vector<ModbusRegisterMapping> mappings);
+    DeviceTemplateModule(std::string& name, std::vector<ModbusRegisterMapping>& mappings);
 
-    DeviceTemplate(nlohmann::json j);
+    explicit DeviceTemplateModule(nlohmann::json json);
 
-    const std::string getName() const;
+    const std::string& getName() const;
 
     const std::vector<ModbusRegisterMapping>& getMappings() const;
 
@@ -41,3 +44,5 @@ private:
     std::vector<ModbusRegisterMapping> m_mappings;
 };
 }    // namespace wolkabout
+
+#endif    // WOLKGATEWAYMODBUSMODULE_DEVICETEMPLATEMODULE_H

@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
+#ifndef WOLKGATEWAYMODBUSMODULE_DEVICESCONFIGURATION_H
+#define WOLKGATEWAYMODBUSMODULE_DEVICESCONFIGURATION_H
+
 #include "DeviceInformation.h"
-#include "DeviceTemplate.h"
 
 #include <vector>
 
@@ -26,17 +28,19 @@ class DevicesConfiguration
 public:
     DevicesConfiguration() = default;
 
-    DevicesConfiguration(std::map<std::string, DeviceTemplate>& templates,
-                         std::map<std::string, DeviceInformation>& devices);
+    DevicesConfiguration(std::map<std::string, std::unique_ptr<DeviceTemplateModule>>& templates,
+                         std::map<std::string, std::unique_ptr<DeviceInformation>>& devices);
 
-    std::map<std::string, DeviceTemplate>& getTemplates();
+    explicit DevicesConfiguration(nlohmann::json j);
 
-    std::map<std::string, DeviceInformation>& getInformation();
+    std::map<std::string, std::unique_ptr<DeviceTemplateModule>>& getTemplates();
 
-    static wolkabout::DevicesConfiguration fromJsonFile(const std::string& devicesConfigurationPath);
+    std::map<std::string, std::unique_ptr<DeviceInformation>>& getInformation();
 
 private:
-    std::map<std::string, DeviceTemplate> m_templates;
-    std::map<std::string, DeviceInformation> m_devices;
+    std::map<std::string, std::unique_ptr<DeviceTemplateModule>> m_templates;
+    std::map<std::string, std::unique_ptr<DeviceInformation>> m_devices;
 };
 }    // namespace wolkabout
+
+#endif    // WOLKGATEWAYMODBUSMODULE_DEVICESCONFIGURATION_H

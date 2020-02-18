@@ -19,6 +19,7 @@
 
 #include "SerialRtuConfiguration.h"
 #include "TcpIpConfiguration.h"
+#include "utilities/json.hpp"
 
 #include <chrono>
 #include <memory>
@@ -26,6 +27,8 @@
 
 namespace wolkabout
 {
+using nlohmann::json;
+
 class ModuleConfiguration
 {
 public:
@@ -45,6 +48,8 @@ public:
                         std::unique_ptr<TcpIpConfiguration> tcpIpConfiguration,
                         std::chrono::milliseconds responseTimeout, std::chrono::milliseconds registerReadPeriod);
 
+    explicit ModuleConfiguration(nlohmann::json j);
+
     const std::string& getMqttHost() const;
 
     ModuleConfiguration::ConnectionType getConnectionType() const;
@@ -60,8 +65,6 @@ public:
     const std::chrono::milliseconds& getResponseTimeout() const;
 
     const std::chrono::milliseconds& getRegisterReadPeriod() const;
-
-    static wolkabout::ModuleConfiguration fromJsonFile(const std::string& moduleConfigurationFile);
 
 private:
     std::string m_mqttHost;

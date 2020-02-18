@@ -17,6 +17,8 @@
 #ifndef MODBUSREGISTERMAPPING_H
 #define MODBUSREGISTERMAPPING_H
 
+#include "utilities/json.hpp"
+
 #include <map>
 #include <memory>
 #include <string>
@@ -24,6 +26,7 @@
 
 namespace wolkabout
 {
+using nlohmann::json;
 typedef std::vector<std::pair<std::string, int>> LabelMap;
 
 class ModbusRegisterMapping
@@ -74,6 +77,7 @@ public:
 
     LabelMap getLabelsAndAddresses() const;
     int getAddress() const;
+    int getSlaveAddress() const { return -1; }
 
     RegisterType getRegisterType() const;
     DataType getDataType() const;

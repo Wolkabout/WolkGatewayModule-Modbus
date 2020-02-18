@@ -50,6 +50,64 @@ ModuleConfiguration::ModuleConfiguration(std::string mqttHost, ConnectionType co
 {
 }
 
+ModuleConfiguration::ModuleConfiguration(nlohmann::json j)
+{
+    try
+    {
+        m_mqttHost = j.at("mqttHost").get<std::string>();
+    }
+    catch (std::exception&)
+    {
+        m_mqttHost = "tcp://localhost:1883";
+    }
+
+    std::string connectionTypeStr;
+    try
+    {
+        connectionTypeStr = j.at("connectionType").get<std::string>();
+    }
+    catch (std::exception&)
+    {
+        throw std::logic_error("Missing configuration field : connectionType");
+    }
+
+    [&]() {
+        if (connectionTypeStr == "TCP/IP")
+        {
+            m_tcpIpConfiguration = std::unique_ptr<TcpIpConfiguration>(new TcpIpConfiguration(j["tcp/ip"]));
+            m_connectionType = ConnectionType::TCP_IP;
+        }
+        else if (connectionTypeStr == "SERIAL/RTU")
+        {
+            m_serialRtuConfiguration =
+              std::unique_ptr<SerialRtuConfiguration>(new SerialRtuConfiguration(j["serial/rtu"]));
+            m_connectionType = ConnectionType::SERIAL_RTU;
+        }
+        else
+        {
+            throw std::logic_error("Unknown modbus connection type : " + connectionTypeStr);
+        }
+    }();
+
+    try
+    {
+        m_responseTimeout = std::chrono::milliseconds(j.at("responseTimeoutMs").get<long long>());
+    }
+    catch (std::exception&)
+    {
+        m_responseTimeout = std::chrono::milliseconds(200);
+    }
+
+    try
+    {
+        m_registerReadPeriod = std::chrono::milliseconds(j.at("registerReadPeriodMs").get<long long>());
+    }
+    catch (std::exception&)
+    {
+        m_registerReadPeriod = std::chrono::milliseconds(500);
+    }
+}
+
 const std::string& ModuleConfiguration::getMqttHost() const
 {
     return m_mqttHost;
@@ -88,90 +146,5 @@ void ModuleConfiguration::setSerialRtuConfiguration(std::unique_ptr<SerialRtuCon
 void ModuleConfiguration::setTcpIpConfiguration(std::unique_ptr<TcpIpConfiguration> tcpIpConfiguration)
 {
     m_tcpIpConfiguration = std::move(tcpIpConfiguration);
-}
-
-wolkabout::ModuleConfiguration ModuleConfiguration::fromJsonFile(const std::string& moduleConfigurationFile)
-{
-    if (!FileSystemUtils::isFilePresent(moduleConfigurationFile))
-    {
-        throw std::logic_error("Given module configuration file does not exist.");
-    }
-
-    std::string moduleConfigurationJson;
-    if (!FileSystemUtils::readFileContent(moduleConfigurationFile, moduleConfigurationJson))
-    {
-        throw std::logic_error("Unable to read module configuration file.");
-    }
-
-    auto j = json::parse(moduleConfigurationJson);
-    std::string mqttHost;
-    try
-    {
-        mqttHost = j.at("mqttHost").get<std::string>();
-    }
-    catch (std::exception&)
-    {
-        mqttHost = "tcp://localhost:1883";
-    }
-
-    std::string connectionTypeStr;
-    try
-    {
-        connectionTypeStr = j.at("connectionType").get<std::string>();
-    }
-    catch (std::exception&)
-    {
-        throw std::logic_error("Missing configuration field : connectionType");
-    }
-
-    std::unique_ptr<SerialRtuConfiguration> serialRtuConfig;
-    std::unique_ptr<TcpIpConfiguration> tcpIpConfig;
-
-    const auto connectionType = [&]() -> ConnectionType {
-        if (connectionTypeStr == "TCP/IP")
-        {
-            tcpIpConfig = std::unique_ptr<TcpIpConfiguration>(new TcpIpConfiguration(j["tcp/ip"]));
-            return ConnectionType::TCP_IP;
-        }
-        else if (connectionTypeStr == "SERIAL/RTU")
-        {
-            serialRtuConfig = std::unique_ptr<SerialRtuConfiguration>(new SerialRtuConfiguration(j["serial/rtu"]));
-            return ConnectionType::SERIAL_RTU;
-        }
-        throw std::logic_error("Unknown modbus connection type : " + connectionTypeStr);
-    }();
-
-    long long responseTimeout;
-    try
-    {
-        responseTimeout = j.at("responseTimeoutMs").get<long long>();
-    }
-    catch (std::exception&)
-    {
-        responseTimeout = 200;
-    }
-
-    long long registerReadPeriod;
-    try
-    {
-        registerReadPeriod = j.at("registerReadPeriodMs").get<long long>();
-    }
-    catch (std::exception&)
-    {
-        registerReadPeriod = 500;
-    }
-
-    if (connectionTypeStr == "SERIAL/RTU")
-    {
-        return ModuleConfiguration(mqttHost, connectionType, std::move(serialRtuConfig),
-                                   std::chrono::milliseconds(responseTimeout),
-                                   std::chrono::milliseconds(registerReadPeriod));
-    }
-    else
-    {
-        return ModuleConfiguration(mqttHost, connectionType, std::move(tcpIpConfig),
-                                   std::chrono::milliseconds(responseTimeout),
-                                   std::chrono::milliseconds(registerReadPeriod));
-    }
 }
 }    // namespace wolkabout

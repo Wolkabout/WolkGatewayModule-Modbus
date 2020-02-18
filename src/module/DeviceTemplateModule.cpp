@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-#include "DeviceTemplate.h"
+#include "DeviceTemplateModule.h"
 
 namespace wolkabout
 {
 using nlohmann::json;
 
-DeviceTemplate::DeviceTemplate(std::string name, std::vector<ModbusRegisterMapping> mappings)
+DeviceTemplateModule::DeviceTemplateModule(std::string& name, std::vector<ModbusRegisterMapping>& mappings)
 : m_name(name), m_mappings(mappings)
 {
 }
 
-DeviceTemplate::DeviceTemplate(nlohmann::json j)
+DeviceTemplateModule::DeviceTemplateModule(nlohmann::json j)
 {
     try
     {
@@ -33,12 +33,22 @@ DeviceTemplate::DeviceTemplate(nlohmann::json j)
     }
     catch (std::exception&)
     {
-        throw std::logic_error("Missing device templated field : name");
+        throw std::logic_error("Missing device template field - name");
     }
 
-    for (auto const& mapping : j["mappings"].get<json::array_t>)
+    for (json::object_t mapping : j["mappings"].get<json::array_t>())
     {
         m_mappings.emplace_back(ModbusRegisterMapping(mapping));
     }
+}
+
+const std::string& DeviceTemplateModule::getName() const
+{
+    return m_name;
+}
+
+const std::vector<ModbusRegisterMapping>& DeviceTemplateModule::getMappings() const
+{
+    return m_mappings;
 }
 }    // namespace wolkabout

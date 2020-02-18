@@ -14,32 +14,47 @@
  * limitations under the License.
  */
 
-#include "DeviceTemplate.h"
+#ifndef WOLKGATEWAYMODBUSMODULE_DEVICEINFORMATION_H
+#define WOLKGATEWAYMODBUSMODULE_DEVICEINFORMATION_H
+
+#include "DeviceTemplateModule.h"
+#include "utilities/json.hpp"
 
 #include <memory>
 
 namespace wolkabout
 {
+using nlohmann::json;
+
 class DeviceInformation
 {
 public:
     DeviceInformation() = default;
 
-    DeviceInformation(std::string name, std::string key, std::weak_ptr<DeviceTemplate> deviceTemplate,
-                      uint slaveAddress = -1);
+    DeviceInformation(std::string& name, std::string& key, std::unique_ptr<DeviceTemplateModule>* deviceTemplate,
+                      int slaveAddress);
 
-    const std::string getName() const;
+    explicit DeviceInformation(nlohmann::json j);
 
-    const std::string getKey() const;
+    const std::string& getName() const;
 
-    uint getSlaveAddress() const;
+    const std::string& getKey() const;
 
-    std::weak_ptr<DeviceTemplate> getTemplate();
+    int getSlaveAddress() const;
+
+    std::unique_ptr<DeviceTemplateModule>* getTemplate();
+
+    const std::string& getTemplateString() const;
+
+    void setTemplate(std::unique_ptr<DeviceTemplateModule>* templatePointer);
 
 private:
     std::string m_name;
     std::string m_key;
-    uint m_slaveAddress;
-    std::weak_ptr<DeviceTemplate> m_template;
+    int m_slaveAddress = -1;
+    std::string m_templateString;
+    std::unique_ptr<DeviceTemplateModule>* m_template{};
 };
 }    // namespace wolkabout
+
+#endif    // WOLKGATEWAYMODBUSMODULE_DEVICEINFORMATION_H
