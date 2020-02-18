@@ -15,7 +15,6 @@
  */
 
 #include "DevicesConfiguration.h"
-#include "utilities/json.hpp"
 
 #include <string>
 
@@ -43,6 +42,7 @@ DevicesConfiguration::DevicesConfiguration(nlohmann::json j) : m_templates(), m_
         if (m_templates.find(deviceInfo->getTemplateString()) != m_templates.end())
         {
             deviceInfo->setTemplate(&(m_templates.at(deviceInfo->getTemplateString())));
+            m_devices.emplace(deviceInfo->getKey(), std::move(deviceInfo));
         }
         else
         {
