@@ -193,8 +193,7 @@ int main(int argc, char** argv)
         const std::string& templateName = info.getTemplateString();
         if (templates.find(templateName) != templates.end())
         {
-            // Create the device with found template
-            // Push the slaveAddress as occupied
+            // Create the device with found template, push the slaveAddress as occupied
             wolkabout::DeviceTemplate& deviceTemplate = *(templates.find(templateName)->second);
             occupiedSlaveAddresses.push_back(info.getSlaveAddress());
             devices.insert(std::pair<std::string, std::unique_ptr<wolkabout::Device>>(
@@ -205,6 +204,13 @@ int main(int argc, char** argv)
             LOG(WARN) << "Device " << info.getName() << " (" << info.getKey() << ") doesn't have a valid template!"
                       << "\nIgnoring device...";
         }
+    }
+
+    // If no devices are valid, the application has no reason to work :c
+    if (devices.empty())
+    {
+        LOG(ERROR) << "No devices are valid. Quitting application...";
+        return -1;
     }
 
     LOG(DEBUG) << "Created " << devices.size() << " device(s)!";
