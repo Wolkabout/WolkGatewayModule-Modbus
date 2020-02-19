@@ -118,6 +118,7 @@ int main(int argc, char** argv)
     }();
 
     std::map<std::string, std::unique_ptr<wolkabout::DeviceTemplate>> templates;
+    std::map<std::string, std::unique_ptr<wolkabout::Device>> devices;
 
     for (auto const& deviceTemplate : devicesConfiguration.getTemplates())
     {
@@ -125,6 +126,21 @@ int main(int argc, char** argv)
         templates.insert(std::pair<std::string, std::unique_ptr<wolkabout::DeviceTemplate>>(
           deviceTemplate.first, wolkabout::DevicesTemplateFactory::makeTemplateFromDeviceConfigTemplate(info)));
     }
+
+    for (auto const& deviceInformation : devicesConfiguration.getDevices())
+    {
+        wolkabout::DeviceInformation& info = *deviceInformation.second;
+        const std::string& templateName = info.getTemplateString();
+
+        if (templates.find(templateName) != templates.end())
+        {
+            wolkabout::DeviceTemplate& deviceTemplate = *(templates.find(templateName)->second);
+            devices.insert(std::pair<std::string, std::unique_ptr<wolkabout::Device>>(
+              info.getKey(), new wolkabout::Device(info.getName(), info.getKey(), deviceTemplate)));
+        }
+    }
+
+    LOG(DEBUG) << "Created " << devices.size() << " device(s)!";
 
     //    std::vector<wolkabout::SensorTemplate> sensorTemplates;
     //    std::vector<wolkabout::ActuatorTemplate> actuatorTemplates;
