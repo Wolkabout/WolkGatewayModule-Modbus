@@ -40,8 +40,6 @@
 #include <thread>
 #include <utility>
 
-namespace
-{
 bool loadModuleConfiguration(const std::string& file, wolkabout::ModuleConfiguration& moduleConfiguration)
 {
     try
@@ -73,179 +71,6 @@ bool loadDevicesConfiguration(const std::string& file, wolkabout::DevicesConfigu
         return false;
     }
 }
-
-wolkabout::DataType getDataTypeFromRegisterType(wolkabout::ModbusRegisterMapping::RegisterType registerType)
-{
-    wolkabout::DataType dataType;
-    if (registerType == wolkabout::ModbusRegisterMapping::RegisterType::COIL ||
-        registerType == wolkabout::ModbusRegisterMapping::RegisterType::INPUT_CONTACT)
-    {
-        dataType = wolkabout::DataType::BOOLEAN;
-    }
-    else
-    {
-        dataType = wolkabout::DataType::NUMERIC;
-    }
-    return dataType;
-}
-
-void makeTemplatesFromMappings(const std::vector<wolkabout::ModbusRegisterMapping>& modbusRegisterMappings,
-                               std::vector<wolkabout::SensorTemplate>& sensorTemplates,
-                               std::vector<wolkabout::ActuatorTemplate>& actuatorTemplates,
-                               std::vector<wolkabout::AlarmTemplate>& alarmTemplates,
-                               std::vector<wolkabout::ConfigurationTemplate>& configurationTemplates)
-{
-    for (const wolkabout::ModbusRegisterMapping& modbusRegisterMapping : modbusRegisterMappings)
-    {
-        auto mappingType = modbusRegisterMapping.getMappingType();
-        auto registerType = modbusRegisterMapping.getRegisterType();
-
-        wolkabout::DataType dataType = getDataTypeFromRegisterType(registerType);
-
-        switch (mappingType)
-        {
-        case wolkabout::ModbusRegisterMapping::MappingType::DEFAULT:
-            switch (registerType)
-            {
-            case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
-            {
-                actuatorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                               dataType, modbusRegisterMapping.getDescription(),
-                                               modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
-                break;
-            }
-
-            case wolkabout::ModbusRegisterMapping::RegisterType::COIL:
-            {
-                actuatorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                               dataType, modbusRegisterMapping.getDescription(),
-                                               modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
-                break;
-            }
-
-            case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR:
-            {
-                sensorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                             dataType, modbusRegisterMapping.getDescription(),
-                                             modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
-                break;
-            }
-
-            case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_REGISTER:
-            {
-                sensorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                             dataType, modbusRegisterMapping.getDescription(),
-                                             modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
-                break;
-            }
-
-            case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_CONTACT:
-            {
-                sensorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                             dataType, modbusRegisterMapping.getDescription(),
-                                             modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
-                break;
-            }
-
-            default:
-            {
-                LOG(WARN) << "WolkGatewayModbusModule Application: Mapping with reference '"
-                          << modbusRegisterMapping.getReference()
-                          << "' not added to device manifest - Unknown register type";
-                break;
-            }
-            }
-            break;
-
-        case wolkabout::ModbusRegisterMapping::MappingType::SENSOR:
-            switch (registerType)
-            {
-            case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_CONTACT:
-            case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_REGISTER:
-            case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR:
-                sensorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                             dataType, modbusRegisterMapping.getDescription(),
-                                             modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
-                break;
-            default:
-                LOG(WARN) << "WolkGatewayModbusModule Application: Mapping with reference '"
-                          << modbusRegisterMapping.getReference()
-                          << "' not added to device manifest - Incompatible Mapping and Register type combination";
-                break;
-            }
-            break;
-
-        case wolkabout::ModbusRegisterMapping::MappingType::ACTUATOR:
-            switch (registerType)
-            {
-            case wolkabout::ModbusRegisterMapping::RegisterType::COIL:
-            case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
-                actuatorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                               dataType, modbusRegisterMapping.getDescription(),
-                                               modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
-                break;
-            default:
-                LOG(WARN) << "WolkGatewayModbusModule Application: Mapping with reference '"
-                          << modbusRegisterMapping.getReference()
-                          << "' not added to device manifest - Incompatible Mapping and Register type combination";
-                break;
-            }
-            break;
-
-        case wolkabout::ModbusRegisterMapping::MappingType::ALARM:
-            switch (registerType)
-            {
-            case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_CONTACT:
-                alarmTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                            modbusRegisterMapping.getDescription());
-                break;
-            default:
-                LOG(WARN) << "WolkGatewayModbusModule Application: Mapping with reference '"
-                          << modbusRegisterMapping.getReference()
-                          << "' not added to device manifest - Incompatible Mapping and Register type combination";
-                break;
-            }
-            break;
-
-        case wolkabout::ModbusRegisterMapping::MappingType::CONFIGURATION:
-            switch (registerType)
-            {
-            case wolkabout::ModbusRegisterMapping::RegisterType::COIL:
-            case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
-                if (modbusRegisterMapping.getLabelsAndAddresses().empty())
-                {
-                    configurationTemplates.emplace_back(
-                      modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), dataType,
-                      modbusRegisterMapping.getDescription(), std::string(""), modbusRegisterMapping.getMinimum(),
-                      modbusRegisterMapping.getMaximum());
-                }
-                else
-                {
-                    std::vector<std::string> labels;
-                    for (auto const& kvp : modbusRegisterMapping.getLabelsAndAddresses())
-                    {
-                        labels.push_back(kvp.first);
-                    }
-                    configurationTemplates.emplace_back(
-                      modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), dataType,
-                      modbusRegisterMapping.getDescription(), std::string(""), labels,
-                      modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
-                }
-                break;
-            default:
-                LOG(WARN) << "WolkGatewayModbusModule Application: Mapping with reference '"
-                          << modbusRegisterMapping.getReference()
-                          << "' not added to device manifest - Incompatible Mapping and Register type combination";
-                break;
-            }
-            break;
-
-        default:
-            break;
-        }
-    }
-}
-}    // namespace
 
 int main(int argc, char** argv)
 {
@@ -288,7 +113,7 @@ int main(int argc, char** argv)
               serialConfiguration->getBitParity(), moduleConfiguration.getResponseTimeout()));
         }
 
-        throw std::logic_error("Unsupported Modbus implementation specified in modbus configuration file");
+        throw std::logic_error("Unsupported Modbus implementation specified in module configuration file");
     }();
 
     //    std::vector<wolkabout::SensorTemplate> sensorTemplates;

@@ -35,4 +35,14 @@ DevicesConfiguration::DevicesConfiguration(nlohmann::json j) : m_templates(), m_
         }
     }
 }
+
+const std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& DevicesConfiguration::getMTemplates() const
+{
+    return m_templates;
+}
+
+const std::map<std::string, std::unique_ptr<DeviceInformation>>& DevicesConfiguration::getMDevices() const
+{
+    return m_devices;
+}
 }    // namespace wolkabout

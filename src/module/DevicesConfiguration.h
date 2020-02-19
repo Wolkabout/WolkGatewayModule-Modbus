@@ -18,6 +18,10 @@ public:
 
     explicit DevicesConfiguration(nlohmann::json j);
 
+    const std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& getMTemplates() const;
+
+    const std::map<std::string, std::unique_ptr<DeviceInformation>>& getMDevices() const;
+
 private:
     std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>> m_templates;
     std::map<std::string, std::unique_ptr<DeviceInformation>> m_devices;
