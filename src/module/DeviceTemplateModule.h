@@ -23,16 +23,16 @@ namespace wolkabout
 {
 using nlohmann::json;
 
-class ConfigurationTemplate
+class DeviceTemplateModule
 {
 public:
-    ConfigurationTemplate() = default;
+    DeviceTemplateModule() = default;
 
-    ConfigurationTemplate(std::string& name, std::vector<ModbusRegisterMapping>& mappings);
+    DeviceTemplateModule(std::string& name, std::vector<ModbusRegisterMapping>& mappings);
 
-    ConfigurationTemplate(const ConfigurationTemplate& instance);
+    DeviceTemplateModule(const DeviceTemplateModule& instance);
 
-    explicit ConfigurationTemplate(nlohmann::json json);
+    explicit DeviceTemplateModule(nlohmann::json json);
 
     const std::string& getName() const;
 

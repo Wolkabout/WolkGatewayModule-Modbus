@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-#include "ConfigurationTemplate.h"
+#include "DeviceTemplateModule.h"
 
 namespace wolkabout
 {
 using nlohmann::json;
 
-ConfigurationTemplate::ConfigurationTemplate(std::string& name, std::vector<ModbusRegisterMapping>& mappings)
+DeviceTemplateModule::DeviceTemplateModule(std::string& name, std::vector<ModbusRegisterMapping>& mappings)
 : m_name(name), m_mappings(mappings)
 {
 }
 
-ConfigurationTemplate::ConfigurationTemplate(const ConfigurationTemplate& instance)
+DeviceTemplateModule::DeviceTemplateModule(const DeviceTemplateModule& instance)
 : m_name(instance.getName()), m_mappings(instance.getMappings())
 {
 }
 
-ConfigurationTemplate::ConfigurationTemplate(nlohmann::json j)
+DeviceTemplateModule::DeviceTemplateModule(nlohmann::json j)
 {
     try
     {
@@ -52,12 +52,12 @@ ConfigurationTemplate::ConfigurationTemplate(nlohmann::json j)
     }
 }
 
-const std::string& ConfigurationTemplate::getName() const
+const std::string& DeviceTemplateModule::getName() const
 {
     return m_name;
 }
 
-const std::vector<ModbusRegisterMapping>& ConfigurationTemplate::getMappings() const
+const std::vector<ModbusRegisterMapping>& DeviceTemplateModule::getMappings() const
 {
     return m_mappings;
 }
