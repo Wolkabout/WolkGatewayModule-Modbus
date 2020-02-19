@@ -19,7 +19,7 @@
 
 namespace wolkabout
 {
-SerialRtuConfiguration::SerialRtuConfiguration(std::string& serialPort, uint baudRate, short dataBits, short stopBits,
+SerialRtuConfiguration::SerialRtuConfiguration(std::string& serialPort, int baudRate, char dataBits, char stopBits,
                                                SerialRtuConfiguration::BitParity bitParity)
 : m_serialPort(serialPort), m_baudRate(baudRate), m_dataBits(dataBits), m_stopBits(stopBits), m_bitParity(bitParity)
 {
@@ -38,7 +38,7 @@ SerialRtuConfiguration::SerialRtuConfiguration(nlohmann::json j)
 
     try
     {
-        m_baudRate = j.at("baudRate").get<uint>();
+        m_baudRate = j.at("baudRate").get<int>();
     }
     catch (std::exception&)
     {
@@ -47,7 +47,7 @@ SerialRtuConfiguration::SerialRtuConfiguration(nlohmann::json j)
 
     try
     {
-        m_dataBits = j.at("dataBits").get<short>();
+        m_dataBits = j.at("dataBits").get<char>();
     }
     catch (std::exception&)
     {
@@ -56,7 +56,7 @@ SerialRtuConfiguration::SerialRtuConfiguration(nlohmann::json j)
 
     try
     {
-        m_stopBits = j.at("stopBits").get<short>();
+        m_stopBits = j.at("stopBits").get<char>();
     }
     catch (std::exception&)
     {
@@ -93,17 +93,17 @@ const std::string& SerialRtuConfiguration::getSerialPort() const
     return m_serialPort;
 }
 
-uint SerialRtuConfiguration::getBaudRate() const
+int SerialRtuConfiguration::getBaudRate() const
 {
     return m_baudRate;
 }
 
-short SerialRtuConfiguration::getDataBits() const
+char SerialRtuConfiguration::getDataBits() const
 {
     return m_dataBits;
 }
 
-short SerialRtuConfiguration::getStopBits() const
+char SerialRtuConfiguration::getStopBits() const
 {
     return m_stopBits;
 }

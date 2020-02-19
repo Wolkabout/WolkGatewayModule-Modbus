@@ -33,26 +33,26 @@ public:
 
     SerialRtuConfiguration() = default;
 
-    SerialRtuConfiguration(std::string& serialPort, uint baudRate, short dataBits, short stopBits,
+    SerialRtuConfiguration(std::string& serialPort, int baudRate, char dataBits, char stopBits,
                            SerialRtuConfiguration::BitParity bitParity);
 
-    SerialRtuConfiguration(nlohmann::json j);
+    explicit SerialRtuConfiguration(nlohmann::json j);
 
     const std::string& getSerialPort() const;
 
-    uint getBaudRate() const;
+    int getBaudRate() const;
 
-    short getDataBits() const;
+    char getDataBits() const;
 
-    short getStopBits() const;
+    char getStopBits() const;
 
     SerialRtuConfiguration::BitParity getBitParity() const;
 
 private:
     std::string m_serialPort;
-    uint m_baudRate;
-    short m_dataBits;
-    short m_stopBits;
+    int m_baudRate;
+    char m_dataBits;
+    char m_stopBits;
     SerialRtuConfiguration::BitParity m_bitParity;
 };
 }    // namespace wolkabout

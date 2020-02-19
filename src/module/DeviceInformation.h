@@ -17,7 +17,7 @@
 #ifndef DEVICEINFORMATION_H
 #define DEVICEINFORMATION_H
 
-#include "DeviceTemplateModule.h"
+#include "DevicesConfigurationTemplate.h"
 
 namespace wolkabout
 {
@@ -28,12 +28,12 @@ class DeviceInformation
 public:
     DeviceInformation() = default;
 
-    DeviceInformation(std::string& name, std::string& key, std::unique_ptr<DeviceTemplateModule>* deviceTemplate,
-                      int slaveAddress);
+    DeviceInformation(std::string& name, std::string& key,
+                      std::unique_ptr<DevicesConfigurationTemplate>* deviceTemplate, int slaveAddress);
 
     explicit DeviceInformation(nlohmann::json j);
 
-    DeviceInformation(nlohmann::json j, std::unique_ptr<DeviceTemplateModule>* templatePointer);
+    DeviceInformation(nlohmann::json j, std::unique_ptr<DevicesConfigurationTemplate>* templatePointer);
 
     DeviceInformation(const DeviceInformation& instance);
 
@@ -45,16 +45,16 @@ public:
 
     const std::string& getTemplateString() const;
 
-    std::unique_ptr<DeviceTemplateModule>* getTemplate() const;
+    std::unique_ptr<DevicesConfigurationTemplate>* getTemplate() const;
 
-    void setTemplate(std::unique_ptr<DeviceTemplateModule>* templatePointer);
+    void setTemplate(std::unique_ptr<DevicesConfigurationTemplate>* templatePointer);
 
 private:
     std::string m_name;
     std::string m_key;
     int m_slaveAddress = -1;
     std::string m_templateString;
-    std::unique_ptr<DeviceTemplateModule>* m_template = nullptr;
+    std::unique_ptr<DevicesConfigurationTemplate>* m_template = nullptr;
 };
 }    // namespace wolkabout
 

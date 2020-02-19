@@ -19,7 +19,7 @@ public:
     explicit DevicesConfiguration(nlohmann::json j);
 
 private:
-    std::map<std::string, std::unique_ptr<DeviceTemplateModule>> m_templates;
+    std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>> m_templates;
     std::map<std::string, std::unique_ptr<DeviceInformation>> m_devices;
 };
 }    // namespace wolkabout
