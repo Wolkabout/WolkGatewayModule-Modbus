@@ -16,6 +16,8 @@
 
 #include "DeviceInformation.h"
 
+#include <utility>
+
 namespace wolkabout
 {
 wolkabout::DeviceInformation::DeviceInformation(std::string& name, std::string& key,
@@ -64,6 +66,21 @@ DeviceInformation::DeviceInformation(nlohmann::json j) : m_template(nullptr)
     }
 }
 
+DeviceInformation::DeviceInformation(nlohmann::json j, std::unique_ptr<DeviceTemplateModule>* templatePointer)
+: DeviceInformation(std::move(j))
+{
+    m_template = templatePointer;
+}
+
+DeviceInformation::DeviceInformation(const DeviceInformation& instance)
+: m_name(instance.getName())
+, m_key(instance.getKey())
+, m_slaveAddress(instance.getSlaveAddress())
+, m_templateString(instance.getTemplateString())
+, m_template(instance.getTemplate())
+{
+}
+
 const std::string& DeviceInformation::getName() const
 {
     return m_name;
@@ -84,7 +101,7 @@ const std::string& DeviceInformation::getTemplateString() const
     return m_templateString;
 }
 
-std::unique_ptr<DeviceTemplateModule>* DeviceInformation::getTemplate()
+std::unique_ptr<DeviceTemplateModule>* DeviceInformation::getTemplate() const
 {
     return m_template;
 }

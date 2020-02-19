@@ -25,6 +25,11 @@ DeviceTemplateModule::DeviceTemplateModule(std::string& name, std::vector<Modbus
 {
 }
 
+DeviceTemplateModule::DeviceTemplateModule(const DeviceTemplateModule& instance)
+: m_name(instance.getName()), m_mappings(instance.getMappings())
+{
+}
+
 DeviceTemplateModule::DeviceTemplateModule(nlohmann::json j)
 {
     try
