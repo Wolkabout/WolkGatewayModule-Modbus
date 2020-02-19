@@ -35,6 +35,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <module/DevicesTemplateFactory.h>
 #include <random>
 #include <string>
 #include <thread>
@@ -75,13 +76,13 @@ bool loadDevicesConfiguration(const std::string& file, wolkabout::DevicesConfigu
 int main(int argc, char** argv)
 {
     auto logger = std::unique_ptr<wolkabout::ConsoleLogger>(new wolkabout::ConsoleLogger());
-    logger->setLogLevel(wolkabout::LogLevel::INFO);
+    logger->setLogLevel(wolkabout::LogLevel::TRACE);
     wolkabout::Logger::setInstance(std::move(logger));
 
     if (argc < 3)
     {
         LOG(ERROR) << "WolkGatewayModbusModule Application: Usage -  " << argv[0]
-                   << " [moduleConfigurationPath] [devicesConfigurationFilePath]";
+                   << " [moduleConfigurationFilePath] [devicesConfigurationFilePath]";
         return -1;
     }
 
@@ -115,6 +116,15 @@ int main(int argc, char** argv)
 
         throw std::logic_error("Unsupported Modbus implementation specified in module configuration file");
     }();
+
+    std::map<std::string, std::unique_ptr<wolkabout::DeviceTemplate>> templates;
+
+    for (auto const& deviceTemplate : devicesConfiguration.getTemplates())
+    {
+        wolkabout::DevicesConfigurationTemplate& info = *deviceTemplate.second;
+        templates.insert(std::pair<std::string, std::unique_ptr<wolkabout::DeviceTemplate>>(
+          deviceTemplate.first, wolkabout::DevicesTemplateFactory::makeTemplateFromDeviceConfigTemplate(info)));
+    }
 
     //    std::vector<wolkabout::SensorTemplate> sensorTemplates;
     //    std::vector<wolkabout::ActuatorTemplate> actuatorTemplates;

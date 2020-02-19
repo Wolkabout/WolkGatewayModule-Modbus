@@ -12,6 +12,7 @@ namespace wolkabout
 {
 class DevicesTemplateFactory
 {
+private:
     static DataType getDataTypeFromRegisterType(ModbusRegisterMapping::RegisterType registerType);
 
     static bool processDefaultMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
@@ -30,6 +31,7 @@ class DevicesTemplateFactory
     static bool processConfigurationMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
                                             std::vector<ConfigurationTemplate>& configurationTemplates);
 
+public:
     static std::unique_ptr<wolkabout::DeviceTemplate> makeTemplateFromDeviceConfigTemplate(
       DevicesConfigurationTemplate& configTemplate);
 };

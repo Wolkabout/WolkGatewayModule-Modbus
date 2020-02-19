@@ -148,34 +148,24 @@ std::unique_ptr<DeviceTemplate> DevicesTemplateFactory::makeTemplateFromDeviceCo
         switch (mappingType)
         {
         case ModbusRegisterMapping::MappingType::DEFAULT:
-            if (processDefaultMapping(mapping, dataType, sensorTemplates, actuatorTemplates))
-            {
-                break;
-            }
+            processDefaultMapping(mapping, dataType, sensorTemplates, actuatorTemplates);
+            break;
 
         case ModbusRegisterMapping::MappingType::SENSOR:
-            if (processSensorMapping(mapping, dataType, sensorTemplates))
-            {
-                break;
-            }
+            processSensorMapping(mapping, dataType, sensorTemplates);
+            break;
 
         case ModbusRegisterMapping::MappingType::ACTUATOR:
-            if (processActuatorMapping(mapping, dataType, actuatorTemplates))
-            {
-                break;
-            }
+            processActuatorMapping(mapping, dataType, actuatorTemplates);
+            break;
 
         case ModbusRegisterMapping::MappingType::ALARM:
-            if (processAlarmMapping(mapping, dataType, alarmTemplates))
-            {
-                break;
-            }
+            processAlarmMapping(mapping, dataType, alarmTemplates);
+            break;
 
         case ModbusRegisterMapping::MappingType::CONFIGURATION:
-            if (processConfigurationMapping(mapping, dataType, configurationTemplates))
-            {
-                break;
-            }
+            processConfigurationMapping(mapping, dataType, configurationTemplates);
+            break;
 
         default:
             break;
