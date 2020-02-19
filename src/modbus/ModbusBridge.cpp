@@ -36,34 +36,24 @@
 
 namespace wolkabout
 {
-ModbusBridge::ModbusBridge(ModbusClient& modbusClient, std::vector<ModbusRegisterMapping> modbusRegisterMappings,
+ModbusBridge::ModbusBridge(ModbusClient& modbusClient,
+                           std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& configurationTemplates,
+                           std::map<std::string, std::unique_ptr<DeviceInformation>>& configurationDevices,
+                           std::map<std::string, std::unique_ptr<DeviceTemplate>>& templates,
+                           std::map<int, std::unique_ptr<Device>>& devices,
                            std::chrono::milliseconds registerReadPeriod)
-: m_modbusClient(modbusClient), m_registerReadPeriod(std::move(registerReadPeriod)), m_readerShouldRun(false)
+: m_modbusClient(modbusClient), m_devices(devices), m_registerReadPeriod(registerReadPeriod), m_readerShouldRun(false)
 {
-    if (modbusRegisterMappings.empty())
+    // TODO Rework entire logic of creating modbus mapping groups, but now for each device
+
+    std::vector<std::string> usedTemplates;
+
+    for (auto const& device : devices)
     {
-        throw std::logic_error("You have passed 0 mappings to the bridge.");
+        if (!usedTemplates.empty())
+        {
+        }
     }
-
-    std::sort(modbusRegisterMappings.begin(), modbusRegisterMappings.end(),
-              [](const ModbusRegisterMapping& lhs, const ModbusRegisterMapping& rhs) {
-                  if (lhs.getSlaveAddress() != rhs.getSlaveAddress())
-                  {
-                      return lhs.getSlaveAddress() < rhs.getSlaveAddress();
-                  }
-
-                  if (static_cast<int>(lhs.getRegisterType()) != static_cast<int>(rhs.getRegisterType()))
-                  {
-                      return static_cast<int>(lhs.getRegisterType()) < static_cast<int>(rhs.getRegisterType());
-                  }
-
-                  if (static_cast<int>(lhs.getDataType()) != static_cast<int>(rhs.getDataType()))
-                  {
-                      return static_cast<int>(lhs.getDataType()) < static_cast<int>(rhs.getDataType());
-                  }
-
-                  return lhs.getAddress() < rhs.getAddress();
-              });
 
     int previousSlaveAddress = modbusRegisterMappings.front().getSlaveAddress();
     ModbusRegisterMapping::RegisterType previousRegisterType = modbusRegisterMappings.front().getRegisterType();
@@ -157,8 +147,7 @@ void ModbusBridge::onDeviceStatusChange(std::function<void(wolkabout::DeviceStat
     m_onDeviceStatusChange = std::move(onDeviceStatusChange);
 }
 
-void ModbusBridge::handleActuation(const std::string& /* deviceKey */, const std::string& reference,
-                                   const std::string& value)
+void ModbusBridge::handleActuation(const std::string& deviceKey, const std::string& reference, const std::string& value)
 {
     LOG(INFO) << "ModbusBridge: Handling actuation for reference '" << reference << "' - Value: '" << value << "'";
     if (m_referenceToModbusRegisterMapping.find(reference) == m_referenceToModbusRegisterMapping.cend())

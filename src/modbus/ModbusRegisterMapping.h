@@ -66,7 +66,7 @@ public:
                           double maximum, const LabelMap& labelsAndAddresses, RegisterType registerType,
                           DataType dataType);
 
-    ModbusRegisterMapping(nlohmann::json j);
+    explicit ModbusRegisterMapping(nlohmann::json j);
 
     const std::string& getName() const;
     const std::string& getReference() const;
@@ -77,7 +77,6 @@ public:
 
     LabelMap getLabelsAndAddresses() const;
     int getAddress() const;
-    int getSlaveAddress() const { return -1; }
 
     RegisterType getRegisterType() const;
     DataType getDataType() const;

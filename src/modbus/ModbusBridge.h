@@ -25,12 +25,15 @@
 #include "modbus/ModbusRegisterGroup.h"
 #include "modbus/ModbusRegisterWatcher.h"
 #include "model/ConfigurationItem.h"
+#include "module/DevicesConfigurationTemplate.h"
 
 #include <atomic>
 #include <chrono>
 #include <functional>
 #include <map>
 #include <memory>
+#include <model/Device.h>
+#include <module/DeviceInformation.h>
 #include <string>
 #include <thread>
 #include <vector>
@@ -47,8 +50,11 @@ class ModbusBridge : public ActuationHandlerPerDevice,
                      public DeviceStatusProvider
 {
 public:
-    ModbusBridge(ModbusClient& modbusClient, std::vector<ModbusRegisterMapping> modbusRegisterMappings,
-                 std::chrono::milliseconds registerReadPeriod);
+    ModbusBridge(ModbusClient& modbusClient,
+                 std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& configurationTemplates,
+                 std::map<std::string, std::unique_ptr<DeviceInformation>>& configurationDevices,
+                 std::map<std::string, std::unique_ptr<DeviceTemplate>>& templates,
+                 std::map<int, std::unique_ptr<Device>>& devices, std::chrono::milliseconds registerReadPeriod);
 
     virtual ~ModbusBridge();
 
@@ -112,7 +118,9 @@ private:
     const std::vector<int> m_timeoutDurations = {1, 5, 10, 15, 30, 60, 300, 600, 1800, 3600};
     bool m_shouldReconnect;
 
-    std::vector<ModbusRegisterGroup> m_modbusRegisterGroups;
+    std::map<int, std::unique_ptr<Device>>& m_devices;
+    std::map<int, std::vector<ModbusRegisterGroup>> m_registerGroups;
+
     std::map<std::string, ModbusRegisterMapping> m_referenceToModbusRegisterMapping;
     std::map<std::string, ModbusRegisterMapping> m_referenceToConfigurationModbusRegisterMapping;
     std::map<std::string, ModbusRegisterWatcher> m_referenceToModbusRegisterWatcherMapping;
