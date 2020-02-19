@@ -4,8 +4,6 @@
 
 #include "DevicesConfiguration.h"
 
-#include <iostream>
-
 namespace wolkabout
 {
 DevicesConfiguration::DevicesConfiguration(nlohmann::json j) : m_templates(), m_devices()
@@ -36,12 +34,12 @@ DevicesConfiguration::DevicesConfiguration(nlohmann::json j) : m_templates(), m_
     }
 }
 
-const std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& DevicesConfiguration::getTemplates() const
+std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& DevicesConfiguration::getTemplates()
 {
     return m_templates;
 }
 
-const std::map<std::string, std::unique_ptr<DeviceInformation>>& DevicesConfiguration::getDevices() const
+std::map<std::string, std::unique_ptr<DeviceInformation>>& DevicesConfiguration::getDevices()
 {
     return m_devices;
 }
