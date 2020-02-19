@@ -45,6 +45,11 @@ DeviceTemplateModule::DeviceTemplateModule(nlohmann::json j)
     {
         m_mappings.emplace_back(ModbusRegisterMapping(mapping));
     }
+
+    if (m_mappings.empty())
+    {
+        throw std::logic_error("Template " + m_name + " has no mappings!");
+    }
 }
 
 const std::string& DeviceTemplateModule::getName() const

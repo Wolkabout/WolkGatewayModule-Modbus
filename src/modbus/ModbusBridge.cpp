@@ -19,15 +19,12 @@
 #include "ActuatorStatusProviderPerDevice.h"
 #include "DeviceStatusProvider.h"
 #include "modbus/ModbusClient.h"
-#include "modbus/ModbusConfiguration.h"
 #include "modbus/ModbusRegisterMapping.h"
 #include "modbus/libmodbus/modbus.h"
 #include "utilities/Logger.h"
 #include "utilities/StringUtils.h"
 
 #include <algorithm>
-#include <atomic>
-#include <cassert>
 #include <chrono>
 #include <functional>
 #include <map>
