@@ -114,11 +114,9 @@ private:
 
     // Helper methods for handleActuation
     // TODO Change the parameters
-    void handleActuationForHoldingRegister(const ModbusRegisterMapping& modbusRegisterMapping,
-                                           ModbusRegisterWatcher& modbusRegisterWatcher, const std::string& value);
+    void handleActuationForHoldingRegister(ModbusRegisterWatcher& watcher, const std::string& value);
 
-    void handleActuationForCoil(const ModbusRegisterMapping& modbusRegisterMapping,
-                                ModbusRegisterWatcher& modbusRegisterWatcher, const std::string& value);
+    void handleActuationForCoil(ModbusRegisterWatcher& modbusRegisterWatcher, const std::string& value);
 
     // Helper methods for handleConfiguration
     // TODO Change the parameters
@@ -145,6 +143,9 @@ private:
     void readDiscreteInputs(ModbusRegisterGroup& group);
 
     void readAndReportModbusRegistersValues();
+
+    // Methods to help with data query
+    int getSlaveAddress(const std::string& deviceKey);
 
     // The client
     ModbusClient& m_modbusClient;
