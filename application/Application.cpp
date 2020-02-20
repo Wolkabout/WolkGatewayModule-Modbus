@@ -167,6 +167,7 @@ int main(int argc, char** argv)
     // and that they're different from one another. In TCP/IP mode, we can have only
     // one device, so we need to check for that.
     std::vector<int> occupiedSlaveAddresses;
+    std::map<std::string, std::vector<int>> usedTemplates;
 
     for (auto const& deviceInformation : devicesConfiguration.getDevices())
     {
@@ -198,6 +199,16 @@ int main(int argc, char** argv)
             occupiedSlaveAddresses.push_back(info.getSlaveAddress());
             devices.insert(std::pair<int, std::unique_ptr<wolkabout::Device>>(
               info.getSlaveAddress(), new wolkabout::Device(info.getName(), info.getKey(), deviceTemplate)));
+
+            // Emplace the template name in usedTemplates array for modbusBridge, and the slaveAddress
+            if (usedTemplates.find(templateName) != usedTemplates.end())
+            {
+                usedTemplates.insert(std::pair<std::string, std::vector<int>>(templateName, {info.getSlaveAddress()}));
+            }
+            else
+            {
+                usedTemplates[templateName].emplace_back(info.getSlaveAddress());
+            }
         }
         else
         {
@@ -223,11 +234,11 @@ int main(int argc, char** argv)
 
     // Pass everything necessary to initialize the bridge
     LOG(DEBUG) << "Initializing the bridge...";
-    auto modbusBridge = std::make_shared<wolkabout::ModbusBridge>(*libModbusClient, devicesConfiguration.getTemplates(),
-                                                                  devicesConfiguration.getDevices(), templates, devices,
-                                                                  moduleConfiguration.getRegisterReadPeriod());
+    auto modbusBridge =
+      std::make_shared<wolkabout::ModbusBridge>(*libModbusClient, devicesConfiguration.getTemplates(), usedTemplates,
+                                                devices, moduleConfiguration.getRegisterReadPeriod());
 
-    // Connect the bridge to wolk
+    // Connect the bridge to Wolk instance
     LOG(DEBUG) << "Connecting with Wolk...";
     std::unique_ptr<wolkabout::Wolk> wolk = wolkabout::Wolk::newBuilder()
                                               .deviceStatusProvider(modbusBridge)
@@ -239,6 +250,7 @@ int main(int argc, char** argv)
                                               .build();
 
     // TODO Rework all the callbacks to support multiple devices
+
     //    modbusBridge->onSensorReading([&](const std::string& reference, const std::string& value) {
     //        wolk->addSensorReading(deviceConfiguration.getKey(), reference, value);
     //        wolk->publish();
@@ -261,8 +273,8 @@ int main(int argc, char** argv)
     //
     //    wolk->addDevice(*modbusBridgeDevice);
     //    wolk->connect();
-
-    modbusBridge->start();
+    //
+    //    modbusBridge->start();
 
     while (true)
     {

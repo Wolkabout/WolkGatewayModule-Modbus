@@ -38,81 +38,103 @@ namespace wolkabout
 {
 ModbusBridge::ModbusBridge(ModbusClient& modbusClient,
                            std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& configurationTemplates,
-                           std::map<std::string, std::unique_ptr<DeviceInformation>>& configurationDevices,
-                           std::map<std::string, std::unique_ptr<DeviceTemplate>>& templates,
-                           std::map<int, std::unique_ptr<Device>>& devices,
+                           std::map<std::string, std::vector<int>>& deviceAddressesByTemplate,
+                           std::map<int, std::unique_ptr<Device>>& devicesBySlaveAddress,
                            std::chrono::milliseconds registerReadPeriod)
-: m_modbusClient(modbusClient), m_devices(devices), m_registerReadPeriod(registerReadPeriod), m_readerShouldRun(false)
+: m_modbusClient(modbusClient)
+, m_devices(devicesBySlaveAddress)
+, m_registerReadPeriod(registerReadPeriod)
+, m_readerShouldRun(false)
 {
     // TODO Rework entire logic of creating modbus mapping groups, but now for each device
 
-    std::vector<std::string> usedTemplates;
+    // By deviceAddressesByTemplate, take all the templates that are in use. From configurationTemplates
+    // take the necessary info about the registers of the template, and by that, template the ModbusRegisterGroups
+    // accordingly, then when that is prepared, for each device of that specific template, create instances of
+    // ModbusRegisterGroups for the device (mostly for the slaveAddress).
 
-    for (auto const& device : devices)
+    for (auto const& templateRegistered : deviceAddressesByTemplate)
     {
-        if (!usedTemplates.empty())
+        // Take the template, make groups for the template
+        DevicesConfigurationTemplate& configurationTemplate = *(configurationTemplates[templateRegistered.first]);
+
+        std::vector<ModbusRegisterGroup> templatesGroups;
+        // insert logic for making RegisterGroups for template
+
+        // Go through devices registered by this template
+        // and make their groups (by copying made groups and assinging slaveAddresses.
+        for (auto const& slaveAddress : templateRegistered.second)
         {
-        }
-    }
+            // Copy over the templates groups
+            std::vector<ModbusRegisterGroup> devicesGroups = templatesGroups;
 
-    int previousSlaveAddress = modbusRegisterMappings.front().getSlaveAddress();
-    ModbusRegisterMapping::RegisterType previousRegisterType = modbusRegisterMappings.front().getRegisterType();
-    ModbusRegisterMapping::DataType previousDataType = modbusRegisterMappings.front().getDataType();
-    int previousAddress = modbusRegisterMappings.front().getAddress() - 1;
-
-    ModbusRegisterGroup modbusRegisterGroup(previousSlaveAddress, previousRegisterType, previousDataType);
-    m_modbusRegisterGroups.push_back(modbusRegisterGroup);
-
-    for (const ModbusRegisterMapping& modbusRegisterMapping : modbusRegisterMappings)
-    {
-        if (modbusRegisterMapping.getSlaveAddress() == previousSlaveAddress)
-        {
-            if (static_cast<int>(modbusRegisterMapping.getRegisterType()) == static_cast<int>(previousRegisterType))
+            for (auto const& devicesGroup : devicesGroups)
             {
-                if (static_cast<int>(modbusRegisterMapping.getDataType()) == static_cast<int>(previousDataType))
-                {
-                    if (modbusRegisterMapping.getAddress() == previousAddress + 1)
-                    {
-                        previousSlaveAddress = modbusRegisterMapping.getSlaveAddress();
-                        previousRegisterType = modbusRegisterMapping.getRegisterType();
-                        previousDataType = modbusRegisterMapping.getDataType();
-                        previousAddress = modbusRegisterMapping.getAddress();
-
-                        m_modbusRegisterGroups.back().addRegister(modbusRegisterMapping);
-                        continue;
-                    }
-                }
-            }
-        }
-        previousSlaveAddress = modbusRegisterMapping.getSlaveAddress();
-        previousRegisterType = modbusRegisterMapping.getRegisterType();
-        previousDataType = modbusRegisterMapping.getDataType();
-        previousAddress = modbusRegisterMapping.getAddress();
-
-        ModbusRegisterGroup nextRegisterGroup(previousSlaveAddress, previousRegisterType, previousDataType);
-        m_modbusRegisterGroups.push_back(nextRegisterGroup);
-        m_modbusRegisterGroups.back().addRegister(modbusRegisterMapping);
-    }
-
-    for (const ModbusRegisterGroup& modbusRegisterGroupMapper : m_modbusRegisterGroups)
-    {
-        for (const ModbusRegisterMapping& modbusRegisterMapping : modbusRegisterGroupMapper.getRegisters())
-        {
-            const std::string& reference = modbusRegisterMapping.getReference();
-
-            m_referenceToModbusRegisterMapping.emplace(reference, modbusRegisterMapping);
-            m_referenceToModbusRegisterWatcherMapping.emplace(reference, ModbusRegisterWatcher{});
-
-            if (modbusRegisterMapping.getMappingType() == ModbusRegisterMapping::MappingType::CONFIGURATION)
-            {
-                m_referenceToConfigurationModbusRegisterMapping.emplace(reference, modbusRegisterMapping);
+                // Set slave address to the devices group.
             }
         }
     }
 
-    LOG(DEBUG) << "There are " << m_referenceToModbusRegisterMapping.size() << " mappings!";
-    LOG(DEBUG) << "There are " << m_referenceToModbusRegisterWatcherMapping.size() << " watchers!";
-    LOG(DEBUG) << "There are " << m_referenceToConfigurationModbusRegisterMapping.size() << " configuration mappings!";
+    //    int previousSlaveAddress = modbusRegisterMappings.front().getSlaveAddress();
+    //    ModbusRegisterMapping::RegisterType previousRegisterType = modbusRegisterMappings.front().getRegisterType();
+    //    ModbusRegisterMapping::DataType previousDataType = modbusRegisterMappings.front().getDataType();
+    //    int previousAddress = modbusRegisterMappings.front().getAddress() - 1;
+    //
+    //    ModbusRegisterGroup modbusRegisterGroup(previousSlaveAddress, previousRegisterType, previousDataType);
+    //    m_modbusRegisterGroups.push_back(modbusRegisterGroup);
+    //
+    //    for (const ModbusRegisterMapping& modbusRegisterMapping : modbusRegisterMappings)
+    //    {
+    //        if (modbusRegisterMapping.getSlaveAddress() == previousSlaveAddress)
+    //        {
+    //            if (static_cast<int>(modbusRegisterMapping.getRegisterType()) ==
+    //            static_cast<int>(previousRegisterType))
+    //            {
+    //                if (static_cast<int>(modbusRegisterMapping.getDataType()) == static_cast<int>(previousDataType))
+    //                {
+    //                    if (modbusRegisterMapping.getAddress() == previousAddress + 1)
+    //                    {
+    //                        previousSlaveAddress = modbusRegisterMapping.getSlaveAddress();
+    //                        previousRegisterType = modbusRegisterMapping.getRegisterType();
+    //                        previousDataType = modbusRegisterMapping.getDataType();
+    //                        previousAddress = modbusRegisterMapping.getAddress();
+    //
+    //                        m_modbusRegisterGroups.back().addRegister(modbusRegisterMapping);
+    //                        continue;
+    //                    }
+    //                }
+    //            }
+    //        }
+    //        previousSlaveAddress = modbusRegisterMapping.getSlaveAddress();
+    //        previousRegisterType = modbusRegisterMapping.getRegisterType();
+    //        previousDataType = modbusRegisterMapping.getDataType();
+    //        previousAddress = modbusRegisterMapping.getAddress();
+    //
+    //        ModbusRegisterGroup nextRegisterGroup(previousSlaveAddress, previousRegisterType, previousDataType);
+    //        m_modbusRegisterGroups.push_back(nextRegisterGroup);
+    //        m_modbusRegisterGroups.back().addRegister(modbusRegisterMapping);
+    //    }
+    //
+    //    for (const ModbusRegisterGroup& modbusRegisterGroupMapper : m_modbusRegisterGroups)
+    //    {
+    //        for (const ModbusRegisterMapping& modbusRegisterMapping : modbusRegisterGroupMapper.getRegisters())
+    //        {
+    //            const std::string& reference = modbusRegisterMapping.getReference();
+    //
+    //            m_referenceToModbusRegisterMapping.emplace(reference, modbusRegisterMapping);
+    //            m_referenceToModbusRegisterWatcherMapping.emplace(reference, ModbusRegisterWatcher{});
+    //
+    //            if (modbusRegisterMapping.getMappingType() == ModbusRegisterMapping::MappingType::CONFIGURATION)
+    //            {
+    //                m_referenceToConfigurationModbusRegisterMapping.emplace(reference, modbusRegisterMapping);
+    //            }
+    //        }
+    //    }
+    //
+    //    LOG(DEBUG) << "There are " << m_referenceToModbusRegisterMapping.size() << " mappings!";
+    //    LOG(DEBUG) << "There are " << m_referenceToModbusRegisterWatcherMapping.size() << " watchers!";
+    //    LOG(DEBUG) << "There are " << m_referenceToConfigurationModbusRegisterMapping.size() << " configuration
+    //    mappings!";
 }
 
 ModbusBridge::~ModbusBridge()
@@ -121,30 +143,33 @@ ModbusBridge::~ModbusBridge()
     stop();
 }
 
-void ModbusBridge::onSensorReading(
-  std::function<void(const std::string& reference, const std::string& value)> onSensorReading)
+void ModbusBridge::setOnSensorChange(
+  const std::function<void(const std::string&, const std::string&, const std::string&)>& onSensorChange)
 {
-    m_onSensorReading = std::move(onSensorReading);
+    m_onSensorChange = onSensorChange;
 }
 
-void ModbusBridge::onActuatorStatusChange(std::function<void(const std::string& reference)> onActuatorStatusChange)
+void ModbusBridge::setOnActuatorStatusChange(
+  const std::function<void(const std::string&, const std::string&, const std::string&)>& onActuatorStatusChange)
 {
-    m_onActuatorStatusChange = std::move(onActuatorStatusChange);
+    m_onActuatorStatusChange = onActuatorStatusChange;
 }
 
-void ModbusBridge::onAlarmChange(std::function<void(const std::string& reference, bool active)> onAlarmChange)
+void ModbusBridge::setOnAlarmChange(
+  const std::function<void(const std::string&, const std::string&, bool)>& onAlarmChange)
 {
-    m_onAlarmChange = std::move(onAlarmChange);
+    m_onAlarmChange = onAlarmChange;
 }
 
-void ModbusBridge::onConfigurationChange(std::function<void()> onConfigurationChange)
+void ModbusBridge::setOnConfigurationChange(const std::function<void(const std::string&, void*)>& onConfigurationChange)
 {
-    m_onConfigurationChange = std::move(onConfigurationChange);
+    m_onConfigurationChange = onConfigurationChange;
 }
 
-void ModbusBridge::onDeviceStatusChange(std::function<void(wolkabout::DeviceStatus::Status)> onDeviceStatusChange)
+void ModbusBridge::setOnDeviceStatusChange(
+  const std::function<void(const std::string&, wolkabout::DeviceStatus::Status)>& onDeviceStatusChange)
 {
-    m_onDeviceStatusChange = std::move(onDeviceStatusChange);
+    m_onDeviceStatusChange = onDeviceStatusChange;
 }
 
 void ModbusBridge::handleActuation(const std::string& deviceKey, const std::string& reference, const std::string& value)
