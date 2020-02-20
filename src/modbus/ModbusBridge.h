@@ -97,38 +97,26 @@ protected:
 
 private:
     // Helper methods for getActuatorStatus
-    // TODO Change the parameters
-    ActuatorStatus getActuatorStatusFromHoldingRegister(const ModbusRegisterMapping& modbusRegisterMapping,
-                                                        ModbusRegisterWatcher& modbusRegisterWatcher);
+    ActuatorStatus getActuatorStatusFromHoldingRegister(ModbusRegisterWatcher& watcher);
 
-    ActuatorStatus getActuatorStatusFromCoil(const ModbusRegisterMapping& modbusRegisterMapping,
-                                             ModbusRegisterWatcher& modbusRegisterWatcher);
+    ActuatorStatus getActuatorStatusFromCoil(ModbusRegisterWatcher& watcher);
 
     // Helper methods for getConfiguration
-    // TODO Change the parameters
-    ConfigurationItem getConfigurationStatusFromCoil(const ModbusRegisterMapping& modbusRegisterMapping,
-                                                     ModbusRegisterWatcher& modbusRegisterWatcher);
+    ConfigurationItem getConfigurationStatusFromCoil(ModbusRegisterWatcher& watcher);
 
-    ConfigurationItem getConfigurationStatusFromHoldingRegister(const ModbusRegisterMapping& modbusRegisterMapping,
-                                                                ModbusRegisterWatcher& modbusRegisterWatcher);
+    ConfigurationItem getConfigurationStatusFromHoldingRegister(ModbusRegisterWatcher& watcher);
 
     // Helper methods for handleActuation
-    // TODO Change the parameters
     void handleActuationForHoldingRegister(ModbusRegisterWatcher& watcher, const std::string& value);
 
-    void handleActuationForCoil(ModbusRegisterWatcher& modbusRegisterWatcher, const std::string& value);
+    void handleActuationForCoil(ModbusRegisterWatcher& watcher, const std::string& value);
 
     // Helper methods for handleConfiguration
-    // TODO Change the parameters
-    void handleConfigurationForHoldingRegister(const ModbusRegisterMapping& modbusRegisterMapping,
-                                               ModbusRegisterWatcher& modbusRegisterWatcher, const std::string& value);
+    void handleConfigurationForHoldingRegister(ModbusRegisterWatcher& watcher, const std::string& value);
 
-    void handleConfigurationForHoldingRegisters(const ModbusRegisterMapping& modbusRegisterMapping,
-                                                ModbusRegisterWatcher& modbusRegisterWatcher,
-                                                std::vector<std::string> value);
+    void handleConfigurationForHoldingRegisters(ModbusRegisterWatcher& watcher, const std::vector<std::string>& value);
 
-    void handleConfigurationForCoil(const ModbusRegisterMapping& modbusRegisterMapping,
-                                    ModbusRegisterWatcher& modbusRegisterWatcher, const std::string& value);
+    void handleConfigurationForCoil(ModbusRegisterWatcher& watcher, const std::string& value);
 
     // Running methods
     void run();
