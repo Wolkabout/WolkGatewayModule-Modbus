@@ -54,7 +54,7 @@ public:
     ModbusBridge(ModbusClient& modbusClient,
                  std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& configurationTemplates,
                  std::map<std::string, std::vector<int>>& deviceAddressesByTemplate,
-                 std::chrono::milliseconds registerReadPeriod);
+                 std::map<int, std::unique_ptr<Device>>& devices, std::chrono::milliseconds registerReadPeriod);
 
     virtual ~ModbusBridge();
 
@@ -154,23 +154,16 @@ private:
     const std::vector<int> m_timeoutDurations = {1, 5, 10, 15, 30, 60, 300, 600, 1800, 3600};
     bool m_shouldReconnect;
 
-    // TODO figure out how to store all the devices, their ModbusRegisterGroups and their full necessary data.
-
-    // Used to fast decode deviceKey into slaveAddress.
-    // Mostly to be used by the handle requests to find slaveAddress from the provided deviceKey
-    std::map<std::string, int> m_slaveAddressesByDeviceKey;
+    // Used to fast decode deviceKey by slaveAddress.
+    std::map<int, std::string> m_deviceKeyBySlaveAddress;
     // Access device by slaveAddress
     // Mostly to be used by the readAndReport method, for quickly being able read all groups of device
     std::map<int, std::vector<ModbusRegisterGroup>> m_registerGroupsBySlaveAddress;
     // Device status
     // Mostly to be used by getDeviceStatus to provide, and readAndReport to write if device is available
     std::map<int, DeviceStatus::Status> m_devicesStatusBySlaveAddress;
-
-    // TODO do these really serve a purpose?
-    // Yes, they just now need be aggregated per device
-    std::map<std::string, ModbusRegisterMapping> m_referenceToModbusRegisterMapping;
-    std::map<std::string, ModbusRegisterMapping> m_referenceToConfigurationModbusRegisterMapping;
-    std::map<std::string, ModbusRegisterWatcher> m_referenceToModbusRegisterWatcherMapping;
+    // Watcher for all the mappings. This is the shortcut for handle and get queries to get to the mapping they need.
+    std::map<std::string, ModbusRegisterWatcher> m_registerWatcherByReference;
 
     // Running logic data
     std::chrono::milliseconds m_registerReadPeriod;

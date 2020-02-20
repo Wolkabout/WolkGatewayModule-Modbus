@@ -39,11 +39,13 @@ namespace wolkabout
 ModbusBridge::ModbusBridge(ModbusClient& modbusClient,
                            std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& configurationTemplates,
                            std::map<std::string, std::vector<int>>& deviceAddressesByTemplate,
+                           std::map<int, std::unique_ptr<Device>>& devices,
                            std::chrono::milliseconds registerReadPeriod)
 : m_modbusClient(modbusClient)
-, m_slaveAddressesByDeviceKey()
+, m_deviceKeyBySlaveAddress()
 , m_registerGroupsBySlaveAddress()
 , m_devicesStatusBySlaveAddress()
+, m_registerWatcherByReference()
 , m_registerReadPeriod(registerReadPeriod)
 , m_readerShouldRun(false)
 {
@@ -76,8 +78,17 @@ ModbusBridge::ModbusBridge(ModbusClient& modbusClient,
             {
                 // Set slave address to the devices group.
                 devicesGroup.setSlaveAddress(slaveAddress);
+
+                // Create the watcher for all mappings inside of the group
+                for (auto& mapping : devicesGroup.getRegisters())
+                {
+                    m_registerWatcherByReference.insert(std::pair<std::string, ModbusRegisterWatcher>(
+                      mapping.getReference(), ModbusRegisterWatcher(slaveAddress, mapping)));
+                }
             }
 
+            m_deviceKeyBySlaveAddress.insert(
+              std::pair<int, std::string>(slaveAddress, devices[slaveAddress]->getKey()));
             // Place the device slave address in memory with its ModbusRegisterGroups
             m_registerGroupsBySlaveAddress.insert(
               std::pair<int, std::vector<ModbusRegisterGroup>>(slaveAddress, devicesGroups));

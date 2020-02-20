@@ -20,7 +20,13 @@
 
 namespace wolkabout
 {
-ModbusRegisterWatcher::ModbusRegisterWatcher() : m_isInitialized(false), m_isValid(true) {}
+ModbusRegisterWatcher::ModbusRegisterWatcher(int slaveAddress, const ModbusRegisterMapping& mapping)
+: m_isInitialized(false)
+, m_isValid(true)
+, m_slaveAddress(slaveAddress)
+, m_mapping(const_cast<ModbusRegisterMapping&>(mapping))
+{
+}
 
 bool ModbusRegisterWatcher::update(const std::string& newValue)
 {
@@ -39,6 +45,16 @@ bool ModbusRegisterWatcher::update(const std::string& newValue)
 const std::string& ModbusRegisterWatcher::getValue() const
 {
     return m_value;
+}
+
+int ModbusRegisterWatcher::getSlaveAddress() const
+{
+    return m_slaveAddress;
+}
+
+const ModbusRegisterMapping& ModbusRegisterWatcher::getMapping()
+{
+    return m_mapping;
 }
 
 void ModbusRegisterWatcher::setValid(bool valid)

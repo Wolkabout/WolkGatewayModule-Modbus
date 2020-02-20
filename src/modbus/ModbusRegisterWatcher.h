@@ -26,10 +26,9 @@ namespace wolkabout
 class ModbusRegisterWatcher
 {
 public:
-    ModbusRegisterWatcher();
+    ModbusRegisterWatcher(int slaveAddress, const ModbusRegisterMapping& mapping);
 
     bool update(const std::string& newRegisterValue);
-
     bool update(signed short newRegisterValue);
     bool update(unsigned short newRegisterValue);
     bool update(float newRegisterValue);
@@ -41,6 +40,10 @@ public:
 
     const std::string& getValue() const;
 
+    int getSlaveAddress() const;
+
+    const ModbusRegisterMapping& getMapping();
+
     void setValid(bool valid);
 
 private:
@@ -48,6 +51,9 @@ private:
     bool m_isValid;
 
     std::string m_value;
+
+    int m_slaveAddress;
+    ModbusRegisterMapping& m_mapping;
 };
 }    // namespace wolkabout
 
