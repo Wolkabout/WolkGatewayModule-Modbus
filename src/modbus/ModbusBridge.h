@@ -54,7 +54,6 @@ public:
     ModbusBridge(ModbusClient& modbusClient,
                  std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& configurationTemplates,
                  std::map<std::string, std::vector<int>>& deviceAddressesByTemplate,
-                 std::map<int, std::unique_ptr<Device>>& devicesBySlaveAddress,
                  std::chrono::milliseconds registerReadPeriod);
 
     virtual ~ModbusBridge();
@@ -76,47 +75,74 @@ public:
     void stop();
 
 protected:
+    // Interface method for ActuatorStatusProviderPerDevice
+    // Used to handle request from platform to provide data about an actuator on device
+    ActuatorStatus getActuatorStatus(const std::string& deviceKey, const std::string& reference) override;
+
+    // Interface method for ActuationHandlerPerDevice
+    // Used to receive data change about an actuator from platform on specific device
     void handleActuation(const std::string& deviceKey, const std::string& reference, const std::string& value) override;
 
+    // Interface method for ConfigurationProviderPerDevice
+    // Used to handle request from platform to provide data about a configuration on device
+    std::vector<ConfigurationItem> getConfiguration(const std::string& deviceKey) override;
+
+    // Interface method for ConfigurationHandlerPerDevice
+    // Used to receive data change about a configuration from platform on specific device
     void handleConfiguration(const std::string& deviceKey,
                              const std::vector<ConfigurationItem>& configuration) override;
 
-    ActuatorStatus getActuatorStatus(const std::string& deviceKey, const std::string& reference) override;
-
-    std::vector<ConfigurationItem> getConfiguration(const std::string& deviceKey) override;
-
+    // Interface method for DeviceStatusProvider
     DeviceStatus::Status getDeviceStatus(const std::string& deviceKey) override;
 
 private:
+    // Helper methods for getActuatorStatus
+    // TODO Change the parameters
     ActuatorStatus getActuatorStatusFromHoldingRegister(const ModbusRegisterMapping& modbusRegisterMapping,
                                                         ModbusRegisterWatcher& modbusRegisterWatcher);
 
     ActuatorStatus getActuatorStatusFromCoil(const ModbusRegisterMapping& modbusRegisterMapping,
                                              ModbusRegisterWatcher& modbusRegisterWatcher);
 
+    // Helper methods for getConfiguration
+    // TODO Change the parameters
     ConfigurationItem getConfigurationStatusFromCoil(const ModbusRegisterMapping& modbusRegisterMapping,
                                                      ModbusRegisterWatcher& modbusRegisterWatcher);
 
     ConfigurationItem getConfigurationStatusFromHoldingRegister(const ModbusRegisterMapping& modbusRegisterMapping,
                                                                 ModbusRegisterWatcher& modbusRegisterWatcher);
 
+    // Helper methods for handleActuation
+    // TODO Change the parameters
     void handleActuationForHoldingRegister(const ModbusRegisterMapping& modbusRegisterMapping,
                                            ModbusRegisterWatcher& modbusRegisterWatcher, const std::string& value);
 
     void handleActuationForCoil(const ModbusRegisterMapping& modbusRegisterMapping,
                                 ModbusRegisterWatcher& modbusRegisterWatcher, const std::string& value);
 
+    // Helper methods for handleConfiguration
+    // TODO Change the parameters
     void handleConfigurationForHoldingRegister(const ModbusRegisterMapping& modbusRegisterMapping,
                                                ModbusRegisterWatcher& modbusRegisterWatcher, const std::string& value);
 
-    void handleConfigurationForHoldingRegister(const ModbusRegisterMapping& modbusRegisterMapping,
-                                               ModbusRegisterWatcher& modbusRegisterWatcher,
-                                               std::vector<std::string> value);
+    void handleConfigurationForHoldingRegisters(const ModbusRegisterMapping& modbusRegisterMapping,
+                                                ModbusRegisterWatcher& modbusRegisterWatcher,
+                                                std::vector<std::string> value);
 
     void handleConfigurationForCoil(const ModbusRegisterMapping& modbusRegisterMapping,
                                     ModbusRegisterWatcher& modbusRegisterWatcher, const std::string& value);
 
+    // Running methods
     void run();
+
+    // Helper methods for readAndReport
+    void readHoldingRegisters(ModbusRegisterGroup& group);
+
+    void readInputRegisters(ModbusRegisterGroup& group);
+
+    void readCoils(ModbusRegisterGroup& group);
+
+    void readDiscreteInputs(ModbusRegisterGroup& group);
 
     void readAndReportModbusRegistersValues();
 
@@ -129,13 +155,24 @@ private:
     bool m_shouldReconnect;
 
     // TODO figure out how to store all the devices, their ModbusRegisterGroups and their full necessary data.
-    std::map<int, std::unique_ptr<Device>>& m_devices;
-    std::map<int, std::vector<ModbusRegisterGroup>> m_registerGroups;
+
+    // Used to fast decode deviceKey into slaveAddress.
+    // Mostly to be used by the handle requests to find slaveAddress from the provided deviceKey
+    std::map<std::string, int> m_slaveAddressesByDeviceKey;
+    // Access device by slaveAddress
+    // Mostly to be used by the readAndReport method, for quickly being able read all groups of device
+    std::map<int, std::vector<ModbusRegisterGroup>> m_registerGroupsBySlaveAddress;
+    // Device status
+    // Mostly to be used by getDeviceStatus to provide, and readAndReport to write if device is available
+    std::map<int, DeviceStatus::Status> m_devicesStatusBySlaveAddress;
+
+    // TODO do these really serve a purpose?
+    // Yes, they just now need be aggregated per device
     std::map<std::string, ModbusRegisterMapping> m_referenceToModbusRegisterMapping;
     std::map<std::string, ModbusRegisterMapping> m_referenceToConfigurationModbusRegisterMapping;
     std::map<std::string, ModbusRegisterWatcher> m_referenceToModbusRegisterWatcherMapping;
 
-    // Running logic
+    // Running logic data
     std::chrono::milliseconds m_registerReadPeriod;
     std::atomic_bool m_readerShouldRun;
     std::unique_ptr<std::thread> m_reader;

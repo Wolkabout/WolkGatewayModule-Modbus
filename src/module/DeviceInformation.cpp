@@ -97,6 +97,11 @@ int DeviceInformation::getSlaveAddress() const
     return m_slaveAddress;
 }
 
+void DeviceInformation::setSlaveAddress(int slaveAddress)
+{
+    m_slaveAddress = slaveAddress;
+}
+
 const std::string& DeviceInformation::getTemplateString() const
 {
     return m_templateString;

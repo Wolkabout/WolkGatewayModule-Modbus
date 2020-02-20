@@ -43,6 +43,8 @@ public:
 
     int getSlaveAddress() const;
 
+    void setSlaveAddress(int slaveAddress);
+
     const std::string& getTemplateString() const;
 
     std::unique_ptr<DevicesConfigurationTemplate>* getTemplate() const;

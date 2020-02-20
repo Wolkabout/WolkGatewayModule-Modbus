@@ -18,9 +18,23 @@
 
 namespace wolkabout
 {
+ModbusRegisterGroup::ModbusRegisterGroup(const ModbusRegisterMapping& mapping)
+: m_slaveAddress(-1)
+, m_registerType(mapping.getRegisterType())
+, m_dataType(mapping.getDataType())
+, m_modbusRegisterMappings{mapping}
+{
+}
+
+ModbusRegisterGroup::ModbusRegisterGroup(ModbusRegisterMapping::RegisterType registerType,
+                                         ModbusRegisterMapping::DataType dataType)
+: m_slaveAddress(-1), m_registerType(registerType), m_dataType(dataType), m_modbusRegisterMappings()
+{
+}
+
 ModbusRegisterGroup::ModbusRegisterGroup(int slaveAddress, ModbusRegisterMapping::RegisterType registerType,
                                          ModbusRegisterMapping::DataType dataType)
-: m_slaveAddress(slaveAddress), m_registerType(registerType), m_dataType(dataType)
+: m_slaveAddress(slaveAddress), m_registerType(registerType), m_dataType(dataType), m_modbusRegisterMappings()
 {
 }
 
@@ -89,5 +103,10 @@ const std::vector<ModbusRegisterMapping>& ModbusRegisterGroup::getRegisters() co
 void ModbusRegisterGroup::addRegister(ModbusRegisterMapping modbusRegisterMapping)
 {
     m_modbusRegisterMappings.push_back(modbusRegisterMapping);
+}
+
+void ModbusRegisterGroup::setSlaveAddress(int slaveAddress)
+{
+    m_slaveAddress = slaveAddress;
 }
 }    // namespace wolkabout

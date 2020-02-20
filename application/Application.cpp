@@ -165,8 +165,9 @@ int main(int argc, char** argv)
     // Parse devices with templates to wolkabout::Device
     // We need to check, in the SERIAL/RTU, that all devices have a slave address
     // and that they're different from one another. In TCP/IP mode, we can have only
-    // one device, so we need to check for that.
+    // one device, so we need to check for that (and assign it a slaveAddress, because -1 is an invalid address).
     std::vector<int> occupiedSlaveAddresses;
+    int assigningSlaveAddress = 0;
     std::map<std::string, std::vector<int>> usedTemplates;
 
     for (auto const& deviceInformation : devicesConfiguration.getDevices())
@@ -189,6 +190,11 @@ int main(int argc, char** argv)
                           << "has a conflicting slaveAddress!\nIgnoring device...";
                 continue;
             }
+        }
+        else
+        {
+            // If it's an TCP/IP device, assign it the next free slaveAddress.
+            info.setSlaveAddress(assigningSlaveAddress++);
         }
 
         const std::string& templateName = info.getTemplateString();
@@ -249,37 +255,48 @@ int main(int argc, char** argv)
                                               .host(moduleConfiguration.getMqttHost())
                                               .build();
 
-    // TODO Rework all the callbacks to support multiple devices
+    // Setup all the necessary callbacks for value changes from inside the modbusBridge
+    modbusBridge->setOnSensorChange(
+      [&](const std::string& deviceKey, const std::string& reference, const std::string& value) {
+          wolk->addSensorReading(deviceKey, reference, value);
+          wolk->publish();
+      });
 
-    //    modbusBridge->onSensorReading([&](const std::string& reference, const std::string& value) {
-    //        wolk->addSensorReading(deviceConfiguration.getKey(), reference, value);
-    //        wolk->publish();
-    //    });
-    //
-    //    modbusBridge->onActuatorStatusChange(
-    //      [&](const std::string& reference) { wolk->publishActuatorStatus(deviceConfiguration.getKey(), reference);
-    //      });
-    //
-    //    modbusBridge->onAlarmChange([&](const std::string& reference, bool active) {
-    //        wolk->addAlarm(deviceConfiguration.getKey(), reference, active);
-    //        wolk->publish();
-    //    });
-    //
-    //    modbusBridge->onConfigurationChange([&]() { wolk->publishConfiguration(deviceConfiguration.getKey()); });
-    //
-    //    modbusBridge->onDeviceStatusChange(
-    //      [&](wolkabout::DeviceStatus::Status status) { wolk->publishDeviceStatus(deviceConfiguration.getKey(),
-    //      status); });
-    //
-    //    wolk->addDevice(*modbusBridgeDevice);
+    modbusBridge->setOnActuatorStatusChange(
+      [&](const std::string& deviceKey, const std::string& reference, const std::string& value) {
+          // TODO Pass value here. We already know the value changed, just give it to us!
+          wolk->publishActuatorStatus(deviceKey, reference);
+      });
+
+    modbusBridge->setOnAlarmChange([&](const std::string& deviceKey, const std::string& reference, bool active) {
+        wolk->addAlarm(deviceKey, reference, active);
+        wolk->publish();
+    });
+
+    modbusBridge->setOnConfigurationChange([&](const std::string& deviceKey, void* value) {
+        // TODO Figure this value out! Change the type, make explicit publish!
+        wolk->publishConfiguration(deviceKey);
+    });
+
+    modbusBridge->setOnDeviceStatusChange([&](const std::string& deviceKey, wolkabout::DeviceStatus::Status status) {
+        wolk->publishDeviceStatus(deviceKey, status);
+    });
+
+    // Register all the devices created
+    for (auto const& device : devices)
+    {
+        wolk->addDevice(*device.second);
+    }
+
+    // TODO Final step - unleash it into the wild!
+
     //    wolk->connect();
-    //
     //    modbusBridge->start();
 
-    while (true)
-    {
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    }
+    //    while (true)
+    //    {
+    //        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    //    }
 
     return 0;
 }
