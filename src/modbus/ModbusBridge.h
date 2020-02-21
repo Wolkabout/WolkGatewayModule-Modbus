@@ -23,7 +23,6 @@
 #include "ConfigurationProviderPerDevice.h"
 #include "DeviceStatusProvider.h"
 #include "modbus/ModbusRegisterGroup.h"
-#include "modbus/ModbusRegisterWatcher.h"
 #include "model/ConfigurationItem.h"
 #include "model/Device.h"
 #include "module/DeviceInformation.h"
@@ -66,7 +65,8 @@ public:
 
     void setOnAlarmChange(const std::function<void(const std::string&, const std::string&, bool)>& onAlarmChange);
 
-    void setOnConfigurationChange(const std::function<void(const std::string&, void*)>& onConfigurationChange);
+    void setOnConfigurationChange(
+      const std::function<void(const std::string&, std::vector<ConfigurationItem>)>& onConfigurationChange);
 
     void setOnDeviceStatusChange(
       const std::function<void(const std::string&, wolkabout::DeviceStatus::Status)>& onDeviceStatusChange);
@@ -97,38 +97,40 @@ protected:
 
 private:
     // Helper methods for getActuatorStatus
-    ActuatorStatus getActuatorStatusFromHoldingRegister(ModbusRegisterWatcher& watcher);
+    ActuatorStatus getActuatorStatusFromHoldingRegister(ModbusRegisterMapping& mapping);
 
-    ActuatorStatus getActuatorStatusFromCoil(ModbusRegisterWatcher& watcher);
+    ActuatorStatus getActuatorStatusFromCoil(ModbusRegisterMapping& mapping);
 
     // Helper methods for getConfiguration
-    ConfigurationItem getConfigurationStatusFromCoil(ModbusRegisterWatcher& watcher);
+    ConfigurationItem getConfigurationStatusFromCoil(ModbusRegisterMapping& mapping);
 
-    ConfigurationItem getConfigurationStatusFromHoldingRegister(ModbusRegisterWatcher& watcher);
+    ConfigurationItem getConfigurationStatusFromHoldingRegister(ModbusRegisterMapping& mapping);
 
     // Helper methods for handleActuation
-    void handleActuationForHoldingRegister(ModbusRegisterWatcher& watcher, const std::string& value);
+    void handleActuationForHoldingRegister(ModbusRegisterMapping& mapping, const std::string& value);
 
-    void handleActuationForCoil(ModbusRegisterWatcher& watcher, const std::string& value);
+    void handleActuationForCoil(ModbusRegisterMapping& mapping, const std::string& value);
 
     // Helper methods for handleConfiguration
-    void handleConfigurationForHoldingRegister(ModbusRegisterWatcher& watcher, const std::string& value);
+    void handleConfigurationForHoldingRegister(ModbusRegisterMapping& mapping, const std::string& value);
 
-    void handleConfigurationForHoldingRegisters(ModbusRegisterWatcher& watcher, const std::vector<std::string>& value);
+    void handleConfigurationForHoldingRegisters(ModbusRegisterMapping& mapping, const std::vector<std::string>& value);
 
-    void handleConfigurationForCoil(ModbusRegisterWatcher& watcher, const std::string& value);
+    void handleConfigurationForCoil(ModbusRegisterMapping& mapping, const std::string& value);
 
     // Running methods
     void run();
 
     // Helper methods for readAndReport
-    void readHoldingRegisters(ModbusRegisterGroup& group);
+    void readHoldingRegistersActuators(ModbusRegisterGroup& group, std::map<int, bool>& slavesRead);
 
-    void readInputRegisters(ModbusRegisterGroup& group);
+    void readHoldingRegistersSensors(ModbusRegisterGroup& group, std::map<int, bool>& slavesRead);
 
-    void readCoils(ModbusRegisterGroup& group);
+    void readInputRegisters(ModbusRegisterGroup& group, std::map<int, bool>& slavesRead);
 
-    void readDiscreteInputs(ModbusRegisterGroup& group);
+    void readCoils(ModbusRegisterGroup& group, std::map<int, bool>& slavesRead);
+
+    void readDiscreteInputs(ModbusRegisterGroup& group, std::map<int, bool>& slavesRead);
 
     void readAndReportModbusRegistersValues();
 
@@ -139,7 +141,7 @@ private:
     ModbusClient& m_modbusClient;
 
     // Reconnect logic
-    int m_timeoutIterator;
+    unsigned long m_timeoutIterator;
     const std::vector<int> m_timeoutDurations = {1, 5, 10, 15, 30, 60, 300, 600, 1800, 3600};
     bool m_shouldReconnect;
 
@@ -152,7 +154,9 @@ private:
     // Mostly to be used by getDeviceStatus to provide, and readAndReport to write if device is available
     std::map<int, DeviceStatus::Status> m_devicesStatusBySlaveAddress;
     // Watcher for all the mappings. This is the shortcut for handle and get queries to get to the mapping they need.
-    std::map<std::string, ModbusRegisterWatcher> m_registerWatcherByReference;
+    std::map<std::string, ModbusRegisterMapping*> m_registerMappingByReference;
+    // Configurations grouped per device. Necessary for getConfiguration.
+    std::map<std::string, std::map<std::string, ModbusRegisterMapping*>> m_configurationMappingByDevice;
 
     // Running logic data
     std::chrono::milliseconds m_registerReadPeriod;
@@ -160,15 +164,14 @@ private:
     std::unique_ptr<std::thread> m_reader;
 
     // All the callbacks from the modbusBridge to explicitly target Wolk instance and notify of data
-    // TODO make all onData events explicit! RADICAL CHANGE OF THESE
+    // TODO make all onData events explicit
     // This may involve adding methods to WolkGatewayModule-SDK-Cpp, like it was done before for alarms&configurations
     std::function<void(const std::string& deviceKey, const std::string& reference, const std::string& value)>
       m_onSensorChange;
     std::function<void(const std::string& deviceKey, const std::string& reference, const std::string& value)>
       m_onActuatorStatusChange;
     std::function<void(const std::string& deviceKey, const std::string& reference, bool active)> m_onAlarmChange;
-    // TODO figure out what data needs to be here in the configuration
-    std::function<void(const std::string& deviceKey, void* data)> m_onConfigurationChange;
+    std::function<void(const std::string& deviceKey, std::vector<ConfigurationItem> data)> m_onConfigurationChange;
     std::function<void(const std::string& deviceKey, wolkabout::DeviceStatus::Status status)> m_onDeviceStatusChange;
 };
 }    // namespace wolkabout

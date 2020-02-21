@@ -82,6 +82,22 @@ public:
     DataType getDataType() const;
     MappingType getMappingType() const;
 
+    bool update(const std::string& newRegisterValue);
+    bool update(signed short newRegisterValue);
+    bool update(unsigned short newRegisterValue);
+    bool update(float newRegisterValue);
+    bool update(bool newRegisterValue);
+    bool update(const std::vector<bool>& newRegisterValue);
+    bool update(const std::vector<short>& newRegisterValue);
+    bool update(const std::vector<unsigned short>& newRegisterValue);
+    bool update(const std::vector<float>& newRegisterValue);
+
+    int getSlaveAddress() const;
+    void setSlaveAddress(uint slaveAddress);
+
+    const std::string& getValue() const;
+    void setValid(bool valid);
+
 private:
     std::string m_name;
     std::string m_reference;
@@ -96,6 +112,14 @@ private:
     RegisterType m_registerType;
     DataType m_dataType;
     MappingType m_mappingType;
+
+    uint m_slaveAddress;
+
+    // Watcher logic
+    bool m_isInitialized;
+    bool m_isValid;
+
+    std::string m_value;
 };
 
 class MappingTypeConversion

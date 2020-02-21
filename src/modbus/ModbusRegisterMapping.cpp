@@ -42,6 +42,8 @@ ModbusRegisterMapping::ModbusRegisterMapping(
 , m_registerType(registerType)
 , m_dataType(dataType)
 , m_mappingType(mappingType)
+, m_isInitialized(false)
+, m_isValid(true)
 {
 }
 
@@ -59,10 +61,12 @@ ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string refer
 , m_registerType(registerType)
 , m_dataType(dataType)
 , m_mappingType(MappingType::CONFIGURATION)
+, m_isInitialized(false)
+, m_isValid(true)
 {
 }
 
-ModbusRegisterMapping::ModbusRegisterMapping(nlohmann::json j)
+ModbusRegisterMapping::ModbusRegisterMapping(nlohmann::json j) : m_isInitialized(false), m_isValid(true)
 {
     m_name = j.at("name").get<std::string>();
     m_reference = j.at("reference").get<std::string>();
@@ -234,6 +238,120 @@ LabelMap ModbusRegisterMapping::getLabelsAndAddresses() const
     return m_labelsAndAddresses;
 }
 
+bool ModbusRegisterMapping::update(const std::string& newValue)
+{
+    bool isValueUpdated = m_value != newValue;
+    m_value = newValue;
+
+    bool isValueInitialized = m_isInitialized;
+    m_isInitialized = true;
+
+    bool isValid = m_isValid;
+    m_isValid = true;
+
+    return !isValueInitialized || isValueUpdated || !isValid;
+}
+
+const std::string& ModbusRegisterMapping::getValue() const
+{
+    return m_value;
+}
+
+void ModbusRegisterMapping::setValid(bool valid)
+{
+    m_isValid = valid;
+}
+
+bool ModbusRegisterMapping::update(signed short newRegisterValue)
+{
+    const auto newRegisterValueStr = std::to_string(newRegisterValue);
+    return update(newRegisterValueStr);
+}
+
+bool ModbusRegisterMapping::update(unsigned short newRegisterValue)
+{
+    const auto newRegisterValueStr = std::to_string(newRegisterValue);
+    return update(newRegisterValueStr);
+}
+
+bool ModbusRegisterMapping::update(float newRegisterValue)
+{
+    const auto newRegisterValueStr = std::to_string(newRegisterValue);
+    return update(newRegisterValueStr);
+}
+
+bool ModbusRegisterMapping::update(bool newRegisterValue)
+{
+    const auto newRegisterValueStr = std::to_string(newRegisterValue);
+    return update(newRegisterValueStr);
+}
+
+bool ModbusRegisterMapping::update(const std::vector<bool>& newRegisterValue)
+{
+    std::string newRegisterValueStr;
+    for (int i = 0; i < newRegisterValue.size(); i++)
+    {
+        newRegisterValueStr += newRegisterValue[i] ? "true" : "false";
+        if (i < newRegisterValue.size() - 1)
+        {
+            newRegisterValueStr += ',';
+        }
+    }
+    return update(newRegisterValueStr);
+}
+
+bool ModbusRegisterMapping::update(const std::vector<short>& newRegisterValue)
+{
+    std::string newRegisterValueStr;
+    for (int i = 0; i < newRegisterValue.size(); i++)
+    {
+        newRegisterValueStr += std::to_string(newRegisterValue[i]);
+        if (i < newRegisterValue.size() - 1)
+        {
+            newRegisterValueStr += ',';
+        }
+    }
+    return update(newRegisterValueStr);
+}
+
+bool ModbusRegisterMapping::update(const std::vector<unsigned short>& newRegisterValue)
+{
+    std::string newRegisterValueStr;
+    for (int i = 0; i < newRegisterValue.size(); i++)
+    {
+        newRegisterValueStr += std::to_string(newRegisterValue[i]);
+        if (i < newRegisterValue.size() - 1)
+        {
+            newRegisterValueStr += ',';
+        }
+    }
+    return update(newRegisterValueStr);
+}
+
+bool ModbusRegisterMapping::update(const std::vector<float>& newRegisterValue)
+{
+    std::string newRegisterValueStr;
+    for (int i = 0; i < newRegisterValue.size(); i++)
+    {
+        newRegisterValueStr += std::to_string(newRegisterValue[i]);
+        if (i < newRegisterValue.size() - 1)
+        {
+            newRegisterValueStr += ',';
+        }
+    }
+    return update(newRegisterValueStr);
+}
+
+int ModbusRegisterMapping::getSlaveAddress() const
+{
+    return static_cast<int>(m_slaveAddress);
+}
+
+void ModbusRegisterMapping::setSlaveAddress(uint slaveAddress)
+{
+    m_slaveAddress = slaveAddress;
+}
+
 ModbusRegisterMapping::RegisterType MappingTypeConversion::deserializeRegisterType(const std::string& registerType)
 {
     if (registerType == "INPUT_REGISTER")
@@ -306,5 +424,4 @@ ModbusRegisterMapping::MappingType MappingTypeConversion::deserializeMappingType
     }
     throw std::logic_error("Unknown data type: " + mappingType);
 }
-
 }    // namespace wolkabout
