@@ -77,23 +77,35 @@ ModbusBridge::ModbusBridge(ModbusClient& modbusClient,
             // Copy over the templates groups (deep copy, objects are recreated)
             std::vector<ModbusRegisterGroup> devicesGroups = templatesGroups;
 
-            for (auto& devicesGroup : devicesGroups)
+            m_deviceKeyBySlaveAddress.insert(
+              std::pair<int, std::string>(slaveAddress, devices[slaveAddress]->getKey()));
+            m_devicesStatusBySlaveAddress.insert(
+              std::pair<int, DeviceStatus::Status>(slaveAddress, DeviceStatus::Status::OFFLINE));
+            // Place the device slave address in memory with its ModbusRegisterGroups
+            auto deviceGroupsPair =
+              m_registerGroupsBySlaveAddress
+                .insert(std::pair<int, std::vector<ModbusRegisterGroup>>(slaveAddress, devicesGroups))
+                .first;
+
+            for (auto& devicesGroup : deviceGroupsPair->second)
             {
                 // Set slave address to the devices group.
                 devicesGroup.setSlaveAddress(slaveAddress);
 
-                // Create the watcher for all mappings inside of the group
-                for (auto mapping : devicesGroup.getRegisters())
+                for (uint i = 0; i < devicesGroup.getRegisters().size(); i++)
                 {
-                    mapping.setSlaveAddress((uint)slaveAddress);
+                    ModbusRegisterMapping* mapping = &(devicesGroup.getRegisters()[i]);
+                    LOG(TRACE) << mapping;
+
+                    mapping->setSlaveAddress((uint)slaveAddress);
                     auto deviceKey = devices[slaveAddress]->getKey();
-                    auto pair = m_registerMappingByReference
-                                  .insert(std::pair<std::string, ModbusRegisterMapping*>(
-                                    deviceKey + '.' + mapping.getReference(), &mapping))
-                                  .first;
+                    auto mappingPair = m_registerMappingByReference
+                                         .insert(std::pair<std::string, ModbusRegisterMapping*>(
+                                           deviceKey + '.' + mapping->getReference(), mapping))
+                                         .first;
 
                     // If the mapping is configuration, add it to the log of configurations for devices.
-                    if (mapping.getMappingType() == ModbusRegisterMapping::MappingType::CONFIGURATION)
+                    if (mapping->getMappingType() == ModbusRegisterMapping::MappingType::CONFIGURATION)
                     {
                         if (m_configurationMappingByDevice.find(deviceKey) == m_configurationMappingByDevice.end())
                         {
@@ -102,18 +114,10 @@ ModbusBridge::ModbusBridge(ModbusClient& modbusClient,
                         }
 
                         m_configurationMappingByDevice[deviceKey].insert(
-                          std::pair<std::string, ModbusRegisterMapping*>(mapping.getReference(), pair->second));
+                          std::pair<std::string, ModbusRegisterMapping*>(mapping->getReference(), mappingPair->second));
                     }
                 }
             }
-
-            m_deviceKeyBySlaveAddress.insert(
-              std::pair<int, std::string>(slaveAddress, devices[slaveAddress]->getKey()));
-            // Place the device slave address in memory with its ModbusRegisterGroups
-            m_registerGroupsBySlaveAddress.insert(
-              std::pair<int, std::vector<ModbusRegisterGroup>>(slaveAddress, devicesGroups));
-            m_devicesStatusBySlaveAddress.insert(
-              std::pair<int, DeviceStatus::Status>(slaveAddress, DeviceStatus::Status::OFFLINE));
         }
     }
 }
@@ -126,8 +130,9 @@ ModbusBridge::~ModbusBridge()
 
 int ModbusBridge::getSlaveAddress(const std::string& deviceKey)
 {
-    auto iterator = std::find_if(m_deviceKeyBySlaveAddress.begin(), m_deviceKeyBySlaveAddress.end(),
-                                 [&](std::pair<int, std::string>& element) { return element.second == deviceKey; });
+    auto iterator =
+      std::find_if(m_deviceKeyBySlaveAddress.begin(), m_deviceKeyBySlaveAddress.end(),
+                   [&](const std::pair<int, std::string>& element) { return element.second == deviceKey; });
 
     if (iterator == m_deviceKeyBySlaveAddress.end())
     {
@@ -157,7 +162,7 @@ void ModbusBridge::setOnAlarmChange(
 }
 
 void ModbusBridge::setOnConfigurationChange(
-  const std::function<void(const std::string&, std::vector<ConfigurationItem>)>& onConfigurationChange)
+  const std::function<void(const std::string&, std::vector<ConfigurationItem>&)>& onConfigurationChange)
 {
     m_onConfigurationChange = onConfigurationChange;
 }
@@ -473,7 +478,7 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatus(const std::string& dev
         return ActuatorStatus("", ActuatorStatus::State::ERROR);
     }
 
-    auto mapping = *m_registerMappingByReference[deviceKey + '.' + reference];
+    auto mapping = *(m_registerMappingByReference[deviceKey + '.' + reference]);
 
     if (mapping.getRegisterType() != ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR &&
         mapping.getRegisterType() != ModbusRegisterMapping::RegisterType::COIL)
@@ -775,9 +780,9 @@ void ModbusBridge::readHoldingRegistersActuators(wolkabout::ModbusRegisterGroup&
                 case ModbusRegisterMapping::MappingType::CONFIGURATION:
                     if (m_onConfigurationChange)
                     {
-                        m_onConfigurationChange(
-                          m_deviceKeyBySlaveAddress[group.getSlaveAddress()],
-                          {ConfigurationItem(StringUtils::tokenize(mapping.getValue(), ","), mapping.getReference())});
+                        auto vector = std::vector<ConfigurationItem>{
+                          ConfigurationItem(StringUtils::tokenize(mapping.getValue(), ","), mapping.getReference())};
+                        m_onConfigurationChange(m_deviceKeyBySlaveAddress[group.getSlaveAddress()], vector);
                     }
                     break;
                 default:
@@ -841,9 +846,9 @@ void ModbusBridge::readHoldingRegistersActuators(wolkabout::ModbusRegisterGroup&
                 case ModbusRegisterMapping::MappingType::CONFIGURATION:
                     if (m_onConfigurationChange)
                     {
-                        m_onConfigurationChange(
-                          deviceKey,
-                          {ConfigurationItem(StringUtils::tokenize(mapping.getValue(), ","), mapping.getReference())});
+                        auto vector = std::vector<ConfigurationItem>{
+                          ConfigurationItem(StringUtils::tokenize(mapping.getValue(), ","), mapping.getReference())};
+                        m_onConfigurationChange(deviceKey, vector);
                     }
                     break;
                 default:
@@ -908,9 +913,9 @@ void ModbusBridge::readHoldingRegistersActuators(wolkabout::ModbusRegisterGroup&
                 case ModbusRegisterMapping::MappingType::CONFIGURATION:
                     if (m_onConfigurationChange)
                     {
-                        m_onConfigurationChange(
-                          deviceKey,
-                          {ConfigurationItem(StringUtils::tokenize(mapping.getValue(), ","), mapping.getReference())});
+                        auto vector = std::vector<ConfigurationItem>{
+                          ConfigurationItem(StringUtils::tokenize(mapping.getValue(), ","), mapping.getReference())};
+                        m_onConfigurationChange(deviceKey, vector);
                     }
                     break;
                 default:
@@ -919,6 +924,7 @@ void ModbusBridge::readHoldingRegistersActuators(wolkabout::ModbusRegisterGroup&
                 }
             }
         }
+        break;
     }
     case ModbusRegisterMapping::DataType::BOOL:
         throw std::logic_error(&"Invalid type for HoldingRegisterActuator at slaveAddress "[group.getSlaveAddress()]);
@@ -1204,9 +1210,9 @@ void ModbusBridge::readCoils(ModbusRegisterGroup& group, std::map<int, bool>& sl
             case ModbusRegisterMapping::MappingType::CONFIGURATION:
                 if (m_onConfigurationChange)
                 {
-                    m_onConfigurationChange(
-                      deviceKey,
-                      {ConfigurationItem(StringUtils::tokenize(mapping.getValue(), ","), mapping.getReference())});
+                    auto vector = std::vector<ConfigurationItem>{
+                      ConfigurationItem(StringUtils::tokenize(mapping.getValue(), ","), mapping.getReference())};
+                    m_onConfigurationChange(deviceKey, vector);
                 }
                 break;
             default:

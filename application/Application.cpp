@@ -209,11 +209,11 @@ int main(int argc, char** argv)
             // Emplace the template name in usedTemplates array for modbusBridge, and the slaveAddress
             if (usedTemplates.find(templateName) != usedTemplates.end())
             {
-                usedTemplates.insert(std::pair<std::string, std::vector<int>>(templateName, {info.getSlaveAddress()}));
+                usedTemplates[templateName].emplace_back(info.getSlaveAddress());
             }
             else
             {
-                usedTemplates[templateName].emplace_back(info.getSlaveAddress());
+                usedTemplates.insert(std::pair<std::string, std::vector<int>>(templateName, {info.getSlaveAddress()}));
             }
         }
         else
@@ -273,10 +273,11 @@ int main(int argc, char** argv)
         wolk->publish();
     });
 
-    modbusBridge->setOnConfigurationChange([&](const std::string& deviceKey, void* value) {
-        // TODO Figure this value out! Change the type, make explicit publish!
-        wolk->publishConfiguration(deviceKey);
-    });
+    modbusBridge->setOnConfigurationChange(
+      [&](const std::string& deviceKey, std::vector<wolkabout::ConfigurationItem>& value) {
+          // TODO Figure this value out! Change the type, make explicit publish!
+          wolk->publishConfiguration(deviceKey);
+      });
 
     modbusBridge->setOnDeviceStatusChange([&](const std::string& deviceKey, wolkabout::DeviceStatus::Status status) {
         wolk->publishDeviceStatus(deviceKey, status);
@@ -288,15 +289,13 @@ int main(int argc, char** argv)
         wolk->addDevice(*device.second);
     }
 
-    // TODO Final step - unleash it into the wild!
+    wolk->connect();
+    modbusBridge->start();
 
-    //    wolk->connect();
-    //    modbusBridge->start();
-
-    //    while (true)
-    //    {
-    //        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    //    }
+    while (true)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
 
     return 0;
 }

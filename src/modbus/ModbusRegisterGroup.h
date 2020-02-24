@@ -39,7 +39,7 @@ public:
     int getStartingRegisterAddress();
     int getRegisterCount();
     int getMappingsCount();
-    const std::vector<ModbusRegisterMapping>& getRegisters() const;
+    std::vector<ModbusRegisterMapping>& getRegisters();
 
     void addRegister(ModbusRegisterMapping modbusRegisterMapping);
     void setSlaveAddress(int slaveAddress);

@@ -95,7 +95,7 @@ int ModbusRegisterGroup::getRegisterCount()
     return count;
 }
 
-const std::vector<ModbusRegisterMapping>& ModbusRegisterGroup::getRegisters() const
+std::vector<ModbusRegisterMapping>& ModbusRegisterGroup::getRegisters()
 {
     return m_modbusRegisterMappings;
 }

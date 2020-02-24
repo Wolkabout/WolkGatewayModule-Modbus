@@ -1,4 +1,18 @@
 {
+    "devices": [
+        {
+            "name": "DEVICE_NAME",
+            "key": "DEVICE_KEY",
+            "slaveAddress": 1,
+            "template": "TEMPLATE_NAME"
+        },
+        {
+            "name": "DEVICE_NAME2",
+            "key": "DEVICE_KEY2",
+            "slaveAddress": 2,
+            "template": "TEMPLATE_NAME"
+        }
+    ],
     "templates": [
         {
             "name": "TEMPLATE_NAME",
@@ -59,14 +73,6 @@
                     "dataType": "BOOL"
                 }
             ]
-        }
-    ],
-    "devices": [
-        {
-            "name": "DEVICE_NAME",
-            "key": "DEVICE_KEY",
-            "slaveAddress": 1,
-            "template": "TEMPLATE_NAME"
         }
     ]
 }
