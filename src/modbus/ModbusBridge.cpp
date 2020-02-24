@@ -95,8 +95,6 @@ ModbusBridge::ModbusBridge(ModbusClient& modbusClient,
                 for (uint i = 0; i < devicesGroup.getRegisters().size(); i++)
                 {
                     ModbusRegisterMapping* mapping = &(devicesGroup.getRegisters()[i]);
-                    LOG(TRACE) << mapping;
-
                     mapping->setSlaveAddress((uint)slaveAddress);
                     auto deviceKey = devices[slaveAddress]->getKey();
                     auto mappingPair = m_registerMappingByReference
