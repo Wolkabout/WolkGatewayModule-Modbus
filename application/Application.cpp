@@ -264,8 +264,7 @@ int main(int argc, char** argv)
 
     modbusBridge->setOnActuatorStatusChange(
       [&](const std::string& deviceKey, const std::string& reference, const std::string& value) {
-          // TODO Pass value here. We already know the value changed, just give it to us!
-          wolk->publishActuatorStatus(deviceKey, reference);
+          wolk->publishActuatorStatus(deviceKey, reference, value);
       });
 
     modbusBridge->setOnAlarmChange([&](const std::string& deviceKey, const std::string& reference, bool active) {

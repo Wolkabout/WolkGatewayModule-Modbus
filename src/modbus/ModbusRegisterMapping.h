@@ -66,6 +66,8 @@ public:
                           double maximum, const LabelMap& labelsAndAddresses, RegisterType registerType,
                           DataType dataType);
 
+    ModbusRegisterMapping(const ModbusRegisterMapping& mapping);
+
     explicit ModbusRegisterMapping(nlohmann::json j);
 
     const std::string& getName() const;
@@ -93,7 +95,7 @@ public:
     bool update(const std::vector<float>& newRegisterValue);
 
     int getSlaveAddress() const;
-    void setSlaveAddress(uint slaveAddress);
+    void setSlaveAddress(int slaveAddress);
 
     const std::string& getValue() const;
     void setValid(bool valid);
@@ -113,7 +115,7 @@ private:
     DataType m_dataType;
     MappingType m_mappingType;
 
-    uint m_slaveAddress;
+    int m_slaveAddress;
 
     // Watcher logic
     bool m_isInitialized;

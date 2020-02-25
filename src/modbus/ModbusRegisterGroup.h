@@ -33,13 +33,15 @@ public:
     ModbusRegisterGroup(int slaveAddress, ModbusRegisterMapping::RegisterType registerType,
                         ModbusRegisterMapping::DataType dataType);
 
-    int getSlaveAddress();
-    ModbusRegisterMapping::RegisterType getRegisterType();
-    ModbusRegisterMapping::DataType getDataType();
-    int getStartingRegisterAddress();
-    int getRegisterCount();
-    int getMappingsCount();
-    std::vector<ModbusRegisterMapping>& getRegisters();
+    ModbusRegisterGroup(const ModbusRegisterGroup& group);
+
+    int getSlaveAddress() const;
+    ModbusRegisterMapping::RegisterType getRegisterType() const;
+    ModbusRegisterMapping::DataType getDataType() const;
+    int getStartingRegisterAddress() const;
+    int getRegisterCount() const;
+    int getMappingsCount() const;
+    std::vector<ModbusRegisterMapping> getRegisters() const;
 
     void addRegister(ModbusRegisterMapping modbusRegisterMapping);
     void setSlaveAddress(int slaveAddress);

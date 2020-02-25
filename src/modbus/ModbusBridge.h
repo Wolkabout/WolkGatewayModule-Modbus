@@ -122,15 +122,15 @@ private:
     void run();
 
     // Helper methods for readAndReport
-    void readHoldingRegistersActuators(ModbusRegisterGroup& group, std::map<int, bool>& slavesRead);
+    void readHoldingRegistersActuators(const ModbusRegisterGroup& group, std::map<int, bool>& slavesRead);
 
-    void readHoldingRegistersSensors(ModbusRegisterGroup& group, std::map<int, bool>& slavesRead);
+    void readHoldingRegistersSensors(const ModbusRegisterGroup& group, std::map<int, bool>& slavesRead);
 
-    void readInputRegisters(ModbusRegisterGroup& group, std::map<int, bool>& slavesRead);
+    void readInputRegisters(const ModbusRegisterGroup& group, std::map<int, bool>& slavesRead);
 
-    void readCoils(ModbusRegisterGroup& group, std::map<int, bool>& slavesRead);
+    void readCoils(const ModbusRegisterGroup& group, std::map<int, bool>& slavesRead);
 
-    void readDiscreteInputs(ModbusRegisterGroup& group, std::map<int, bool>& slavesRead);
+    void readDiscreteInputs(const ModbusRegisterGroup& group, std::map<int, bool>& slavesRead);
 
     void readAndReportModbusRegistersValues();
 

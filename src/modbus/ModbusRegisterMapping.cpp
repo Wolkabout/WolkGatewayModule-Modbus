@@ -18,6 +18,7 @@
 #include "utilities/FileSystemUtils.h"
 #include "utilities/json.hpp"
 
+#include <iostream>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -42,6 +43,7 @@ ModbusRegisterMapping::ModbusRegisterMapping(
 , m_registerType(registerType)
 , m_dataType(dataType)
 , m_mappingType(mappingType)
+, m_slaveAddress(0)
 , m_isInitialized(false)
 , m_isValid(true)
 {
@@ -61,12 +63,31 @@ ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string refer
 , m_registerType(registerType)
 , m_dataType(dataType)
 , m_mappingType(MappingType::CONFIGURATION)
+, m_slaveAddress(0)
 , m_isInitialized(false)
 , m_isValid(true)
 {
 }
 
-ModbusRegisterMapping::ModbusRegisterMapping(nlohmann::json j) : m_isInitialized(false), m_isValid(true)
+ModbusRegisterMapping::ModbusRegisterMapping(const ModbusRegisterMapping& mapping)
+: m_name(mapping.m_name)
+, m_reference(mapping.m_reference)
+, m_description(mapping.m_description)
+, m_minimum(mapping.m_minimum)
+, m_maximum(mapping.m_maximum)
+, m_address(mapping.m_address)
+, m_labelsAndAddresses(mapping.m_labelsAndAddresses)
+, m_registerType(mapping.m_registerType)
+, m_dataType(mapping.m_dataType)
+, m_mappingType(mapping.m_mappingType)
+, m_slaveAddress(mapping.m_slaveAddress)
+, m_isInitialized(false)
+, m_isValid(true)
+{
+}
+
+ModbusRegisterMapping::ModbusRegisterMapping(nlohmann::json j)
+: m_slaveAddress(0), m_isInitialized(false), m_isValid(true)
 {
     m_name = j.at("name").get<std::string>();
     m_reference = j.at("reference").get<std::string>();
@@ -240,6 +261,7 @@ LabelMap ModbusRegisterMapping::getLabelsAndAddresses() const
 
 bool ModbusRegisterMapping::update(const std::string& newValue)
 {
+    std::cout << "MRM value : " << m_value << std::endl;
     bool isValueUpdated = m_value != newValue;
     m_value = newValue;
 
@@ -289,7 +311,7 @@ bool ModbusRegisterMapping::update(bool newRegisterValue)
 bool ModbusRegisterMapping::update(const std::vector<bool>& newRegisterValue)
 {
     std::string newRegisterValueStr;
-    for (int i = 0; i < newRegisterValue.size(); i++)
+    for (uint i = 0; i < newRegisterValue.size(); i++)
     {
         newRegisterValueStr += newRegisterValue[i] ? "true" : "false";
         if (i < newRegisterValue.size() - 1)
@@ -303,7 +325,7 @@ bool ModbusRegisterMapping::update(const std::vector<bool>& newRegisterValue)
 bool ModbusRegisterMapping::update(const std::vector<short>& newRegisterValue)
 {
     std::string newRegisterValueStr;
-    for (int i = 0; i < newRegisterValue.size(); i++)
+    for (uint i = 0; i < newRegisterValue.size(); i++)
     {
         newRegisterValueStr += std::to_string(newRegisterValue[i]);
         if (i < newRegisterValue.size() - 1)
@@ -317,7 +339,7 @@ bool ModbusRegisterMapping::update(const std::vector<short>& newRegisterValue)
 bool ModbusRegisterMapping::update(const std::vector<unsigned short>& newRegisterValue)
 {
     std::string newRegisterValueStr;
-    for (int i = 0; i < newRegisterValue.size(); i++)
+    for (uint i = 0; i < newRegisterValue.size(); i++)
     {
         newRegisterValueStr += std::to_string(newRegisterValue[i]);
         if (i < newRegisterValue.size() - 1)
@@ -331,7 +353,7 @@ bool ModbusRegisterMapping::update(const std::vector<unsigned short>& newRegiste
 bool ModbusRegisterMapping::update(const std::vector<float>& newRegisterValue)
 {
     std::string newRegisterValueStr;
-    for (int i = 0; i < newRegisterValue.size(); i++)
+    for (uint i = 0; i < newRegisterValue.size(); i++)
     {
         newRegisterValueStr += std::to_string(newRegisterValue[i]);
         if (i < newRegisterValue.size() - 1)
@@ -347,7 +369,7 @@ int ModbusRegisterMapping::getSlaveAddress() const
     return static_cast<int>(m_slaveAddress);
 }
 
-void ModbusRegisterMapping::setSlaveAddress(uint slaveAddress)
+void ModbusRegisterMapping::setSlaveAddress(int slaveAddress)
 {
     m_slaveAddress = slaveAddress;
 }

@@ -38,22 +38,34 @@ ModbusRegisterGroup::ModbusRegisterGroup(int slaveAddress, ModbusRegisterMapping
 {
 }
 
-int ModbusRegisterGroup::getSlaveAddress()
+ModbusRegisterGroup::ModbusRegisterGroup(const ModbusRegisterGroup& group)
+: m_slaveAddress(group.m_slaveAddress)
+, m_registerType(group.m_registerType)
+, m_dataType(group.m_dataType)
+, m_modbusRegisterMappings()
+{
+    for (auto& mapping : group.m_modbusRegisterMappings)
+    {
+        m_modbusRegisterMappings.emplace_back(ModbusRegisterMapping(mapping));
+    }
+}
+
+int ModbusRegisterGroup::getSlaveAddress() const
 {
     return m_slaveAddress;
 }
 
-ModbusRegisterMapping::RegisterType ModbusRegisterGroup::getRegisterType()
+ModbusRegisterMapping::RegisterType ModbusRegisterGroup::getRegisterType() const
 {
     return m_registerType;
 }
 
-ModbusRegisterMapping::DataType ModbusRegisterGroup::getDataType()
+ModbusRegisterMapping::DataType ModbusRegisterGroup::getDataType() const
 {
     return m_dataType;
 }
 
-int ModbusRegisterGroup::getStartingRegisterAddress()
+int ModbusRegisterGroup::getStartingRegisterAddress() const
 {
     auto& front = m_modbusRegisterMappings.front();
     if (front.getLabelsAndAddresses().empty())
@@ -73,12 +85,12 @@ int ModbusRegisterGroup::getStartingRegisterAddress()
     return min;
 }
 
-int ModbusRegisterGroup::getMappingsCount()
+int ModbusRegisterGroup::getMappingsCount() const
 {
     return static_cast<int>(m_modbusRegisterMappings.size());
 }
 
-int ModbusRegisterGroup::getRegisterCount()
+int ModbusRegisterGroup::getRegisterCount() const
 {
     int count = 0;
     for (auto& mappings : m_modbusRegisterMappings)
@@ -95,7 +107,7 @@ int ModbusRegisterGroup::getRegisterCount()
     return count;
 }
 
-std::vector<ModbusRegisterMapping>& ModbusRegisterGroup::getRegisters()
+std::vector<ModbusRegisterMapping> ModbusRegisterGroup::getRegisters() const
 {
     return m_modbusRegisterMappings;
 }
