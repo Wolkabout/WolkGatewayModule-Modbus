@@ -734,6 +734,7 @@ void ModbusBridge::readHoldingRegistersActuators(wolkabout::ModbusRegisterGroup&
         }
 
         slavesRead[group.getSlaveAddress()] = true;
+        m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::CONNECTED;
 
         for (int i = 0, j = 0; i < group.getMappingsCount(); ++i)
         {
@@ -807,6 +808,7 @@ void ModbusBridge::readHoldingRegistersActuators(wolkabout::ModbusRegisterGroup&
         }
 
         slavesRead[group.getSlaveAddress()] = true;
+        m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::CONNECTED;
 
         for (int i = 0, j = 0; i < group.getMappingsCount(); ++i)
         {
@@ -873,6 +875,7 @@ void ModbusBridge::readHoldingRegistersActuators(wolkabout::ModbusRegisterGroup&
         }
 
         slavesRead[group.getSlaveAddress()] = true;
+        m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::CONNECTED;
 
         for (int i = 0, j = 0; i < group.getMappingsCount(); ++i)
         {
@@ -952,6 +955,7 @@ void ModbusBridge::readHoldingRegistersSensors(ModbusRegisterGroup& group, std::
         }
 
         slavesRead[group.getSlaveAddress()] = true;
+        m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::CONNECTED;
 
         for (int i = 0; i < group.getMappingsCount(); ++i)
         {
@@ -988,6 +992,7 @@ void ModbusBridge::readHoldingRegistersSensors(ModbusRegisterGroup& group, std::
         }
 
         slavesRead[group.getSlaveAddress()] = true;
+        m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::CONNECTED;
 
         for (int i = 0; i < group.getMappingsCount(); ++i)
         {
@@ -1024,6 +1029,7 @@ void ModbusBridge::readHoldingRegistersSensors(ModbusRegisterGroup& group, std::
         }
 
         slavesRead[group.getSlaveAddress()] = true;
+        m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::CONNECTED;
 
         for (int i = 0; i < group.getMappingsCount(); ++i)
         {
@@ -1072,6 +1078,7 @@ void ModbusBridge::readInputRegisters(ModbusRegisterGroup& group, std::map<int, 
         }
 
         slavesRead[group.getSlaveAddress()] = true;
+        m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::CONNECTED;
 
         for (int i = 0; i < group.getMappingsCount(); ++i)
         {
@@ -1107,6 +1114,7 @@ void ModbusBridge::readInputRegisters(ModbusRegisterGroup& group, std::map<int, 
         }
 
         slavesRead[group.getSlaveAddress()] = true;
+        m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::CONNECTED;
 
         for (int i = 0; i < group.getMappingsCount(); ++i)
         {
@@ -1142,6 +1150,7 @@ void ModbusBridge::readInputRegisters(ModbusRegisterGroup& group, std::map<int, 
         }
 
         slavesRead[group.getSlaveAddress()] = true;
+        m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::CONNECTED;
 
         for (int i = 0; i < group.getMappingsCount(); ++i)
         {
@@ -1186,6 +1195,7 @@ void ModbusBridge::readCoils(ModbusRegisterGroup& group, std::map<int, bool>& sl
     }
 
     slavesRead[group.getSlaveAddress()] = true;
+    m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::CONNECTED;
 
     for (int i = 0; i < group.getMappingsCount(); ++i)
     {
@@ -1241,6 +1251,7 @@ void ModbusBridge::readDiscreteInputs(ModbusRegisterGroup& group, std::map<int, 
     }
 
     slavesRead[group.getSlaveAddress()] = true;
+    m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::CONNECTED;
 
     for (int i = 0; i < group.getMappingsCount(); ++i)
     {
