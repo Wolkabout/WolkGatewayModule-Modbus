@@ -43,7 +43,7 @@ ModbusRegisterMapping::ModbusRegisterMapping(
 , m_registerType(registerType)
 , m_dataType(dataType)
 , m_mappingType(mappingType)
-, m_slaveAddress(0)
+, m_slaveAddress(-1)
 , m_isInitialized(false)
 , m_isValid(true)
 {
@@ -63,7 +63,7 @@ ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string refer
 , m_registerType(registerType)
 , m_dataType(dataType)
 , m_mappingType(MappingType::CONFIGURATION)
-, m_slaveAddress(0)
+, m_slaveAddress(-1)
 , m_isInitialized(false)
 , m_isValid(true)
 {
@@ -270,6 +270,7 @@ LabelMap ModbusRegisterMapping::getLabelsAndAddresses() const
 
 bool ModbusRegisterMapping::update(const std::string& newValue)
 {
+    std::cout << "MRM (" << m_name << ", " << m_slaveAddress << ") : " << m_value << std::endl;
     bool isValueUpdated = m_value != newValue;
     m_value = newValue;
 

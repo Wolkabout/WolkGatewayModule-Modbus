@@ -121,13 +121,10 @@ ModbusBridge::ModbusBridge(ModbusClient& modbusClient,
                 // Set slave address to the devices group.
                 ModbusRegisterGroup deviceGroup(templateGroup);
                 deviceGroup.setSlaveAddress(slaveAddress);
-                deviceGroup.getRegisters().clear();
-                devicesGroups.insert(devicesGroups.end(), deviceGroup);
+                LOG(DEBUG) << deviceGroup.getRegisters().size();
 
-                for (auto const& templateMapping : templateGroup.getRegisters())
+                for (auto const& mapping : deviceGroup.getRegisters())
                 {
-                    auto mappingValue = *templateMapping;
-                    auto mapping = std::make_shared<ModbusRegisterMapping>(mappingValue);
                     mapping->setSlaveAddress(slaveAddress);
                     auto deviceKey = devices[slaveAddress]->getKey();
                     auto mappingPair = m_registerMappingByReference
@@ -151,6 +148,8 @@ ModbusBridge::ModbusBridge(ModbusClient& modbusClient,
 
                     deviceGroup.addRegister(mapping);
                 }
+
+                devicesGroups.insert(devicesGroups.end(), deviceGroup);
             }
 
             // Place the device slave address in memory with its ModbusRegisterGroups
