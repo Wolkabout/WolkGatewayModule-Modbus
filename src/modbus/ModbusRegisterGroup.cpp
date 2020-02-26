@@ -95,14 +95,7 @@ int ModbusRegisterGroup::getRegisterCount() const
     int count = 0;
     for (auto& mappings : m_modbusRegisterMappings)
     {
-        if (!mappings->getLabelsAndAddresses().empty())
-        {
-            count += mappings->getLabelsAndAddresses().size();
-        }
-        else
-        {
-            count++;
-        }
+        count += mappings->getRegisterCount();
     }
     return count;
 }

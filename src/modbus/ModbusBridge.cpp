@@ -121,7 +121,6 @@ ModbusBridge::ModbusBridge(ModbusClient& modbusClient,
                 // Set slave address to the devices group.
                 ModbusRegisterGroup deviceGroup(templateGroup);
                 deviceGroup.setSlaveAddress(slaveAddress);
-                LOG(DEBUG) << deviceGroup.getRegisters().size();
 
                 for (auto const& mapping : deviceGroup.getRegisters())
                 {
@@ -759,6 +758,8 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
     case ModbusRegisterMapping::DataType::INT16:
     {
         std::vector<short> values;
+        LOG(TRACE) << "readHoldingRegisters (INT16) " << group.getSlaveAddress() << ", "
+                   << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
         if (!m_modbusClient.readHoldingRegisters(group.getSlaveAddress(),
                                                  static_cast<int>(group.getStartingRegisterAddress()),
                                                  static_cast<int>(group.getRegisterCount()), values))
@@ -835,6 +836,8 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
     case ModbusRegisterMapping::DataType::UINT16:
     {
         std::vector<unsigned short> values;
+        LOG(TRACE) << "readHoldingRegisters (UINT16) " << group.getSlaveAddress() << ", "
+                   << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
         if (!m_modbusClient.readHoldingRegisters(group.getSlaveAddress(), group.getStartingRegisterAddress(),
                                                  group.getRegisterCount(), values))
         {
@@ -903,6 +906,8 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
     case ModbusRegisterMapping::DataType::REAL32:
     {
         std::vector<float> values;
+        LOG(TRACE) << "readHoldingRegisters (REAL32) " << group.getSlaveAddress() << ", "
+                   << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
         if (!m_modbusClient.readHoldingRegisters(group.getSlaveAddress(), group.getStartingRegisterAddress(),
                                                  group.getRegisterCount(), values))
         {
@@ -984,6 +989,8 @@ void ModbusBridge::readHoldingRegistersSensors(const ModbusRegisterGroup& group,
     case ModbusRegisterMapping::DataType::INT16:
     {
         std::vector<signed short> values;
+        LOG(TRACE) << "readHoldingRegisters (INT16) " << group.getSlaveAddress() << ", "
+                   << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
         if (!m_modbusClient.readHoldingRegisters(group.getSlaveAddress(), group.getStartingRegisterAddress(),
                                                  group.getRegisterCount(), values))
         {
@@ -1022,6 +1029,8 @@ void ModbusBridge::readHoldingRegistersSensors(const ModbusRegisterGroup& group,
     case ModbusRegisterMapping::DataType::UINT16:
     {
         std::vector<unsigned short> values;
+        LOG(TRACE) << "readHoldingRegisters (UINT16) " << group.getSlaveAddress() << ", "
+                   << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
         if (!m_modbusClient.readHoldingRegisters(group.getSlaveAddress(), group.getStartingRegisterAddress(),
                                                  group.getRegisterCount(), values))
         {
@@ -1060,6 +1069,8 @@ void ModbusBridge::readHoldingRegistersSensors(const ModbusRegisterGroup& group,
     case ModbusRegisterMapping::DataType::REAL32:
     {
         std::vector<float> values;
+        LOG(TRACE) << "readHoldingRegisters (REAL32) " << group.getSlaveAddress() << ", "
+                   << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
         if (!m_modbusClient.readHoldingRegisters(group.getSlaveAddress(), group.getStartingRegisterAddress(),
                                                  group.getRegisterCount(), values))
         {
@@ -1110,6 +1121,8 @@ void ModbusBridge::readInputRegisters(const ModbusRegisterGroup& group, std::map
     case ModbusRegisterMapping::DataType::INT16:
     {
         std::vector<signed short> values;
+        LOG(TRACE) << "readInputRegisters (INT16) " << group.getSlaveAddress() << ", "
+                   << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
         if (!m_modbusClient.readInputRegisters(group.getSlaveAddress(), group.getStartingRegisterAddress(),
                                                group.getRegisterCount(), values))
         {
@@ -1147,6 +1160,8 @@ void ModbusBridge::readInputRegisters(const ModbusRegisterGroup& group, std::map
     case ModbusRegisterMapping::DataType::UINT16:
     {
         std::vector<unsigned short> values;
+        LOG(TRACE) << "readInputRegisters (UINT16) " << group.getSlaveAddress() << ", "
+                   << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
         if (!m_modbusClient.readInputRegisters(group.getSlaveAddress(), group.getStartingRegisterAddress(),
                                                group.getRegisterCount(), values))
         {
@@ -1184,6 +1199,8 @@ void ModbusBridge::readInputRegisters(const ModbusRegisterGroup& group, std::map
     case ModbusRegisterMapping::DataType::REAL32:
     {
         std::vector<float> values;
+        LOG(TRACE) << "readInputRegisters (REAL32) " << group.getSlaveAddress() << ", "
+                   << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
         if (!m_modbusClient.readInputRegisters(group.getSlaveAddress(), group.getStartingRegisterAddress(),
                                                group.getRegisterCount(), values))
         {
@@ -1229,6 +1246,8 @@ void ModbusBridge::readCoils(const ModbusRegisterGroup& group, std::map<int, boo
     std::string deviceKey = m_deviceKeyBySlaveAddress[slaveAddress];
 
     std::vector<bool> values;
+    LOG(TRACE) << "readCoils " << group.getSlaveAddress() << ", " << group.getStartingRegisterAddress() << ", "
+               << group.getRegisterCount();
     if (!m_modbusClient.readCoils(group.getSlaveAddress(), group.getStartingRegisterAddress(), group.getRegisterCount(),
                                   values))
     {
@@ -1287,6 +1306,8 @@ void ModbusBridge::readDiscreteInputs(const ModbusRegisterGroup& group, std::map
     std::string deviceKey = m_deviceKeyBySlaveAddress[slaveAddress];
 
     std::vector<bool> values;
+    LOG(TRACE) << "readInputContacts " << group.getSlaveAddress() << ", " << group.getStartingRegisterAddress() << ", "
+               << group.getRegisterCount();
     if (!m_modbusClient.readInputContacts(group.getSlaveAddress(), group.getStartingRegisterAddress(),
                                           group.getRegisterCount(), values))
     {

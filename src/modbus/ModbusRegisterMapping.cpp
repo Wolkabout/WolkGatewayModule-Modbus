@@ -15,10 +15,8 @@
  */
 
 #include "ModbusRegisterMapping.h"
-#include "utilities/FileSystemUtils.h"
 #include "utilities/json.hpp"
 
-#include <iostream>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -270,7 +268,6 @@ LabelMap ModbusRegisterMapping::getLabelsAndAddresses() const
 
 bool ModbusRegisterMapping::update(const std::string& newValue)
 {
-    std::cout << "MRM (" << m_name << ", " << m_slaveAddress << ") : " << m_value << std::endl;
     bool isValueUpdated = m_value != newValue;
     m_value = newValue;
 
