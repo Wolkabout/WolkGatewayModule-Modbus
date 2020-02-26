@@ -758,6 +758,12 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
         std::vector<short> values;
         LOG(TRACE) << "readHoldingRegisters (INT16) " << group.getSlaveAddress() << ", "
                    << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
+        LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
+        for (auto const& mapping : group.getRegisters())
+        {
+            LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
+                       << mapping->getSlaveAddress() << ", " << mapping->getValue();
+        }
         if (!m_modbusClient.readHoldingRegisters(group.getSlaveAddress(),
                                                  static_cast<int>(group.getStartingRegisterAddress()),
                                                  static_cast<int>(group.getRegisterCount()), values))
@@ -840,6 +846,12 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
         std::vector<unsigned short> values;
         LOG(TRACE) << "readHoldingRegisters (UINT16) " << group.getSlaveAddress() << ", "
                    << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
+        LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
+        for (auto const& mapping : group.getRegisters())
+        {
+            LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
+                       << mapping->getSlaveAddress() << ", " << mapping->getValue();
+        }
         if (!m_modbusClient.readHoldingRegisters(group.getSlaveAddress(), group.getStartingRegisterAddress(),
                                                  group.getRegisterCount(), values))
         {
@@ -914,6 +926,12 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
         std::vector<float> values;
         LOG(TRACE) << "readHoldingRegisters (REAL32) " << group.getSlaveAddress() << ", "
                    << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
+        LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
+        for (auto const& mapping : group.getRegisters())
+        {
+            LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
+                       << mapping->getSlaveAddress() << ", " << mapping->getValue();
+        }
         if (!m_modbusClient.readHoldingRegisters(group.getSlaveAddress(), group.getStartingRegisterAddress(),
                                                  group.getRegisterCount(), values))
         {
@@ -1000,6 +1018,12 @@ void ModbusBridge::readHoldingRegistersSensors(const ModbusRegisterGroup& group,
         std::vector<signed short> values;
         LOG(TRACE) << "readHoldingRegisters (INT16) " << group.getSlaveAddress() << ", "
                    << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
+        LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
+        for (auto const& mapping : group.getRegisters())
+        {
+            LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
+                       << mapping->getSlaveAddress() << ", " << mapping->getValue();
+        }
         if (!m_modbusClient.readHoldingRegisters(group.getSlaveAddress(), group.getStartingRegisterAddress(),
                                                  group.getRegisterCount(), values))
         {
@@ -1042,6 +1066,12 @@ void ModbusBridge::readHoldingRegistersSensors(const ModbusRegisterGroup& group,
         std::vector<unsigned short> values;
         LOG(TRACE) << "readHoldingRegisters (UINT16) " << group.getSlaveAddress() << ", "
                    << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
+        LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
+        for (auto const& mapping : group.getRegisters())
+        {
+            LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
+                       << mapping->getSlaveAddress() << ", " << mapping->getValue();
+        }
         if (!m_modbusClient.readHoldingRegisters(group.getSlaveAddress(), group.getStartingRegisterAddress(),
                                                  group.getRegisterCount(), values))
         {
@@ -1084,6 +1114,12 @@ void ModbusBridge::readHoldingRegistersSensors(const ModbusRegisterGroup& group,
         std::vector<float> values;
         LOG(TRACE) << "readHoldingRegisters (REAL32) " << group.getSlaveAddress() << ", "
                    << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
+        LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
+        for (auto const& mapping : group.getRegisters())
+        {
+            LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
+                       << mapping->getSlaveAddress() << ", " << mapping->getValue();
+        }
         if (!m_modbusClient.readHoldingRegisters(group.getSlaveAddress(), group.getStartingRegisterAddress(),
                                                  group.getRegisterCount(), values))
         {
@@ -1138,6 +1174,12 @@ void ModbusBridge::readInputRegisters(const ModbusRegisterGroup& group, std::map
         std::vector<signed short> values;
         LOG(TRACE) << "readInputRegisters (INT16) " << group.getSlaveAddress() << ", "
                    << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
+        LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
+        for (auto const& mapping : group.getRegisters())
+        {
+            LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
+                       << mapping->getSlaveAddress() << ", " << mapping->getValue();
+        }
         if (!m_modbusClient.readInputRegisters(group.getSlaveAddress(), group.getStartingRegisterAddress(),
                                                group.getRegisterCount(), values))
         {
@@ -1179,6 +1221,12 @@ void ModbusBridge::readInputRegisters(const ModbusRegisterGroup& group, std::map
         std::vector<unsigned short> values;
         LOG(TRACE) << "readInputRegisters (UINT16) " << group.getSlaveAddress() << ", "
                    << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
+        LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
+        for (auto const& mapping : group.getRegisters())
+        {
+            LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
+                       << mapping->getSlaveAddress() << ", " << mapping->getValue();
+        }
         if (!m_modbusClient.readInputRegisters(group.getSlaveAddress(), group.getStartingRegisterAddress(),
                                                group.getRegisterCount(), values))
         {
@@ -1220,6 +1268,12 @@ void ModbusBridge::readInputRegisters(const ModbusRegisterGroup& group, std::map
         std::vector<float> values;
         LOG(TRACE) << "readInputRegisters (REAL32) " << group.getSlaveAddress() << ", "
                    << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
+        LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
+        for (auto const& mapping : group.getRegisters())
+        {
+            LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
+                       << mapping->getSlaveAddress() << ", " << mapping->getValue();
+        }
         if (!m_modbusClient.readInputRegisters(group.getSlaveAddress(), group.getStartingRegisterAddress(),
                                                group.getRegisterCount(), values))
         {
@@ -1269,6 +1323,12 @@ void ModbusBridge::readCoils(const ModbusRegisterGroup& group, std::map<int, boo
     std::vector<bool> values;
     LOG(TRACE) << "readCoils " << group.getSlaveAddress() << ", " << group.getStartingRegisterAddress() << ", "
                << group.getRegisterCount();
+    LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
+    for (auto const& mapping : group.getRegisters())
+    {
+        LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", " << mapping->getSlaveAddress()
+                   << ", " << mapping->getValue();
+    }
     if (!m_modbusClient.readCoils(group.getSlaveAddress(), group.getStartingRegisterAddress(), group.getRegisterCount(),
                                   values))
     {
@@ -1331,6 +1391,12 @@ void ModbusBridge::readDiscreteInputs(const ModbusRegisterGroup& group, std::map
     std::vector<bool> values;
     LOG(TRACE) << "readInputContacts " << group.getSlaveAddress() << ", " << group.getStartingRegisterAddress() << ", "
                << group.getRegisterCount();
+    LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
+    for (auto const& mapping : group.getRegisters())
+    {
+        LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", " << mapping->getSlaveAddress()
+                   << ", " << mapping->getValue();
+    }
     if (!m_modbusClient.readInputContacts(group.getSlaveAddress(), group.getStartingRegisterAddress(),
                                           group.getRegisterCount(), values))
     {
