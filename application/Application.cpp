@@ -76,7 +76,7 @@ int main(int argc, char** argv)
 {
     // Setup logger
     auto logger = std::unique_ptr<wolkabout::ConsoleLogger>(new wolkabout::ConsoleLogger());
-    logger->setLogLevel(wolkabout::LogLevel::DEBUG);
+    logger->setLogLevel(wolkabout::LogLevel::TRACE);
     wolkabout::Logger::setInstance(std::move(logger));
 
     // Checking if arg count is valid

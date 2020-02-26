@@ -778,20 +778,24 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
         for (int i = 0, j = 0; i < group.getMappingsCount(); ++i)
         {
             auto mapping = group.getRegisters()[static_cast<uint>(i)];
+            LOG(TRACE) << "Old value : " << mapping->getValue() << " (Mapping : " << (i + 1) << ")";
 
             bool updated;
             // separate the values of group for each mapping they need to go to
             if (mapping->getLabelsAndAddresses().empty())
             {
                 signed short value = values[static_cast<uint>(j++)];
+                LOG(TRACE) << "Received value : " << value;
                 updated = mapping->update(value);
             }
             else
             {
                 std::vector<short> groupValues;
+                LOG(TRACE) << "Received values : ";
                 for (uint k = 0; k < mapping->getLabelsAndAddresses().size(); k++)
                 {
                     groupValues.push_back(values[static_cast<uint>(j++)]);
+                    LOG(TRACE) << values[static_cast<uint>(j++)];
                 }
                 updated = mapping->update(groupValues);
             }
@@ -855,19 +859,23 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
         for (int i = 0, j = 0; i < group.getMappingsCount(); ++i)
         {
             auto mapping = group.getRegisters()[static_cast<uint>(i)];
+            LOG(TRACE) << "Old value : " << mapping->getValue() << " (Mapping : " << (i + 1) << ")";
             bool updated;
             // separate the values of group for each mapping they need to go to
             if (mapping->getLabelsAndAddresses().empty())
             {
                 unsigned short value = values[static_cast<uint>(j++)];
+                LOG(TRACE) << "Received value : " << value;
                 updated = mapping->update(value);
             }
             else
             {
                 std::vector<unsigned short> groupValues;
+                LOG(TRACE) << "Received values : ";
                 for (uint k = 0; k < mapping->getLabelsAndAddresses().size(); k++)
                 {
                     groupValues.push_back(values[static_cast<uint>(j++)]);
+                    LOG(TRACE) << values[static_cast<uint>(j++)];
                 }
                 updated = mapping->update(groupValues);
             }
@@ -925,20 +933,23 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
         for (int i = 0, j = 0; i < group.getMappingsCount(); ++i)
         {
             auto mapping = group.getRegisters()[static_cast<uint>(i)];
-
+            LOG(TRACE) << "Old value : " << mapping->getValue() << " (Mapping : " << (i + 1) << ")";
             bool updated;
             // separate the values of group for each mapping they need to go to
             if (mapping->getLabelsAndAddresses().empty())
             {
                 float value = values[static_cast<uint>(j++)];
+                LOG(TRACE) << "Received value : " << value;
                 updated = mapping->update(value);
             }
             else
             {
                 std::vector<float> groupValues;
+                LOG(TRACE) << "Received values : ";
                 for (uint k = 0; k < mapping->getLabelsAndAddresses().size(); k++)
                 {
                     groupValues.push_back(values[static_cast<uint>(j++)]);
+                    LOG(TRACE) << values[static_cast<uint>(j++)];
                 }
                 updated = mapping->update(groupValues);
             }
@@ -1009,6 +1020,8 @@ void ModbusBridge::readHoldingRegistersSensors(const ModbusRegisterGroup& group,
         {
             signed short value = values[static_cast<uint>(i)];
             auto mapping = group.getRegisters()[static_cast<uint>(i)];
+            LOG(TRACE) << "Old value : " << mapping->getValue() << " (Mapping : " << (i + 1) << ")";
+            LOG(TRACE) << "Received value : " << value;
             if (mapping->update(value))
             {
                 LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping->getReference() << "' Value: '"
@@ -1049,6 +1062,8 @@ void ModbusBridge::readHoldingRegistersSensors(const ModbusRegisterGroup& group,
         {
             unsigned short value = values[static_cast<uint>(i)];
             auto mapping = group.getRegisters()[static_cast<uint>(i)];
+            LOG(TRACE) << "Old value : " << mapping->getValue() << " (Mapping : " << (i + 1) << ")";
+            LOG(TRACE) << "Received value : " << value;
             if (mapping->update(value))
             {
                 LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping->getReference() << "' Value: '"
@@ -1089,6 +1104,8 @@ void ModbusBridge::readHoldingRegistersSensors(const ModbusRegisterGroup& group,
         {
             float value = values[static_cast<uint>(i)];
             auto mapping = group.getRegisters()[static_cast<uint>(i)];
+            LOG(TRACE) << "Old value : " << mapping->getValue() << " (Mapping : " << (i + 1) << ")";
+            LOG(TRACE) << "Received value : " << value;
             if (mapping->update(value))
             {
                 LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping->getReference() << "' Value: '"
@@ -1141,6 +1158,8 @@ void ModbusBridge::readInputRegisters(const ModbusRegisterGroup& group, std::map
         {
             signed short value = values[static_cast<uint>(i)];
             auto mapping = group.getRegisters()[static_cast<uint>(i)];
+            LOG(TRACE) << "Old value : " << mapping->getValue() << " (Mapping : " << (i + 1) << ")";
+            LOG(TRACE) << "Received value : " << value;
             if (mapping->update(value))
             {
                 LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping->getReference() << "' Value: '"
@@ -1180,6 +1199,8 @@ void ModbusBridge::readInputRegisters(const ModbusRegisterGroup& group, std::map
         {
             unsigned short value = values[static_cast<uint>(i)];
             auto mapping = group.getRegisters()[static_cast<uint>(i)];
+            LOG(TRACE) << "Old value : " << mapping->getValue() << " (Mapping : " << (i + 1) << ")";
+            LOG(TRACE) << "Received value : " << value;
             if (mapping->update(value))
             {
                 LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping->getReference() << "' Value: '"
@@ -1219,6 +1240,8 @@ void ModbusBridge::readInputRegisters(const ModbusRegisterGroup& group, std::map
         {
             float value = values[static_cast<uint>(i)];
             auto mapping = group.getRegisters()[static_cast<uint>(i)];
+            LOG(TRACE) << "Old value : " << mapping->getValue() << " (Mapping : " << (i + 1) << ")";
+            LOG(TRACE) << "Received value : " << value;
             if (mapping->update(value))
             {
                 LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping->getReference() << "' Value: '"
@@ -1267,6 +1290,8 @@ void ModbusBridge::readCoils(const ModbusRegisterGroup& group, std::map<int, boo
     {
         bool value = values[i];
         auto mapping = group.getRegisters()[i];
+        LOG(TRACE) << "Old value : " << mapping->getValue() << " (Mapping : " << (i + 1) << ")";
+        LOG(TRACE) << "Received value : " << value;
         if (mapping->update(value))
         {
             LOG(INFO) << "ModbusBridge: Actuator value changed - Reference: '" << mapping->getReference()
@@ -1326,6 +1351,8 @@ void ModbusBridge::readDiscreteInputs(const ModbusRegisterGroup& group, std::map
     {
         bool value = values[static_cast<uint>(i)];
         auto mapping = group.getRegisters()[static_cast<uint>(i)];
+        LOG(TRACE) << "Old value : " << mapping->getValue() << " (Mapping : " << (i + 1) << ")";
+        LOG(TRACE) << "Received value : " << value;
         if (mapping->update(value))
         {
             LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping->getReference() << "' Value: '"
