@@ -18,8 +18,6 @@
 #include "utilities/FileSystemUtils.h"
 #include "utilities/json.hpp"
 
-#include <iostream>
-
 namespace wolkabout
 {
 using nlohmann::json;

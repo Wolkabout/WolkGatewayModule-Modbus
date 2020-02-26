@@ -144,8 +144,6 @@ ModbusBridge::ModbusBridge(ModbusClient& modbusClient,
                           std::pair<std::string, std::shared_ptr<ModbusRegisterMapping>>(mapping->getReference(),
                                                                                          mappingPair->second));
                     }
-
-                    deviceGroup.addRegister(mapping);
                 }
 
                 devicesGroups.insert(devicesGroups.end(), deviceGroup);
@@ -1364,7 +1362,7 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 
     for (auto const& pair : m_registerGroupsBySlaveAddress)
     {
-        LOG(DEBUG) << "ModbusBridge: Device slave address : " << pair.first;
+        LOG(TRACE) << "ModbusBridge: Device slave address : " << pair.first;
 
         for (auto const& group : pair.second)
         {

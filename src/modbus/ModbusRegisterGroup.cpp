@@ -44,9 +44,10 @@ ModbusRegisterGroup::ModbusRegisterGroup(const ModbusRegisterGroup& group)
 , m_dataType(group.m_dataType)
 , m_modbusRegisterMappings()
 {
+    m_modbusRegisterMappings.clear();
     for (const auto& mapping : group.m_modbusRegisterMappings)
     {
-        m_modbusRegisterMappings.emplace_back(std::make_shared<ModbusRegisterMapping>(*mapping));
+        m_modbusRegisterMappings.emplace_back(mapping);
     }
 }
 

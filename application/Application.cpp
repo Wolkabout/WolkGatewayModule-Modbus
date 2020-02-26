@@ -76,7 +76,7 @@ int main(int argc, char** argv)
 {
     // Setup logger
     auto logger = std::unique_ptr<wolkabout::ConsoleLogger>(new wolkabout::ConsoleLogger());
-    logger->setLogLevel(wolkabout::LogLevel::TRACE);
+    logger->setLogLevel(wolkabout::LogLevel::DEBUG);
     wolkabout::Logger::setInstance(std::move(logger));
 
     // Checking if arg count is valid
@@ -167,7 +167,7 @@ int main(int argc, char** argv)
     // and that they're different from one another. In TCP/IP mode, we can have only
     // one device, so we need to check for that (and assign it a slaveAddress, because -1 is an invalid address).
     std::vector<int> occupiedSlaveAddresses;
-    int assigningSlaveAddress = 0;
+    int assigningSlaveAddress = 1;
     std::map<std::string, std::vector<int>> usedTemplates;
 
     for (auto const& deviceInformation : devicesConfiguration.getDevices())
