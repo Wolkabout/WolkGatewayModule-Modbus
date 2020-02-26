@@ -18,10 +18,10 @@
 
 namespace wolkabout
 {
-ModbusRegisterGroup::ModbusRegisterGroup(const ModbusRegisterMapping& mapping)
+ModbusRegisterGroup::ModbusRegisterGroup(const std::shared_ptr<ModbusRegisterMapping>& mapping)
 : m_slaveAddress(-1)
-, m_registerType(mapping.getRegisterType())
-, m_dataType(mapping.getDataType())
+, m_registerType(mapping->getRegisterType())
+, m_dataType(mapping->getDataType())
 , m_modbusRegisterMappings{mapping}
 {
 }
@@ -46,7 +46,7 @@ ModbusRegisterGroup::ModbusRegisterGroup(const ModbusRegisterGroup& group)
 {
     for (auto& mapping : group.m_modbusRegisterMappings)
     {
-        m_modbusRegisterMappings.emplace_back(ModbusRegisterMapping(mapping));
+        m_modbusRegisterMappings.emplace_back(mapping);
     }
 }
 
@@ -68,14 +68,14 @@ ModbusRegisterMapping::DataType ModbusRegisterGroup::getDataType() const
 int ModbusRegisterGroup::getStartingRegisterAddress() const
 {
     auto& front = m_modbusRegisterMappings.front();
-    if (front.getLabelsAndAddresses().empty())
+    if (front == nullptr || front->getLabelsAndAddresses().empty())
     {
         // if it's only a single address
-        return front.getAddress();
+        return front->getAddress();
     }
     // if the addresses are in a labelMap, get the minimum
-    int min = front.getLabelsAndAddresses().begin()->second;
-    for (auto& label : front.getLabelsAndAddresses())
+    int min = front->getLabelsAndAddresses().begin()->second;
+    for (auto& label : front->getLabelsAndAddresses())
     {
         if (label.second < min)
         {
@@ -95,9 +95,9 @@ int ModbusRegisterGroup::getRegisterCount() const
     int count = 0;
     for (auto& mappings : m_modbusRegisterMappings)
     {
-        if (!mappings.getLabelsAndAddresses().empty())
+        if (!mappings->getLabelsAndAddresses().empty())
         {
-            count += mappings.getLabelsAndAddresses().size();
+            count += mappings->getLabelsAndAddresses().size();
         }
         else
         {
@@ -107,12 +107,12 @@ int ModbusRegisterGroup::getRegisterCount() const
     return count;
 }
 
-std::vector<ModbusRegisterMapping> ModbusRegisterGroup::getRegisters() const
+std::vector<std::shared_ptr<ModbusRegisterMapping>> ModbusRegisterGroup::getRegisters() const
 {
     return m_modbusRegisterMappings;
 }
 
-void ModbusRegisterGroup::addRegister(ModbusRegisterMapping modbusRegisterMapping)
+void ModbusRegisterGroup::addRegister(const std::shared_ptr<ModbusRegisterMapping>& modbusRegisterMapping)
 {
     m_modbusRegisterMappings.push_back(modbusRegisterMapping);
 }

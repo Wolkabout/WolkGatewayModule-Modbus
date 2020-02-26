@@ -63,11 +63,45 @@ ModbusBridge::ModbusBridge(ModbusClient& modbusClient,
         DevicesConfigurationTemplate& configurationTemplate = *(configurationTemplates[templateRegistered.first]);
 
         std::vector<ModbusRegisterGroup> templatesGroups;
+        //        auto &firstMapping = configurationTemplate.getMappings()[0];
+        //        int previousSlaveAddress = firstMapping.getSlaveAddress();
+        //        ModbusRegisterMapping::RegisterType previousRegisterType = firstMapping.getRegisterType();
+        //        ModbusRegisterMapping::DataType previousDataType = firstMapping.getDataType();
+        //        int previousAddress = firstMapping.getAddress() - 1;
+        //
+        //        ModbusRegisterGroup group(previousSlaveAddress, previousRegisterType, previousDataType);
+        //        templatesGroups.push_back(group);
 
-        // TODO Improve logic for creating groups - copy over the old one and adjust it
         for (auto const& mapping : configurationTemplate.getMappings())
         {
-            templatesGroups.emplace_back(mapping);
+            templatesGroups.emplace_back(std::make_shared<ModbusRegisterMapping>(mapping));
+            //            if (static_cast<int>(mapping.getRegisterType()) ==
+            //                static_cast<int>(previousRegisterType))
+            //            {
+            //                if (static_cast<int>(mapping.getDataType()) == static_cast<int>(previousDataType))
+            //                {
+            //                    if ((mapping.getAddress() + mapping.getRegisterCount() - 1) == previousAddress + 1)
+            //                    {
+            //                        previousSlaveAddress = mapping.getSlaveAddress();
+            //                        previousRegisterType = mapping.getRegisterType();
+            //                        previousDataType = mapping.getDataType();
+            //                        previousAddress = mapping.getAddress();
+            //
+            //                        group.addRegister(std::make_shared<ModbusRegisterMapping>(mapping));
+            //                        continue;
+            //                    }
+            //                }
+            //            }
+            //
+            //            previousSlaveAddress = mapping.getSlaveAddress();
+            //            previousRegisterType = mapping.getRegisterType();
+            //            previousDataType = mapping.getDataType();
+            //            previousAddress = mapping.getAddress();
+            //
+            //            ModbusRegisterGroup nextRegisterGroup(previousSlaveAddress, previousRegisterType,
+            //            previousDataType);
+            //            nextRegisterGroup.addRegister(std::make_shared<ModbusRegisterMapping>(mapping));
+            //            templatesGroups.push_back(nextRegisterGroup);
         }
 
         // Go through devices registered by this template
@@ -75,25 +109,26 @@ ModbusBridge::ModbusBridge(ModbusClient& modbusClient,
         for (auto const& slaveAddress : templateRegistered.second)
         {
             // Copy over the templates groups (deep copy, objects are recreated)
-            std::vector<ModbusRegisterGroup> devicesGroups = templatesGroups;
+            std::vector<ModbusRegisterGroup> devicesGroups;
 
             m_deviceKeyBySlaveAddress.insert(
               std::pair<int, std::string>(slaveAddress, devices[slaveAddress]->getKey()));
             m_devicesStatusBySlaveAddress.insert(
               std::pair<int, DeviceStatus::Status>(slaveAddress, DeviceStatus::Status::OFFLINE));
 
-            for (auto& devicesGroup : devicesGroups)
+            for (auto const& templateGroup : templatesGroups)
             {
                 // Set slave address to the devices group.
-                devicesGroup.setSlaveAddress(slaveAddress);
+                ModbusRegisterGroup deviceGroup(templateGroup);
+                deviceGroup.setSlaveAddress(slaveAddress);
+                devicesGroups.insert(devicesGroups.end(), deviceGroup);
 
-                for (uint i = 0; i < devicesGroup.getRegisters().size(); i++)
+                for (auto const& mapping : deviceGroup.getRegisters())
                 {
-                    ModbusRegisterMapping* mapping = &(devicesGroup.getRegisters()[i]);
                     mapping->setSlaveAddress(slaveAddress);
                     auto deviceKey = devices[slaveAddress]->getKey();
                     auto mappingPair = m_registerMappingByReference
-                                         .insert(std::pair<std::string, ModbusRegisterMapping*>(
+                                         .insert(std::pair<std::string, std::shared_ptr<ModbusRegisterMapping>>(
                                            deviceKey + '.' + mapping->getReference(), mapping))
                                          .first;
 
@@ -102,12 +137,13 @@ ModbusBridge::ModbusBridge(ModbusClient& modbusClient,
                     {
                         if (m_configurationMappingByDevice.find(deviceKey) == m_configurationMappingByDevice.end())
                         {
-                            m_configurationMappingByDevice.emplace(deviceKey,
-                                                                   std::map<std::string, ModbusRegisterMapping*>());
+                            m_configurationMappingByDevice.emplace(
+                              deviceKey, std::map<std::string, std::shared_ptr<ModbusRegisterMapping>>());
                         }
 
                         m_configurationMappingByDevice[deviceKey].insert(
-                          std::pair<std::string, ModbusRegisterMapping*>(mapping->getReference(), mappingPair->second));
+                          std::pair<std::string, std::shared_ptr<ModbusRegisterMapping>>(mapping->getReference(),
+                                                                                         mappingPair->second));
                     }
                 }
             }
@@ -115,8 +151,6 @@ ModbusBridge::ModbusBridge(ModbusClient& modbusClient,
             // Place the device slave address in memory with its ModbusRegisterGroups
             m_registerGroupsBySlaveAddress.insert(
               std::pair<int, std::vector<ModbusRegisterGroup>>(slaveAddress, devicesGroups));
-
-            continue;
         }
     }
 }
@@ -744,45 +778,45 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
 
             bool updated;
             // separate the values of group for each mapping they need to go to
-            if (mapping.getLabelsAndAddresses().empty())
+            if (mapping->getLabelsAndAddresses().empty())
             {
                 signed short value = values[static_cast<uint>(j++)];
-                updated = mapping.update(value);
+                updated = mapping->update(value);
             }
             else
             {
                 std::vector<short> groupValues;
-                for (uint k = 0; k < mapping.getLabelsAndAddresses().size(); k++)
+                for (uint k = 0; k < mapping->getLabelsAndAddresses().size(); k++)
                 {
                     groupValues.push_back(values[static_cast<uint>(j++)]);
                 }
-                updated = mapping.update(groupValues);
+                updated = mapping->update(groupValues);
             }
 
             if (updated)
             {
                 LOG(INFO) << "ModbusBridge: "
-                          << ((mapping.getMappingType() == ModbusRegisterMapping::MappingType::CONFIGURATION) ?
+                          << ((mapping->getMappingType() == ModbusRegisterMapping::MappingType::CONFIGURATION) ?
                                 "Configuration" :
                                 "Actuator")
-                          << " value changed - Reference: '" << mapping.getReference() << "' Value: '"
-                          << mapping.getValue() << "'";
+                          << " value changed - Reference: '" << mapping->getReference() << "' Value: '"
+                          << mapping->getValue() << "'";
 
-                switch (mapping.getMappingType())
+                switch (mapping->getMappingType())
                 {
                 case ModbusRegisterMapping::MappingType::DEFAULT:
                 case ModbusRegisterMapping::MappingType::ACTUATOR:
                     if (m_onActuatorStatusChange)
                     {
                         m_onActuatorStatusChange(m_deviceKeyBySlaveAddress[group.getSlaveAddress()],
-                                                 mapping.getReference(), mapping.getValue());
+                                                 mapping->getReference(), mapping->getValue());
                     }
                     break;
                 case ModbusRegisterMapping::MappingType::CONFIGURATION:
                     if (m_onConfigurationChange)
                     {
                         auto vector = std::vector<ConfigurationItem>{
-                          ConfigurationItem(StringUtils::tokenize(mapping.getValue(), ","), mapping.getReference())};
+                          ConfigurationItem(StringUtils::tokenize(mapping->getValue(), ","), mapping->getReference())};
                         m_onConfigurationChange(m_deviceKeyBySlaveAddress[group.getSlaveAddress()], vector);
                     }
                     break;
@@ -818,39 +852,39 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
             auto mapping = group.getRegisters()[static_cast<uint>(i)];
             bool updated;
             // separate the values of group for each mapping they need to go to
-            if (mapping.getLabelsAndAddresses().empty())
+            if (mapping->getLabelsAndAddresses().empty())
             {
                 unsigned short value = values[static_cast<uint>(j++)];
-                updated = mapping.update(value);
+                updated = mapping->update(value);
             }
             else
             {
                 std::vector<unsigned short> groupValues;
-                for (uint k = 0; k < mapping.getLabelsAndAddresses().size(); k++)
+                for (uint k = 0; k < mapping->getLabelsAndAddresses().size(); k++)
                 {
                     groupValues.push_back(values[static_cast<uint>(j++)]);
                 }
-                updated = mapping.update(groupValues);
+                updated = mapping->update(groupValues);
             }
             if (updated)
             {
-                LOG(INFO) << "ModbusBridge: Actuator value changed - Reference: '" << mapping.getReference()
-                          << "' Value: '" << mapping.getValue() << "'";
+                LOG(INFO) << "ModbusBridge: Actuator value changed - Reference: '" << mapping->getReference()
+                          << "' Value: '" << mapping->getValue() << "'";
 
-                switch (mapping.getMappingType())
+                switch (mapping->getMappingType())
                 {
                 case ModbusRegisterMapping::MappingType::DEFAULT:
                 case ModbusRegisterMapping::MappingType::ACTUATOR:
                     if (m_onActuatorStatusChange)
                     {
-                        m_onActuatorStatusChange(deviceKey, mapping.getReference(), mapping.getValue());
+                        m_onActuatorStatusChange(deviceKey, mapping->getReference(), mapping->getValue());
                     }
                     break;
                 case ModbusRegisterMapping::MappingType::CONFIGURATION:
                     if (m_onConfigurationChange)
                     {
                         auto vector = std::vector<ConfigurationItem>{
-                          ConfigurationItem(StringUtils::tokenize(mapping.getValue(), ","), mapping.getReference())};
+                          ConfigurationItem(StringUtils::tokenize(mapping->getValue(), ","), mapping->getReference())};
                         m_onConfigurationChange(deviceKey, vector);
                     }
                     break;
@@ -887,39 +921,39 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
 
             bool updated;
             // separate the values of group for each mapping they need to go to
-            if (mapping.getLabelsAndAddresses().empty())
+            if (mapping->getLabelsAndAddresses().empty())
             {
                 float value = values[static_cast<uint>(j++)];
-                updated = mapping.update(value);
+                updated = mapping->update(value);
             }
             else
             {
                 std::vector<float> groupValues;
-                for (uint k = 0; k < mapping.getLabelsAndAddresses().size(); k++)
+                for (uint k = 0; k < mapping->getLabelsAndAddresses().size(); k++)
                 {
                     groupValues.push_back(values[static_cast<uint>(j++)]);
                 }
-                updated = mapping.update(groupValues);
+                updated = mapping->update(groupValues);
             }
             if (updated)
             {
-                LOG(INFO) << "ModbusBridge: Actuator value changed - Reference: '" << mapping.getReference()
-                          << "' Value: '" << mapping.getValue() << "'";
+                LOG(INFO) << "ModbusBridge: Actuator value changed - Reference: '" << mapping->getReference()
+                          << "' Value: '" << mapping->getValue() << "'";
 
-                switch (mapping.getMappingType())
+                switch (mapping->getMappingType())
                 {
                 case ModbusRegisterMapping::MappingType::DEFAULT:
                 case ModbusRegisterMapping::MappingType::ACTUATOR:
                     if (m_onActuatorStatusChange)
                     {
-                        m_onActuatorStatusChange(deviceKey, mapping.getReference(), mapping.getValue());
+                        m_onActuatorStatusChange(deviceKey, mapping->getReference(), mapping->getValue());
                     }
                     break;
                 case ModbusRegisterMapping::MappingType::CONFIGURATION:
                     if (m_onConfigurationChange)
                     {
                         auto vector = std::vector<ConfigurationItem>{
-                          ConfigurationItem(StringUtils::tokenize(mapping.getValue(), ","), mapping.getReference())};
+                          ConfigurationItem(StringUtils::tokenize(mapping->getValue(), ","), mapping->getReference())};
                         m_onConfigurationChange(deviceKey, vector);
                     }
                     break;
@@ -966,16 +1000,16 @@ void ModbusBridge::readHoldingRegistersSensors(const ModbusRegisterGroup& group,
         {
             signed short value = values[static_cast<uint>(i)];
             auto mapping = group.getRegisters()[static_cast<uint>(i)];
-            if (mapping.update(value))
+            if (mapping->update(value))
             {
-                LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping.getReference() << "' Value: '"
-                          << mapping.getValue() << "'";
+                LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping->getReference() << "' Value: '"
+                          << mapping->getValue() << "'";
 
                 // This here isn't edited because the holding_register_sensor can't be anything else than a
                 // sensor!
                 if (m_onSensorChange)
                 {
-                    m_onSensorChange(deviceKey, mapping.getReference(), mapping.getValue());
+                    m_onSensorChange(deviceKey, mapping->getReference(), mapping->getValue());
                 }
             }
         }
@@ -1004,16 +1038,16 @@ void ModbusBridge::readHoldingRegistersSensors(const ModbusRegisterGroup& group,
         {
             unsigned short value = values[static_cast<uint>(i)];
             auto mapping = group.getRegisters()[static_cast<uint>(i)];
-            if (mapping.update(value))
+            if (mapping->update(value))
             {
-                LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping.getReference() << "' Value: '"
-                          << mapping.getValue() << "'";
+                LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping->getReference() << "' Value: '"
+                          << mapping->getValue() << "'";
 
                 // This here isn't edited because the holding_register_sensor can't be anything else than a
                 // sensor!
                 if (m_onSensorChange)
                 {
-                    m_onSensorChange(deviceKey, mapping.getReference(), mapping.getValue());
+                    m_onSensorChange(deviceKey, mapping->getReference(), mapping->getValue());
                 }
             }
         }
@@ -1042,16 +1076,16 @@ void ModbusBridge::readHoldingRegistersSensors(const ModbusRegisterGroup& group,
         {
             float value = values[static_cast<uint>(i)];
             auto mapping = group.getRegisters()[static_cast<uint>(i)];
-            if (mapping.update(value))
+            if (mapping->update(value))
             {
-                LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping.getReference() << "' Value: '"
-                          << mapping.getValue() << "'";
+                LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping->getReference() << "' Value: '"
+                          << mapping->getValue() << "'";
 
                 // This here isn't edited because the holding_register_sensor can't be anything else than a
                 // sensor!
                 if (m_onSensorChange)
                 {
-                    m_onSensorChange(deviceKey, mapping.getReference(), mapping.getValue());
+                    m_onSensorChange(deviceKey, mapping->getReference(), mapping->getValue());
                 }
             }
         }
@@ -1092,15 +1126,15 @@ void ModbusBridge::readInputRegisters(const ModbusRegisterGroup& group, std::map
         {
             signed short value = values[static_cast<uint>(i)];
             auto mapping = group.getRegisters()[static_cast<uint>(i)];
-            if (mapping.update(value))
+            if (mapping->update(value))
             {
-                LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping.getReference() << "' Value: '"
-                          << mapping.getValue() << "'";
+                LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping->getReference() << "' Value: '"
+                          << mapping->getValue() << "'";
 
                 // This here isn't edited because the input_register can't be anything else than a sensor!
                 if (m_onSensorChange)
                 {
-                    m_onSensorChange(deviceKey, mapping.getReference(), mapping.getValue());
+                    m_onSensorChange(deviceKey, mapping->getReference(), mapping->getValue());
                 }
             }
         }
@@ -1129,15 +1163,15 @@ void ModbusBridge::readInputRegisters(const ModbusRegisterGroup& group, std::map
         {
             unsigned short value = values[static_cast<uint>(i)];
             auto mapping = group.getRegisters()[static_cast<uint>(i)];
-            if (mapping.update(value))
+            if (mapping->update(value))
             {
-                LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping.getReference() << "' Value: '"
-                          << mapping.getValue() << "'";
+                LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping->getReference() << "' Value: '"
+                          << mapping->getValue() << "'";
 
                 // This here isn't edited because the input_register can't be anything else than a sensor!
                 if (m_onSensorChange)
                 {
-                    m_onSensorChange(deviceKey, mapping.getReference(), mapping.getValue());
+                    m_onSensorChange(deviceKey, mapping->getReference(), mapping->getValue());
                 }
             }
         }
@@ -1166,15 +1200,15 @@ void ModbusBridge::readInputRegisters(const ModbusRegisterGroup& group, std::map
         {
             float value = values[static_cast<uint>(i)];
             auto mapping = group.getRegisters()[static_cast<uint>(i)];
-            if (mapping.update(value))
+            if (mapping->update(value))
             {
-                LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping.getReference() << "' Value: '"
-                          << mapping.getValue() << "'";
+                LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping->getReference() << "' Value: '"
+                          << mapping->getValue() << "'";
 
                 // This here isn't edited because the input_register can't be anything else than a sensor!
                 if (m_onSensorChange)
                 {
-                    m_onSensorChange(deviceKey, mapping.getReference(), mapping.getValue());
+                    m_onSensorChange(deviceKey, mapping->getReference(), mapping->getValue());
                 }
             }
         }
@@ -1211,31 +1245,31 @@ void ModbusBridge::readCoils(const ModbusRegisterGroup& group, std::map<int, boo
     for (uint i = 0; i < group.getMappingsCount(); ++i)
     {
         bool value = values[i];
-        auto& mapping = group.getRegisters()[i];
-        if (mapping.update(value))
+        auto mapping = group.getRegisters()[i];
+        if (mapping->update(value))
         {
-            LOG(INFO) << "ModbusBridge: Actuator value changed - Reference: '" << mapping.getReference() << "' Value: '"
-                      << mapping.getValue() << "'";
+            LOG(INFO) << "ModbusBridge: Actuator value changed - Reference: '" << mapping->getReference()
+                      << "' Value: '" << mapping->getValue() << "'";
 
-            switch (mapping.getMappingType())
+            switch (mapping->getMappingType())
             {
             case ModbusRegisterMapping::MappingType::DEFAULT:
             case ModbusRegisterMapping::MappingType::ACTUATOR:
                 if (m_onActuatorStatusChange)
                 {
-                    m_onActuatorStatusChange(deviceKey, mapping.getReference(), mapping.getValue());
+                    m_onActuatorStatusChange(deviceKey, mapping->getReference(), mapping->getValue());
                 }
                 break;
             case ModbusRegisterMapping::MappingType::CONFIGURATION:
                 if (m_onConfigurationChange)
                 {
                     auto vector = std::vector<ConfigurationItem>{
-                      ConfigurationItem(StringUtils::tokenize(mapping.getValue(), ","), mapping.getReference())};
+                      ConfigurationItem(StringUtils::tokenize(mapping->getValue(), ","), mapping->getReference())};
                     m_onConfigurationChange(deviceKey, vector);
                 }
                 break;
             default:
-                LOG(ERROR) << "Mapping " << mapping.getName() << " (address: " << mapping.getAddress() << ") "
+                LOG(ERROR) << "Mapping " << mapping->getName() << " (address: " << mapping->getAddress() << ") "
                            << "can't be that mapping type!";
                 break;
             }
@@ -1269,24 +1303,24 @@ void ModbusBridge::readDiscreteInputs(const ModbusRegisterGroup& group, std::map
     {
         bool value = values[static_cast<uint>(i)];
         auto mapping = group.getRegisters()[static_cast<uint>(i)];
-        if (mapping.update(value))
+        if (mapping->update(value))
         {
-            LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping.getReference() << "' Value: '"
-                      << mapping.getValue() << "'";
+            LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping->getReference() << "' Value: '"
+                      << mapping->getValue() << "'";
 
-            switch (mapping.getMappingType())
+            switch (mapping->getMappingType())
             {
             case ModbusRegisterMapping::MappingType::DEFAULT:
             case ModbusRegisterMapping::MappingType::SENSOR:
                 if (m_onSensorChange)
                 {
-                    m_onSensorChange(deviceKey, mapping.getReference(), mapping.getValue());
+                    m_onSensorChange(deviceKey, mapping->getReference(), mapping->getValue());
                 }
                 break;
             case ModbusRegisterMapping::MappingType::ALARM:
                 if (m_onAlarmChange)
                 {
-                    m_onAlarmChange(deviceKey, mapping.getReference(), value);
+                    m_onAlarmChange(deviceKey, mapping->getReference(), value);
                 }
                 break;
             default:

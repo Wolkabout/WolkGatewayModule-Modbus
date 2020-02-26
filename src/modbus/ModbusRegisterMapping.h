@@ -79,6 +79,7 @@ public:
 
     LabelMap getLabelsAndAddresses() const;
     int getAddress() const;
+    int getRegisterCount() const;
 
     RegisterType getRegisterType() const;
     DataType getDataType() const;

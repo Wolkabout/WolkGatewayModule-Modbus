@@ -239,6 +239,15 @@ int ModbusRegisterMapping::getAddress() const
     return m_address;
 }
 
+int ModbusRegisterMapping::getRegisterCount() const
+{
+    if (m_address == -1)
+    {
+        return static_cast<int>(m_labelsAndAddresses.size());
+    }
+    return 1;
+}
+
 ModbusRegisterMapping::RegisterType ModbusRegisterMapping::getRegisterType() const
 {
     return m_registerType;
@@ -261,7 +270,6 @@ LabelMap ModbusRegisterMapping::getLabelsAndAddresses() const
 
 bool ModbusRegisterMapping::update(const std::string& newValue)
 {
-    std::cout << "MRM value : " << m_value << std::endl;
     bool isValueUpdated = m_value != newValue;
     m_value = newValue;
 

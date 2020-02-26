@@ -26,7 +26,7 @@ namespace wolkabout
 class ModbusRegisterGroup
 {
 public:
-    explicit ModbusRegisterGroup(const ModbusRegisterMapping& mapping);
+    explicit ModbusRegisterGroup(const std::shared_ptr<ModbusRegisterMapping>& mapping);
 
     ModbusRegisterGroup(ModbusRegisterMapping::RegisterType registerType, ModbusRegisterMapping::DataType dataType);
 
@@ -41,16 +41,16 @@ public:
     int getStartingRegisterAddress() const;
     int getRegisterCount() const;
     int getMappingsCount() const;
-    std::vector<ModbusRegisterMapping> getRegisters() const;
+    std::vector<std::shared_ptr<ModbusRegisterMapping>> getRegisters() const;
 
-    void addRegister(ModbusRegisterMapping modbusRegisterMapping);
+    void addRegister(const std::shared_ptr<ModbusRegisterMapping>& modbusRegisterMapping);
     void setSlaveAddress(int slaveAddress);
 
 private:
     int m_slaveAddress;
     ModbusRegisterMapping::RegisterType m_registerType;
     ModbusRegisterMapping::DataType m_dataType;
-    std::vector<ModbusRegisterMapping> m_modbusRegisterMappings;
+    std::vector<std::shared_ptr<ModbusRegisterMapping>> m_modbusRegisterMappings;
 };
 }    // namespace wolkabout
 

@@ -154,9 +154,9 @@ private:
     // Mostly to be used by getDeviceStatus to provide, and readAndReport to write if device is available
     std::map<int, DeviceStatus::Status> m_devicesStatusBySlaveAddress;
     // Watcher for all the mappings. This is the shortcut for handle and get queries to get to the mapping they need.
-    std::map<std::string, ModbusRegisterMapping*> m_registerMappingByReference;
+    std::map<std::string, std::shared_ptr<ModbusRegisterMapping>> m_registerMappingByReference;
     // Configurations grouped per device. Necessary for getConfiguration.
-    std::map<std::string, std::map<std::string, ModbusRegisterMapping*>> m_configurationMappingByDevice;
+    std::map<std::string, std::map<std::string, std::shared_ptr<ModbusRegisterMapping>>> m_configurationMappingByDevice;
 
     // Running logic data
     std::chrono::milliseconds m_registerReadPeriod;
@@ -164,8 +164,6 @@ private:
     std::unique_ptr<std::thread> m_reader;
 
     // All the callbacks from the modbusBridge to explicitly target Wolk instance and notify of data
-    // TODO make all onData events explicit
-    // This may involve adding methods to WolkGatewayModule-SDK-Cpp, like it was done before for alarms&configurations
     std::function<void(const std::string& deviceKey, const std::string& reference, const std::string& value)>
       m_onSensorChange;
     std::function<void(const std::string& deviceKey, const std::string& reference, const std::string& value)>
