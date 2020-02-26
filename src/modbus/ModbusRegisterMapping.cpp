@@ -44,6 +44,7 @@ ModbusRegisterMapping::ModbusRegisterMapping(
 , m_slaveAddress(-1)
 , m_isInitialized(false)
 , m_isValid(true)
+, m_value()
 {
 }
 
@@ -64,6 +65,7 @@ ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string refer
 , m_slaveAddress(-1)
 , m_isInitialized(false)
 , m_isValid(true)
+, m_value()
 {
 }
 
@@ -81,11 +83,12 @@ ModbusRegisterMapping::ModbusRegisterMapping(const ModbusRegisterMapping& mappin
 , m_slaveAddress(mapping.m_slaveAddress)
 , m_isInitialized(false)
 , m_isValid(true)
+, m_value()
 {
 }
 
 ModbusRegisterMapping::ModbusRegisterMapping(nlohmann::json j)
-: m_slaveAddress(0), m_isInitialized(false), m_isValid(true)
+: m_slaveAddress(0), m_isInitialized(false), m_isValid(true), m_value()
 {
     m_name = j.at("name").get<std::string>();
     m_reference = j.at("reference").get<std::string>();
