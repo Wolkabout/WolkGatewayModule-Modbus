@@ -152,14 +152,15 @@ ModbusBridge::ModbusBridge(ModbusClient& modbusClient,
     }
 }
 
+ModbusBridge::~ModbusBridge()
+{
+    m_modbusClient.disconnect();
+    stop();
+}
+
 const std::atomic_bool& ModbusBridge::isRunning() const
 {
     return m_readerShouldRun;
-}
-
-void ModbusBridge::stopRunning()
-{
-    m_readerShouldRun = false;
 }
 
 int ModbusBridge::getSlaveAddress(const std::string& deviceKey)
@@ -680,6 +681,7 @@ wolkabout::DeviceStatus::Status ModbusBridge::getDeviceStatus(const std::string&
 // methods for the running logic of modbusBridge
 void ModbusBridge::start()
 {
+    LOG(DEBUG) << "Starting ModbusBridge.";
     if (m_readerShouldRun)
     {
         return;
@@ -687,13 +689,22 @@ void ModbusBridge::start()
 
     m_readerShouldRun = true;
     m_reader = std::unique_ptr<std::thread>(new std::thread(&ModbusBridge::run, this));
+    LOG(DEBUG) << "Started ModbusBridge.";
 }
 
 void ModbusBridge::stop()
 {
     m_readerShouldRun = false;
-    m_reader->join();
-    m_modbusClient.disconnect();
+    if (m_reader->joinable())
+    {
+        m_reader->join();
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    for (auto const& device : m_deviceKeyBySlaveAddress)
+    {
+        m_onDeviceStatusChange(device.second, DeviceStatus::Status::OFFLINE);
+    }
 }
 
 void ModbusBridge::run()
