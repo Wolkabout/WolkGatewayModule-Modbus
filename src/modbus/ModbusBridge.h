@@ -55,7 +55,8 @@ public:
                  std::map<std::string, std::vector<int>>& deviceAddressesByTemplate,
                  std::map<int, std::unique_ptr<Device>>& devices, std::chrono::milliseconds registerReadPeriod);
 
-    virtual ~ModbusBridge();
+    const std::atomic_bool& isRunning() const;
+    void stopRunning();
 
     void setOnSensorChange(
       const std::function<void(const std::string&, const std::string&, const std::string&)>& onSensorChange);

@@ -152,10 +152,14 @@ ModbusBridge::ModbusBridge(ModbusClient& modbusClient,
     }
 }
 
-ModbusBridge::~ModbusBridge()
+const std::atomic_bool& ModbusBridge::isRunning() const
 {
-    m_modbusClient.disconnect();
-    stop();
+    return m_readerShouldRun;
+}
+
+void ModbusBridge::stopRunning()
+{
+    m_readerShouldRun = false;
 }
 
 int ModbusBridge::getSlaveAddress(const std::string& deviceKey)
@@ -684,11 +688,14 @@ void ModbusBridge::start()
     m_readerShouldRun = true;
     m_reader = std::unique_ptr<std::thread>(new std::thread(&ModbusBridge::run, this));
 }
+
 void ModbusBridge::stop()
 {
     m_readerShouldRun = false;
     m_reader->join();
+    m_modbusClient.disconnect();
 }
+
 void ModbusBridge::run()
 {
     m_shouldReconnect = true;

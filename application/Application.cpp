@@ -72,11 +72,13 @@ bool loadDevicesConfiguration(const std::string& file, wolkabout::DevicesConfigu
     }
 }
 
+std::function<void(int)> shutdownHandler;
+
 int main(int argc, char** argv)
 {
     // Setup logger
     auto logger = std::unique_ptr<wolkabout::ConsoleLogger>(new wolkabout::ConsoleLogger());
-    logger->setLogLevel(wolkabout::LogLevel::TRACE);
+    logger->setLogLevel(wolkabout::LogLevel::DEBUG);
     wolkabout::Logger::setInstance(std::move(logger));
 
     // Checking if arg count is valid
@@ -291,10 +293,29 @@ int main(int argc, char** argv)
     wolk->connect();
     modbusBridge->start();
 
-    while (true)
+    shutdownHandler = [&](int signum) {
+        // Stop the bridge, so that the MQTT client is done sending messages. Wait for them a bit to arrive onto
+        // the platform, and then send OFFLINE status messages for devices.
+        LOG(WARN) << "Shutting down...";
+        modbusBridge->stop();
+        std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+        for (auto& device : devices)
+        {
+            wolk->publishDeviceStatus(device.second->getKey(), wolkabout::DeviceStatus::Status::OFFLINE);
+        }
+        wolk->publish();
+        wolk->disconnect();
+        LOG(DEBUG) << "Disconnecting from Wolk";
+        exit(0);
+    };
+
+    signal(SIGINT, [](int signum) { shutdownHandler(signum); });
+
+    while (modbusBridge->isRunning())
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
+    LOG(DEBUG) << "What?";
 
     return 0;
 }
