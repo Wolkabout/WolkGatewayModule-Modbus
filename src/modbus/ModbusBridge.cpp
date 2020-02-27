@@ -63,45 +63,41 @@ ModbusBridge::ModbusBridge(ModbusClient& modbusClient,
         DevicesConfigurationTemplate& configurationTemplate = *(configurationTemplates[templateRegistered.first]);
 
         std::vector<ModbusRegisterGroup> templatesGroups;
-        //        auto &firstMapping = configurationTemplate.getMappings()[0];
-        //        int previousSlaveAddress = firstMapping.getSlaveAddress();
-        //        ModbusRegisterMapping::RegisterType previousRegisterType = firstMapping.getRegisterType();
-        //        ModbusRegisterMapping::DataType previousDataType = firstMapping.getDataType();
-        //        int previousAddress = firstMapping.getAddress() - 1;
-        //
-        //        ModbusRegisterGroup group(previousSlaveAddress, previousRegisterType, previousDataType);
-        //        templatesGroups.push_back(group);
+        auto& firstMapping = configurationTemplate.getMappings()[0];
+        int previousSlaveAddress = firstMapping.getSlaveAddress();
+        ModbusRegisterMapping::RegisterType previousRegisterType = firstMapping.getRegisterType();
+        ModbusRegisterMapping::DataType previousDataType = firstMapping.getDataType();
+        int previousAddress = firstMapping.getAddress() - 1;
+
+        ModbusRegisterGroup group(previousSlaveAddress, previousRegisterType, previousDataType);
+        templatesGroups.push_back(group);
 
         for (auto const& mapping : configurationTemplate.getMappings())
         {
-            templatesGroups.emplace_back(std::make_shared<ModbusRegisterMapping>(mapping));
-            //            if (static_cast<int>(mapping.getRegisterType()) ==
-            //                static_cast<int>(previousRegisterType))
-            //            {
-            //                if (static_cast<int>(mapping.getDataType()) == static_cast<int>(previousDataType))
-            //                {
-            //                    if ((mapping.getAddress() + mapping.getRegisterCount() - 1) == previousAddress + 1)
-            //                    {
-            //                        previousSlaveAddress = mapping.getSlaveAddress();
-            //                        previousRegisterType = mapping.getRegisterType();
-            //                        previousDataType = mapping.getDataType();
-            //                        previousAddress = mapping.getAddress();
-            //
-            //                        group.addRegister(std::make_shared<ModbusRegisterMapping>(mapping));
-            //                        continue;
-            //                    }
-            //                }
-            //            }
-            //
-            //            previousSlaveAddress = mapping.getSlaveAddress();
-            //            previousRegisterType = mapping.getRegisterType();
-            //            previousDataType = mapping.getDataType();
-            //            previousAddress = mapping.getAddress();
-            //
-            //            ModbusRegisterGroup nextRegisterGroup(previousSlaveAddress, previousRegisterType,
-            //            previousDataType);
-            //            nextRegisterGroup.addRegister(std::make_shared<ModbusRegisterMapping>(mapping));
-            //            templatesGroups.push_back(nextRegisterGroup);
+            if (static_cast<int>(mapping.getRegisterType()) == static_cast<int>(previousRegisterType))
+            {
+                if (static_cast<int>(mapping.getDataType()) == static_cast<int>(previousDataType))
+                {
+                    if ((mapping.getAddress() + mapping.getRegisterCount() - 1) == previousAddress + 1)
+                    {
+                        previousSlaveAddress = mapping.getSlaveAddress();
+                        previousRegisterType = mapping.getRegisterType();
+                        previousDataType = mapping.getDataType();
+                        previousAddress = mapping.getAddress();
+                        templatesGroups.back().addRegister(std::make_shared<ModbusRegisterMapping>(mapping));
+                        continue;
+                    }
+                }
+            }
+
+            previousSlaveAddress = mapping.getSlaveAddress();
+            previousRegisterType = mapping.getRegisterType();
+            previousDataType = mapping.getDataType();
+            previousAddress = mapping.getAddress();
+
+            ModbusRegisterGroup nextRegisterGroup(previousSlaveAddress, previousRegisterType, previousDataType);
+            nextRegisterGroup.addRegister(std::make_shared<ModbusRegisterMapping>(mapping));
+            templatesGroups.push_back(nextRegisterGroup);
         }
 
         // Go through devices registered by this template
