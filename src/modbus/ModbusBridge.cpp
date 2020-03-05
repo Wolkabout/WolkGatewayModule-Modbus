@@ -36,11 +36,11 @@
 
 namespace wolkabout
 {
-ModbusBridge::ModbusBridge(ModbusClient& modbusClient,
-                           std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& configurationTemplates,
-                           std::map<std::string, std::vector<int>>& deviceAddressesByTemplate,
-                           std::map<int, std::unique_ptr<Device>>& devices,
-                           std::chrono::milliseconds registerReadPeriod)
+ModbusBridge::ModbusBridge(
+  ModbusClient& modbusClient,
+  const std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& configurationTemplates,
+  const std::map<std::string, std::vector<int>>& deviceAddressesByTemplate,
+  const std::map<int, std::unique_ptr<Device>>& devices, std::chrono::milliseconds registerReadPeriod)
 : m_modbusClient(modbusClient)
 , m_timeoutIterator(0)
 , m_shouldReconnect(false)
@@ -60,7 +60,7 @@ ModbusBridge::ModbusBridge(ModbusClient& modbusClient,
     for (auto const& templateRegistered : deviceAddressesByTemplate)
     {
         // Take the template, make groups for the template
-        DevicesConfigurationTemplate& configurationTemplate = *(configurationTemplates[templateRegistered.first]);
+        DevicesConfigurationTemplate& configurationTemplate = *(configurationTemplates.at(templateRegistered.first));
 
         std::vector<ModbusRegisterGroup> templatesGroups;
         auto& firstMapping = configurationTemplate.getMappings()[0];
@@ -108,7 +108,7 @@ ModbusBridge::ModbusBridge(ModbusClient& modbusClient,
             std::vector<ModbusRegisterGroup> devicesGroups;
 
             m_deviceKeyBySlaveAddress.insert(
-              std::pair<int, std::string>(slaveAddress, devices[slaveAddress]->getKey()));
+              std::pair<int, std::string>(slaveAddress, devices.at(slaveAddress)->getKey()));
             m_devicesStatusBySlaveAddress.insert(
               std::pair<int, DeviceStatus::Status>(slaveAddress, DeviceStatus::Status::OFFLINE));
 
@@ -121,7 +121,7 @@ ModbusBridge::ModbusBridge(ModbusClient& modbusClient,
                 for (auto const& mapping : deviceGroup.getRegisters())
                 {
                     mapping->setSlaveAddress(slaveAddress);
-                    auto deviceKey = devices[slaveAddress]->getKey();
+                    auto deviceKey = devices.at(slaveAddress)->getKey();
                     auto mappingPair = m_registerMappingByReference
                                          .insert(std::pair<std::string, std::shared_ptr<ModbusRegisterMapping>>(
                                            deviceKey + '.' + mapping->getReference(), mapping))

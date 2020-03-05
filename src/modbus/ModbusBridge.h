@@ -51,9 +51,9 @@ class ModbusBridge : public ActuationHandlerPerDevice,
 {
 public:
     ModbusBridge(ModbusClient& modbusClient,
-                 std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& configurationTemplates,
-                 std::map<std::string, std::vector<int>>& deviceAddressesByTemplate,
-                 std::map<int, std::unique_ptr<Device>>& devices, std::chrono::milliseconds registerReadPeriod);
+                 const std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& configurationTemplates,
+                 const std::map<std::string, std::vector<int>>& deviceAddressesByTemplate,
+                 const std::map<int, std::unique_ptr<Device>>& devices, std::chrono::milliseconds registerReadPeriod);
 
     virtual ~ModbusBridge();
 

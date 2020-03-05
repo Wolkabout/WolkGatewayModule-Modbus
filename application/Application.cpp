@@ -20,11 +20,8 @@
 #include "modbus/LibModbusTcpIpClient.h"
 #include "modbus/ModbusBridge.h"
 #include "modbus/ModbusClient.h"
-#include "modbus/ModbusRegisterGroup.h"
-#include "modbus/ModbusRegisterMapping.h"
-#include "model/ActuatorTemplate.h"
 #include "model/DeviceTemplate.h"
-#include "model/SensorTemplate.h"
+#include "module/DevicePreparationFactory.h"
 #include "module/DevicesConfiguration.h"
 #include "module/DevicesTemplateFactory.h"
 #include "module/ModuleConfiguration.h"
@@ -110,79 +107,11 @@ int main(int argc, char** argv)
     }();
 
     // Process the devices configuration and create and register devices.
-    std::map<std::string, std::unique_ptr<wolkabout::DeviceTemplate>> templates;
-    std::map<int, std::unique_ptr<wolkabout::Device>> devices;
-
-    // Parse templates to wolkabout::DeviceTemplate
-    for (const auto& deviceTemplate : devicesConfiguration.getTemplates())
-    {
-        wolkabout::DevicesConfigurationTemplate& info = *deviceTemplate.second;
-        templates.emplace(deviceTemplate.first,
-                          wolkabout::DevicesTemplateFactory::makeTemplateFromDeviceConfigTemplate(info));
-    }
-
-    // Parse devices with templates to wolkabout::Device
-    // We need to check, in the SERIAL/RTU, that all devices have a slave address
-    // and that they're different from one another. In TCP/IP mode, we can have only
-    // one device, so we need to check for that (and assign it a slaveAddress, because -1 is an invalid address).
-    std::vector<int> occupiedSlaveAddresses;
-    int assigningSlaveAddress = 1;
-    std::map<std::string, std::vector<int>> usedTemplates;
-
-    for (auto const& deviceInformation : devicesConfiguration.getDevices())
-    {
-        wolkabout::DeviceInformation& info = *deviceInformation.second;
-        if (moduleConfiguration.getConnectionType() == wolkabout::ModuleConfiguration::ConnectionType::SERIAL_RTU)
-        {
-            // If it doesn't at all have a slaveAddress or if the slaveAddress is already occupied
-            // device is not valid.
-
-            if (info.getSlaveAddress() == -1)
-            {
-                LOG(WARN) << "Device " << info.getName() << " (" << info.getKey() << ") is missing a slaveAddress!"
-                          << "\nIgnoring device...";
-                continue;
-            }
-            else if (std::any_of(occupiedSlaveAddresses.begin(), occupiedSlaveAddresses.end(),
-                                 [&](int i) { return i == info.getSlaveAddress(); }))
-            {
-                LOG(WARN) << "Device " << info.getName() << " (" << info.getKey() << ") "
-                          << "has a conflicting slaveAddress!\nIgnoring device...";
-                continue;
-            }
-        }
-        else
-        {
-            // If it's an TCP/IP device, assign it the next free slaveAddress.
-            info.setSlaveAddress(assigningSlaveAddress++);
-        }
-
-        const std::string& templateName = info.getTemplateString();
-        const auto& pair = templates.find(templateName);
-        if (pair != templates.end())
-        {
-            // Create the device with found template, push the slaveAddress as occupied
-            wolkabout::DeviceTemplate& deviceTemplate = *pair->second;
-            occupiedSlaveAddresses.push_back(info.getSlaveAddress());
-            devices.insert(std::pair<int, std::unique_ptr<wolkabout::Device>>(
-              info.getSlaveAddress(), new wolkabout::Device(info.getName(), info.getKey(), deviceTemplate)));
-
-            // Emplace the template name in usedTemplates array for modbusBridge, and the slaveAddress
-            if (usedTemplates.find(templateName) != usedTemplates.end())
-            {
-                usedTemplates[templateName].emplace_back(info.getSlaveAddress());
-            }
-            else
-            {
-                usedTemplates.insert(std::pair<std::string, std::vector<int>>(templateName, {info.getSlaveAddress()}));
-            }
-        }
-        else
-        {
-            LOG(WARN) << "Device " << info.getName() << " (" << info.getKey() << ") doesn't have a valid template!"
-                      << "\nIgnoring device...";
-        }
-    }
+    wolkabout::DevicePreparationFactory factory(devicesConfiguration.getTemplates(), devicesConfiguration.getDevices(),
+                                                moduleConfiguration.getConnectionType());
+    const auto& templates = factory.getTemplates();
+    const auto& devices = factory.getDevices();
+    const auto& deviceTemplateMap = factory.getTemplateDeviceMap();
 
     // If no devices are valid, the application has no reason to work
     if (devices.empty())
@@ -201,9 +130,9 @@ int main(int argc, char** argv)
 
     // Pass everything necessary to initialize the bridge
     LOG(DEBUG) << "Initializing the bridge...";
-    auto modbusBridge =
-      std::make_shared<wolkabout::ModbusBridge>(*libModbusClient, devicesConfiguration.getTemplates(), usedTemplates,
-                                                devices, moduleConfiguration.getRegisterReadPeriod());
+    auto modbusBridge = std::make_shared<wolkabout::ModbusBridge>(*libModbusClient, devicesConfiguration.getTemplates(),
+                                                                  deviceTemplateMap, devices,
+                                                                  moduleConfiguration.getRegisterReadPeriod());
 
     // Connect the bridge to Wolk instance
     LOG(DEBUG) << "Connecting with Wolk...";
