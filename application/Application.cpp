@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 WolkAbout Technology s.r.o.
+ * Copyright 2020 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@
 #include "model/DeviceTemplate.h"
 #include "model/SensorTemplate.h"
 #include "module/DevicesConfiguration.h"
+#include "module/DevicesTemplateFactory.h"
 #include "module/ModuleConfiguration.h"
 #include "service/FirmwareInstaller.h"
 #include "utilities/ConsoleLogger.h"
@@ -34,45 +35,10 @@
 #include <chrono>
 #include <map>
 #include <memory>
-#include <module/DevicesTemplateFactory.h>
 #include <random>
 #include <string>
 #include <thread>
 #include <utility>
-
-bool loadModuleConfiguration(const std::string& file, wolkabout::ModuleConfiguration& moduleConfiguration)
-{
-    try
-    {
-        moduleConfiguration = wolkabout::ModuleConfiguration(wolkabout::JsonReaderParser::readFile(file));
-        LOG(INFO) << "WolkGatewayModbusModule Application: Loaded module configuration from '" << file << "'";
-        return true;
-    }
-    catch (std::logic_error& e)
-    {
-        LOG(ERROR) << "WolkGatewayModbusModule Application: Unable to parse module configuration file."
-                   << "Reason: " << e.what();
-        return false;
-    }
-}
-
-bool loadDevicesConfiguration(const std::string& file, wolkabout::DevicesConfiguration& devicesConfiguration)
-{
-    try
-    {
-        devicesConfiguration = wolkabout::DevicesConfiguration(wolkabout::JsonReaderParser::readFile(file));
-        LOG(INFO) << "WolkGatewayModbusModule Application: Loaded devices configuration from '" << file << "'";
-        return true;
-    }
-    catch (std::logic_error& e)
-    {
-        LOG(ERROR) << "WolkGatewayModbusModule Application: Unable to parse devices configuration file."
-                   << "Reason: " << e.what();
-        return false;
-    }
-}
-
-std::function<void(int)> shutdownHandler;
 
 int main(int argc, char** argv)
 {
@@ -81,7 +47,6 @@ int main(int argc, char** argv)
     logger->setLogLevel(wolkabout::LogLevel::INFO);
     wolkabout::Logger::setInstance(std::move(logger));
 
-    // Checking if arg count is valid
     if (argc < 3)
     {
         LOG(ERROR) << "WolkGatewayModbusModule Application: Usage -  " << argv[0]
@@ -90,18 +55,10 @@ int main(int argc, char** argv)
     }
 
     // Parse file passed in first arg - module configuration JSON file
-    wolkabout::ModuleConfiguration moduleConfiguration;
-    if (!loadModuleConfiguration(argv[1], moduleConfiguration))
-    {
-        return -1;
-    }
+    wolkabout::ModuleConfiguration moduleConfiguration(wolkabout::JsonReaderParser::readFile(argv[1]));
 
     // Parse file passed in second arg - devices configuration JSON file
-    wolkabout::DevicesConfiguration devicesConfiguration;
-    if (!loadDevicesConfiguration(argv[2], devicesConfiguration))
-    {
-        return -1;
-    }
+    wolkabout::DevicesConfiguration devicesConfiguration(wolkabout::JsonReaderParser::readFile(argv[2]));
 
     // We need to do some checks to see if the inputted data is valid.
     // We don't want there to be no devices.
@@ -136,13 +93,13 @@ int main(int argc, char** argv)
     auto libModbusClient = [&]() -> std::unique_ptr<wolkabout::ModbusClient> {
         if (moduleConfiguration.getConnectionType() == wolkabout::ModuleConfiguration::ConnectionType::TCP_IP)
         {
-            auto tcpConfiguration = moduleConfiguration.getTcpIpConfiguration();
+            auto const& tcpConfiguration = moduleConfiguration.getTcpIpConfiguration();
             return std::unique_ptr<wolkabout::LibModbusTcpIpClient>(new wolkabout::LibModbusTcpIpClient(
               tcpConfiguration->getIp(), tcpConfiguration->getPort(), moduleConfiguration.getResponseTimeout()));
         }
         else if (moduleConfiguration.getConnectionType() == wolkabout::ModuleConfiguration::ConnectionType::SERIAL_RTU)
         {
-            auto serialConfiguration = moduleConfiguration.getSerialRtuConfiguration();
+            auto const& serialConfiguration = moduleConfiguration.getSerialRtuConfiguration();
             return std::unique_ptr<wolkabout::LibModbusSerialRtuClient>(new wolkabout::LibModbusSerialRtuClient(
               serialConfiguration->getSerialPort(), serialConfiguration->getBaudRate(),
               serialConfiguration->getDataBits(), serialConfiguration->getStopBits(),
@@ -157,11 +114,11 @@ int main(int argc, char** argv)
     std::map<int, std::unique_ptr<wolkabout::Device>> devices;
 
     // Parse templates to wolkabout::DeviceTemplate
-    for (auto const& deviceTemplate : devicesConfiguration.getTemplates())
+    for (const auto& deviceTemplate : devicesConfiguration.getTemplates())
     {
         wolkabout::DevicesConfigurationTemplate& info = *deviceTemplate.second;
-        templates.insert(std::pair<std::string, std::unique_ptr<wolkabout::DeviceTemplate>>(
-          deviceTemplate.first, wolkabout::DevicesTemplateFactory::makeTemplateFromDeviceConfigTemplate(info)));
+        templates.emplace(deviceTemplate.first,
+                          wolkabout::DevicesTemplateFactory::makeTemplateFromDeviceConfigTemplate(info));
     }
 
     // Parse devices with templates to wolkabout::Device
@@ -179,14 +136,15 @@ int main(int argc, char** argv)
         {
             // If it doesn't at all have a slaveAddress or if the slaveAddress is already occupied
             // device is not valid.
+
             if (info.getSlaveAddress() == -1)
             {
                 LOG(WARN) << "Device " << info.getName() << " (" << info.getKey() << ") is missing a slaveAddress!"
                           << "\nIgnoring device...";
                 continue;
             }
-            else if (std::find(occupiedSlaveAddresses.begin(), occupiedSlaveAddresses.end(), info.getSlaveAddress()) !=
-                     occupiedSlaveAddresses.end())
+            else if (std::any_of(occupiedSlaveAddresses.begin(), occupiedSlaveAddresses.end(),
+                                 [&](int i) { return i == info.getSlaveAddress(); }))
             {
                 LOG(WARN) << "Device " << info.getName() << " (" << info.getKey() << ") "
                           << "has a conflicting slaveAddress!\nIgnoring device...";
@@ -200,10 +158,11 @@ int main(int argc, char** argv)
         }
 
         const std::string& templateName = info.getTemplateString();
-        if (templates.find(templateName) != templates.end())
+        const auto& pair = templates.find(templateName);
+        if (pair != templates.end())
         {
             // Create the device with found template, push the slaveAddress as occupied
-            wolkabout::DeviceTemplate& deviceTemplate = *(templates.find(templateName)->second);
+            wolkabout::DeviceTemplate& deviceTemplate = *pair->second;
             occupiedSlaveAddresses.push_back(info.getSlaveAddress());
             devices.insert(std::pair<int, std::unique_ptr<wolkabout::Device>>(
               info.getSlaveAddress(), new wolkabout::Device(info.getName(), info.getKey(), deviceTemplate)));
@@ -225,7 +184,7 @@ int main(int argc, char** argv)
         }
     }
 
-    // If no devices are valid, the application has no reason to work :c
+    // If no devices are valid, the application has no reason to work
     if (devices.empty())
     {
         LOG(ERROR) << "No devices are valid. Quitting application...";
@@ -234,7 +193,7 @@ int main(int argc, char** argv)
 
     // Report the device count to the user
     LOG(INFO) << "Created " << devices.size() << " device(s)!";
-    int invalidDevices = static_cast<int>(devicesConfiguration.getDevices().size() - devices.size());
+    auto invalidDevices = devicesConfiguration.getDevices().size() - devices.size();
     if (invalidDevices > 0)
     {
         LOG(WARN) << "There were " << invalidDevices << " invalid device(s)!";

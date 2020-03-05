@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 WolkAbout Technology s.r.o.
+ * Copyright 2020 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -158,7 +158,7 @@ ModbusBridge::~ModbusBridge()
     stop();
 }
 
-const std::atomic_bool& ModbusBridge::isRunning() const
+bool ModbusBridge::isRunning() const
 {
     return m_readerShouldRun;
 }
@@ -247,8 +247,7 @@ void ModbusBridge::handleActuationForHoldingRegister(ModbusRegisterMapping& mapp
 // void handleActuatorForCoil() -
 void ModbusBridge::handleActuationForCoil(ModbusRegisterMapping& mapping, const std::string& value)
 {
-    std::vector<std::string> trueValues = {"true", "1", "1.0", "ON"};
-    bool boolValue = std::find(trueValues.begin(), trueValues.end(), value) != trueValues.end();
+    bool boolValue = std::find(TRUE_VALUES.begin(), TRUE_VALUES.end(), value) != TRUE_VALUES.end();
     if (!m_modbusClient.writeCoil(mapping.getSlaveAddress(), mapping.getAddress(), boolValue))
     {
         LOG(ERROR) << "ModbusBridge: Unable to write coil value - Register address: " << mapping.getAddress()
@@ -388,8 +387,7 @@ void ModbusBridge::handleConfigurationForHoldingRegisters(ModbusRegisterMapping&
 // handleConfigurationForCoil() - handles
 void ModbusBridge::handleConfigurationForCoil(ModbusRegisterMapping& mapping, const std::string& value)
 {
-    std::vector<std::string> trueValues = {"true", "1", "1.0", "ON"};
-    bool boolValue = std::find(trueValues.begin(), trueValues.end(), value) != trueValues.end();
+    bool boolValue = std::find(TRUE_VALUES.begin(), TRUE_VALUES.end(), value) != TRUE_VALUES.end();
     if (!m_modbusClient.writeCoil(mapping.getSlaveAddress(), mapping.getAddress(), boolValue))
     {
         LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
@@ -1065,8 +1063,6 @@ void ModbusBridge::readHoldingRegistersSensors(const ModbusRegisterGroup& group,
                 LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping->getReference() << "' Value: '"
                           << mapping->getValue() << "'";
 
-                // This here isn't edited because the holding_register_sensor can't be anything else than a
-                // sensor!
                 if (m_onSensorChange)
                 {
                     m_onSensorChange(deviceKey, mapping->getReference(), mapping->getValue());

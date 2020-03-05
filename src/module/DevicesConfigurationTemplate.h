@@ -26,9 +26,7 @@ using nlohmann::json;
 class DevicesConfigurationTemplate
 {
 public:
-    DevicesConfigurationTemplate() = default;
-
-    DevicesConfigurationTemplate(std::string& name, std::vector<ModbusRegisterMapping>& mappings);
+    DevicesConfigurationTemplate(const std::string& name, const std::vector<ModbusRegisterMapping>& mappings);
 
     DevicesConfigurationTemplate(const DevicesConfigurationTemplate& instance);
 

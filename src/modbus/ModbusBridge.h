@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 WolkAbout Technology s.r.o.
+ * Copyright 2020 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,21 +57,24 @@ public:
 
     virtual ~ModbusBridge();
 
-    const std::atomic_bool& isRunning() const;
+    bool isRunning() const;
 
-    void setOnSensorChange(
-      const std::function<void(const std::string&, const std::string&, const std::string&)>& onSensorChange);
+    void setOnSensorChange(const std::function<void(const std::string& deviceKey, const std::string& reference,
+                                                    const std::string& value)>& onSensorChange);
 
-    void setOnActuatorStatusChange(
-      const std::function<void(const std::string&, const std::string&, const std::string&)>& onActuatorStatusChange);
+    void setOnActuatorStatusChange(const std::function<void(const std::string& deviceKey, const std::string& reference,
+                                                            const std::string& value)>& onActuatorStatusChange);
 
-    void setOnAlarmChange(const std::function<void(const std::string&, const std::string&, bool)>& onAlarmChange);
+    void setOnAlarmChange(const std::function<void(const std::string& deviceKey, const std::string& reference,
+                                                   bool active)>& onAlarmChange);
 
     void setOnConfigurationChange(
-      const std::function<void(const std::string&, std::vector<ConfigurationItem>&)>& onConfigurationChange);
+      const std::function<void(const std::string& deviceKey, std::vector<ConfigurationItem>& data)>&
+        onConfigurationChange);
 
     void setOnDeviceStatusChange(
-      const std::function<void(const std::string&, wolkabout::DeviceStatus::Status)>& onDeviceStatusChange);
+      const std::function<void(const std::string& deviceKey, wolkabout::DeviceStatus::Status status)>&
+        onDeviceStatusChange);
 
     void start();
     void stop();
@@ -141,6 +144,9 @@ private:
 
     // The client
     ModbusClient& m_modbusClient;
+
+    // True values
+    const std::vector<std::string> TRUE_VALUES = {"true", "1", "1.0", "ON"};
 
     // Reconnect logic
     unsigned long m_timeoutIterator;

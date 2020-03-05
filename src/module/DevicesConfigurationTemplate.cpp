@@ -20,8 +20,8 @@ namespace wolkabout
 {
 using nlohmann::json;
 
-DevicesConfigurationTemplate::DevicesConfigurationTemplate(std::string& name,
-                                                           std::vector<ModbusRegisterMapping>& mappings)
+DevicesConfigurationTemplate::DevicesConfigurationTemplate(const std::string& name,
+                                                           const std::vector<ModbusRegisterMapping>& mappings)
 : m_name(name), m_mappings(mappings)
 {
 }

@@ -38,8 +38,6 @@ public:
         SERIAL_RTU
     };
 
-    ModuleConfiguration() = default;
-
     ModuleConfiguration(std::string mqttHost, ConnectionType connectionType,
                         std::unique_ptr<SerialRtuConfiguration> serialRtuConfiguration,
                         std::chrono::milliseconds responseTimeout, std::chrono::milliseconds registerReadPeriod);
@@ -54,17 +52,17 @@ public:
 
     ModuleConfiguration::ConnectionType getConnectionType() const;
 
-    std::unique_ptr<SerialRtuConfiguration> getSerialRtuConfiguration();
+    const std::unique_ptr<SerialRtuConfiguration>& getSerialRtuConfiguration() const;
 
-    std::unique_ptr<TcpIpConfiguration> getTcpIpConfiguration();
-
-    void setSerialRtuConfiguration(std::unique_ptr<SerialRtuConfiguration> serialRtuConfiguration);
-
-    void setTcpIpConfiguration(std::unique_ptr<TcpIpConfiguration> tcpIpConfiguration);
+    const std::unique_ptr<TcpIpConfiguration>& getTcpIpConfiguration() const;
 
     const std::chrono::milliseconds& getResponseTimeout() const;
 
     const std::chrono::milliseconds& getRegisterReadPeriod() const;
+
+    void setSerialRtuConfiguration(std::unique_ptr<SerialRtuConfiguration> serialRtuConfiguration);
+
+    void setTcpIpConfiguration(std::unique_ptr<TcpIpConfiguration> tcpIpConfiguration);
 
 private:
     std::string m_mqttHost;

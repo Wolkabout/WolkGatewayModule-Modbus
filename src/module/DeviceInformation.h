@@ -26,16 +26,14 @@ using nlohmann::json;
 class DeviceInformation
 {
 public:
-    DeviceInformation() = default;
+    DeviceInformation(const std::string& name, const std::string& key, DevicesConfigurationTemplate* deviceTemplate,
+                      int slaveAddress);
 
-    DeviceInformation(std::string& name, std::string& key,
-                      std::unique_ptr<DevicesConfigurationTemplate>* deviceTemplate, int slaveAddress);
-
-    explicit DeviceInformation(nlohmann::json j);
-
-    DeviceInformation(nlohmann::json j, std::unique_ptr<DevicesConfigurationTemplate>* templatePointer);
+    DeviceInformation(nlohmann::json j, DevicesConfigurationTemplate* templatePointer);
 
     DeviceInformation(const DeviceInformation& instance);
+
+    explicit DeviceInformation(nlohmann::json j);
 
     const std::string& getName() const;
 
@@ -47,16 +45,16 @@ public:
 
     const std::string& getTemplateString() const;
 
-    std::unique_ptr<DevicesConfigurationTemplate>* getTemplate() const;
+    DevicesConfigurationTemplate* getTemplate() const;
 
-    void setTemplate(std::unique_ptr<DevicesConfigurationTemplate>* templatePointer);
+    void setTemplate(DevicesConfigurationTemplate* templatePointer);
 
 private:
     std::string m_name;
     std::string m_key;
     int m_slaveAddress = -1;
     std::string m_templateString;
-    std::unique_ptr<DevicesConfigurationTemplate>* m_template = nullptr;
+    DevicesConfigurationTemplate* m_template;
 };
 }    // namespace wolkabout
 
