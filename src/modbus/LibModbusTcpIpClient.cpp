@@ -21,7 +21,6 @@
 
 #include <cerrno>
 #include <chrono>
-#include <cstdint>
 #include <mutex>
 #include <string>
 #include <utility>
