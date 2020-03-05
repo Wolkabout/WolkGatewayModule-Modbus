@@ -214,9 +214,22 @@ void ModbusBridge::handleActuationForHoldingRegister(ModbusRegisterMapping& mapp
 {
     if (mapping.getDataType() == ModbusRegisterMapping::DataType::INT16)
     {
-        auto typedValue = static_cast<short>(std::stoi(value));
+        short shortValue;
+        try
+        {
+            shortValue = static_cast<short>(std::stoi(value));
+        }
+        catch (std::exception&)
+        {
+            LOG(ERROR)
+              << "ModbusBridge: Unable to convert value from platform for holding register - Register address: "
+              << mapping.getAddress() << " Value: " << value;
+            mapping.setValid(false);
+            return;
+        }
+
         if (!m_modbusClient.writeHoldingRegister(static_cast<int>(mapping.getSlaveAddress()), mapping.getAddress(),
-                                                 typedValue))
+                                                 shortValue))
         {
             LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
                        << mapping.getAddress() << " Value: " << value;
@@ -225,8 +238,21 @@ void ModbusBridge::handleActuationForHoldingRegister(ModbusRegisterMapping& mapp
     }
     else if (mapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
     {
-        auto typedValue = static_cast<unsigned short>(std::stoul(value));
-        if (!m_modbusClient.writeHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), typedValue))
+        unsigned short unsignedShortValue;
+        try
+        {
+            unsignedShortValue = static_cast<unsigned short>(std::stoi(value));
+        }
+        catch (std::exception&)
+        {
+            LOG(ERROR)
+              << "ModbusBridge: Unable to convert value from platform for holding register - Register address: "
+              << mapping.getAddress() << " Value: " << value;
+            mapping.setValid(false);
+            return;
+        }
+
+        if (!m_modbusClient.writeHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), unsignedShortValue))
         {
             LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
                        << mapping.getAddress() << " Value: " << value;
@@ -235,8 +261,21 @@ void ModbusBridge::handleActuationForHoldingRegister(ModbusRegisterMapping& mapp
     }
     else if (mapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
     {
-        float typedValue = std::stof(value);
-        if (!m_modbusClient.writeHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), typedValue))
+        float floatValue;
+        try
+        {
+            floatValue = std::stof(value);
+        }
+        catch (std::exception&)
+        {
+            LOG(ERROR)
+              << "ModbusBridge: Unable to convert value from platform for holding register - Register address: "
+              << mapping.getAddress() << " Value: " << value;
+            mapping.setValid(false);
+            return;
+        }
+
+        if (!m_modbusClient.writeHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), floatValue))
         {
             LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
                        << mapping.getAddress() << " Value: " << value;
@@ -247,7 +286,9 @@ void ModbusBridge::handleActuationForHoldingRegister(ModbusRegisterMapping& mapp
 // void handleActuatorForCoil() -
 void ModbusBridge::handleActuationForCoil(ModbusRegisterMapping& mapping, const std::string& value)
 {
-    bool boolValue = std::find(TRUE_VALUES.begin(), TRUE_VALUES.end(), value) != TRUE_VALUES.end();
+    bool boolValue =
+      std::any_of(TRUE_VALUES.begin(), TRUE_VALUES.end(), [&](const std::string& ref) { return ref == value; });
+
     if (!m_modbusClient.writeCoil(mapping.getSlaveAddress(), mapping.getAddress(), boolValue))
     {
         LOG(ERROR) << "ModbusBridge: Unable to write coil value - Register address: " << mapping.getAddress()
@@ -305,7 +346,20 @@ void ModbusBridge::handleConfigurationForHoldingRegister(ModbusRegisterMapping& 
 {
     if (mapping.getDataType() == ModbusRegisterMapping::DataType::INT16)
     {
-        auto shortValue = static_cast<short>(std::stoi(value));
+        short shortValue;
+        try
+        {
+            shortValue = static_cast<short>(std::stoi(value));
+        }
+        catch (std::exception&)
+        {
+            LOG(ERROR)
+              << "ModbusBridge: Unable to convert value from platform for holding register - Register address: "
+              << mapping.getAddress() << " Value: " << value;
+            mapping.setValid(false);
+            return;
+        }
+
         if (!m_modbusClient.writeHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), shortValue))
         {
             LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
@@ -315,17 +369,43 @@ void ModbusBridge::handleConfigurationForHoldingRegister(ModbusRegisterMapping& 
     }
     else if (mapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
     {
-        auto uShortValue = static_cast<unsigned short>(std::stoi(value));
-        if (!m_modbusClient.writeHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), uShortValue))
+        unsigned short unsignedShortValue;
+        try
+        {
+            unsignedShortValue = static_cast<unsigned short>(std::stoi(value));
+        }
+        catch (std::exception&)
+        {
+            LOG(ERROR)
+              << "ModbusBridge: Unable to convert value from platform for holding register - Register address: "
+              << mapping.getAddress() << " Value: " << value;
+            mapping.setValid(false);
+            return;
+        }
+
+        if (!m_modbusClient.writeHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), unsignedShortValue))
         {
             LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
-                       << mapping.getAddress() << " Value: " << uShortValue;
+                       << mapping.getAddress() << " Value: " << unsignedShortValue;
             mapping.setValid(false);
         }
     }
     else if (mapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
     {
-        auto floatValue = std::stof(value);
+        float floatValue;
+        try
+        {
+            floatValue = std::stof(value);
+        }
+        catch (std::exception&)
+        {
+            LOG(ERROR)
+              << "ModbusBridge: Unable to convert value from platform for holding register - Register address: "
+              << mapping.getAddress() << " Value: " << value;
+            mapping.setValid(false);
+            return;
+        }
+
         if (!m_modbusClient.writeHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), floatValue))
         {
             LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
@@ -344,7 +424,18 @@ void ModbusBridge::handleConfigurationForHoldingRegisters(ModbusRegisterMapping&
         shorts.reserve(value.size());
         for (const std::string& shortString : value)
         {
-            shorts.push_back(static_cast<short>(std::stoi(shortString)));
+            try
+            {
+                shorts.push_back(static_cast<short>(std::stoi(shortString)));
+            }
+            catch (std::exception&)
+            {
+                LOG(ERROR)
+                  << "ModbusBridge: Unable to convert value from platform for holding registers - Register address: "
+                  << mapping.getAddress() << " Value: " << shortString;
+                mapping.setValid(false);
+                return;
+            }
         }
         if (!m_modbusClient.writeHoldingRegisters(mapping.getSlaveAddress(), mapping.getAddress(), shorts))
         {
@@ -355,13 +446,24 @@ void ModbusBridge::handleConfigurationForHoldingRegisters(ModbusRegisterMapping&
     }
     else if (mapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
     {
-        std::vector<unsigned short> uShorts;
-        uShorts.reserve(value.size());
+        std::vector<unsigned short> unsignedShorts;
+        unsignedShorts.reserve(value.size());
         for (const std::string& shortString : value)
         {
-            uShorts.push_back(static_cast<unsigned short>(std::stoi(shortString)));
+            try
+            {
+                unsignedShorts.push_back(static_cast<unsigned short>(std::stoi(shortString)));
+            }
+            catch (std::exception&)
+            {
+                LOG(ERROR)
+                  << "ModbusBridge: Unable to convert value from platform for holding registers - Register address: "
+                  << mapping.getAddress() << " Value: " << shortString;
+                mapping.setValid(false);
+                return;
+            }
         }
-        if (!m_modbusClient.writeHoldingRegisters(mapping.getSlaveAddress(), mapping.getAddress(), uShorts))
+        if (!m_modbusClient.writeHoldingRegisters(mapping.getSlaveAddress(), mapping.getAddress(), unsignedShorts))
         {
             LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
                        << mapping.getAddress();
@@ -374,7 +476,18 @@ void ModbusBridge::handleConfigurationForHoldingRegisters(ModbusRegisterMapping&
         floats.reserve(value.size());
         for (const std::string& shortString : value)
         {
-            floats.push_back(static_cast<float>(std::stof(shortString)));
+            try
+            {
+                floats.push_back(static_cast<float>(std::stof(shortString)));
+            }
+            catch (std::exception&)
+            {
+                LOG(ERROR)
+                  << "ModbusBridge: Unable to convert value from platform for holding registers - Register address: "
+                  << mapping.getAddress() << " Value: " << shortString;
+                mapping.setValid(false);
+                return;
+            }
         }
         if (!m_modbusClient.writeHoldingRegisters(mapping.getSlaveAddress(), mapping.getAddress(), floats))
         {

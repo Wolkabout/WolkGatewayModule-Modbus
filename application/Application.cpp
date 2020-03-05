@@ -14,19 +14,17 @@
  * limitations under the License.
  */
 
-#include "JsonReaderParser.h"
 #include "Wolk.h"
 #include "modbus/LibModbusSerialRtuClient.h"
 #include "modbus/LibModbusTcpIpClient.h"
 #include "modbus/ModbusBridge.h"
 #include "modbus/ModbusClient.h"
-#include "model/DeviceTemplate.h"
 #include "module/DevicePreparationFactory.h"
 #include "module/DevicesConfiguration.h"
-#include "module/DevicesTemplateFactory.h"
 #include "module/ModuleConfiguration.h"
 #include "service/FirmwareInstaller.h"
 #include "utilities/ConsoleLogger.h"
+#include "utility/JsonReaderParser.h"
 
 #include <algorithm>
 #include <chrono>
