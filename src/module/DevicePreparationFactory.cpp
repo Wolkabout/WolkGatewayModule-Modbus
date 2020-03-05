@@ -52,7 +52,7 @@ wolkabout::DevicePreparationFactory::DevicePreparationFactory(
     std::vector<int> occupiedSlaveAddresses;
     int assigningSlaveAddress = 1;
 
-    for (auto const& deviceInformation : m_inputDevices)
+    for (const auto& deviceInformation : m_inputDevices)
     {
         wolkabout::DeviceInformation& info = *deviceInformation.second;
         if (connectionType == wolkabout::ModuleConfiguration::ConnectionType::SERIAL_RTU)
@@ -87,8 +87,8 @@ wolkabout::DevicePreparationFactory::DevicePreparationFactory(
             // Create the device with found template, push the slaveAddress as occupied
             wolkabout::DeviceTemplate& deviceTemplate = *pair->second;
             occupiedSlaveAddresses.push_back(info.getSlaveAddress());
-            m_devices.insert(std::pair<int, std::unique_ptr<wolkabout::Device>>(
-              info.getSlaveAddress(), new wolkabout::Device(info.getName(), info.getKey(), deviceTemplate)));
+            m_devices.emplace(info.getSlaveAddress(),
+                              new wolkabout::Device(info.getName(), info.getKey(), deviceTemplate));
 
             // Emplace the template name in usedTemplates array for modbusBridge, and the slaveAddress
             if (m_usedTemplates.find(templateName) != m_usedTemplates.end())
@@ -97,8 +97,7 @@ wolkabout::DevicePreparationFactory::DevicePreparationFactory(
             }
             else
             {
-                m_usedTemplates.insert(
-                  std::pair<std::string, std::vector<int>>(templateName, {info.getSlaveAddress()}));
+                m_usedTemplates.emplace(templateName, std::vector<int>{info.getSlaveAddress()});
             }
         }
         else

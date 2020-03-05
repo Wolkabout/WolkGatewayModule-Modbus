@@ -126,7 +126,7 @@ bool DevicesTemplateFactory::processConfigurationMapping(const ModbusRegisterMap
         else
         {
             std::vector<std::string> labels;
-            for (auto const& kvp : mapping.getLabelsAndAddresses())
+            for (const auto& kvp : mapping.getLabelsAndAddresses())
             {
                 labels.push_back(kvp.first);
             }

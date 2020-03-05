@@ -57,7 +57,7 @@ ModbusBridge::ModbusBridge(
     // accordingly, then when that is prepared, for each device of that specific template, create instances of
     // ModbusRegisterGroups for the device (mostly for the slaveAddress).
 
-    for (auto const& templateRegistered : deviceAddressesByTemplate)
+    for (const auto& templateRegistered : deviceAddressesByTemplate)
     {
         // Take the template, make groups for the template
         DevicesConfigurationTemplate& configurationTemplate = *(configurationTemplates.at(templateRegistered.first));
@@ -72,7 +72,7 @@ ModbusBridge::ModbusBridge(
         ModbusRegisterGroup group(previousSlaveAddress, previousRegisterType, previousDataType);
         templatesGroups.push_back(group);
 
-        for (auto const& mapping : configurationTemplate.getMappings())
+        for (const auto& mapping : configurationTemplate.getMappings())
         {
             if (static_cast<int>(mapping.getRegisterType()) == static_cast<int>(previousRegisterType))
             {
@@ -102,30 +102,26 @@ ModbusBridge::ModbusBridge(
 
         // Go through devices registered by this template
         // and make their groups (by copying made groups and assinging slaveAddresses.
-        for (auto const& slaveAddress : templateRegistered.second)
+        for (const auto& slaveAddress : templateRegistered.second)
         {
             // Copy over the templates groups (deep copy, objects are recreated)
             std::vector<ModbusRegisterGroup> devicesGroups;
 
-            m_deviceKeyBySlaveAddress.insert(
-              std::pair<int, std::string>(slaveAddress, devices.at(slaveAddress)->getKey()));
-            m_devicesStatusBySlaveAddress.insert(
-              std::pair<int, DeviceStatus::Status>(slaveAddress, DeviceStatus::Status::OFFLINE));
+            m_deviceKeyBySlaveAddress.emplace(slaveAddress, devices.at(slaveAddress)->getKey());
+            m_devicesStatusBySlaveAddress.emplace(slaveAddress, DeviceStatus::Status::OFFLINE);
 
-            for (auto const& templateGroup : templatesGroups)
+            for (const auto& templateGroup : templatesGroups)
             {
                 // Set slave address to the devices group.
                 ModbusRegisterGroup deviceGroup(templateGroup);
                 deviceGroup.setSlaveAddress(slaveAddress);
 
-                for (auto const& mapping : deviceGroup.getRegisters())
+                for (const auto& mapping : deviceGroup.getRegisters())
                 {
                     mapping->setSlaveAddress(slaveAddress);
                     auto deviceKey = devices.at(slaveAddress)->getKey();
-                    auto mappingPair = m_registerMappingByReference
-                                         .insert(std::pair<std::string, std::shared_ptr<ModbusRegisterMapping>>(
-                                           deviceKey + '.' + mapping->getReference(), mapping))
-                                         .first;
+                    auto mappingPair =
+                      m_registerMappingByReference.emplace(deviceKey + '.' + mapping->getReference(), mapping).first;
 
                     // If the mapping is configuration, add it to the log of configurations for devices.
                     if (mapping->getMappingType() == ModbusRegisterMapping::MappingType::CONFIGURATION)
@@ -136,18 +132,15 @@ ModbusBridge::ModbusBridge(
                               deviceKey, std::map<std::string, std::shared_ptr<ModbusRegisterMapping>>());
                         }
 
-                        m_configurationMappingByDevice[deviceKey].insert(
-                          std::pair<std::string, std::shared_ptr<ModbusRegisterMapping>>(mapping->getReference(),
-                                                                                         mappingPair->second));
+                        m_configurationMappingByDevice[deviceKey].emplace(mapping->getReference(), mappingPair->second);
                     }
                 }
 
-                devicesGroups.insert(devicesGroups.end(), deviceGroup);
+                devicesGroups.emplace_back(deviceGroup);
             }
 
             // Place the device slave address in memory with its ModbusRegisterGroups
-            m_registerGroupsBySlaveAddress.insert(
-              std::pair<int, std::vector<ModbusRegisterGroup>>(slaveAddress, devicesGroups));
+            m_registerGroupsBySlaveAddress.emplace(slaveAddress, devicesGroups);
         }
     }
 }
@@ -812,7 +805,7 @@ void ModbusBridge::stop()
     }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-    for (auto const& device : m_deviceKeyBySlaveAddress)
+    for (const auto& device : m_deviceKeyBySlaveAddress)
     {
         m_onDeviceStatusChange(device.second, DeviceStatus::Status::OFFLINE);
     }
@@ -834,7 +827,7 @@ void ModbusBridge::run()
             // just disconnecting
             if (m_onDeviceStatusChange)
             {
-                for (auto const& pair : m_deviceKeyBySlaveAddress)
+                for (const auto& pair : m_deviceKeyBySlaveAddress)
                 {
                     m_onDeviceStatusChange(pair.second, wolkabout::DeviceStatus::Status::OFFLINE);
                 }
@@ -856,7 +849,7 @@ void ModbusBridge::run()
 
             if (m_onDeviceStatusChange)
             {
-                for (auto const& pair : m_deviceKeyBySlaveAddress)
+                for (const auto& pair : m_deviceKeyBySlaveAddress)
                 {
                     m_onDeviceStatusChange(pair.second, wolkabout::DeviceStatus::Status::CONNECTED);
                 }
@@ -884,7 +877,7 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
         LOG(TRACE) << "readHoldingRegisters (INT16) " << group.getSlaveAddress() << ", "
                    << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
         LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
-        for (auto const& mapping : group.getRegisters())
+        for (const auto& mapping : group.getRegisters())
         {
             LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
                        << mapping->getSlaveAddress() << ", " << mapping->getValue();
@@ -897,7 +890,7 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
                        << " from address '" << group.getStartingRegisterAddress() << "'";
             if (slavesRead.count(group.getSlaveAddress()) == 0)
             {
-                slavesRead.insert(std::make_pair(group.getSlaveAddress(), false));
+                slavesRead.emplace(group.getSlaveAddress(), false);
                 m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::OFFLINE;
             }
             return;
@@ -972,7 +965,7 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
         LOG(TRACE) << "readHoldingRegisters (UINT16) " << group.getSlaveAddress() << ", "
                    << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
         LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
-        for (auto const& mapping : group.getRegisters())
+        for (const auto& mapping : group.getRegisters())
         {
             LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
                        << mapping->getSlaveAddress() << ", " << mapping->getValue();
@@ -984,7 +977,7 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
                        << " from address '" << group.getStartingRegisterAddress() << "'";
             if (slavesRead.count(group.getSlaveAddress()) == 0)
             {
-                slavesRead.insert(std::make_pair(group.getSlaveAddress(), false));
+                slavesRead.emplace(group.getSlaveAddress(), false);
                 m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::OFFLINE;
             }
             return;
@@ -1052,7 +1045,7 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
         LOG(TRACE) << "readHoldingRegisters (REAL32) " << group.getSlaveAddress() << ", "
                    << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
         LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
-        for (auto const& mapping : group.getRegisters())
+        for (const auto& mapping : group.getRegisters())
         {
             LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
                        << mapping->getSlaveAddress() << ", " << mapping->getValue();
@@ -1064,7 +1057,7 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
                        << " from address '" << group.getStartingRegisterAddress() << "'";
             if (slavesRead.count(group.getSlaveAddress()) == 0)
             {
-                slavesRead.insert(std::make_pair(group.getSlaveAddress(), false));
+                slavesRead.emplace(group.getSlaveAddress(), false);
                 m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::OFFLINE;
             }
             return;
@@ -1144,7 +1137,7 @@ void ModbusBridge::readHoldingRegistersSensors(const ModbusRegisterGroup& group,
         LOG(TRACE) << "readHoldingRegisters (INT16) " << group.getSlaveAddress() << ", "
                    << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
         LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
-        for (auto const& mapping : group.getRegisters())
+        for (const auto& mapping : group.getRegisters())
         {
             LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
                        << mapping->getSlaveAddress() << ", " << mapping->getValue();
@@ -1156,7 +1149,7 @@ void ModbusBridge::readHoldingRegistersSensors(const ModbusRegisterGroup& group,
                        << " from address '" << group.getStartingRegisterAddress() << "'";
             if (slavesRead.count(group.getSlaveAddress()) == 0)
             {
-                slavesRead.insert(std::make_pair(group.getSlaveAddress(), false));
+                slavesRead.emplace(group.getSlaveAddress(), false);
                 m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::OFFLINE;
             }
             return;
@@ -1190,7 +1183,7 @@ void ModbusBridge::readHoldingRegistersSensors(const ModbusRegisterGroup& group,
         LOG(TRACE) << "readHoldingRegisters (UINT16) " << group.getSlaveAddress() << ", "
                    << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
         LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
-        for (auto const& mapping : group.getRegisters())
+        for (const auto& mapping : group.getRegisters())
         {
             LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
                        << mapping->getSlaveAddress() << ", " << mapping->getValue();
@@ -1202,7 +1195,7 @@ void ModbusBridge::readHoldingRegistersSensors(const ModbusRegisterGroup& group,
                        << " from address '" << group.getStartingRegisterAddress() << "'";
             if (slavesRead.count(group.getSlaveAddress()) == 0)
             {
-                slavesRead.insert(std::make_pair(group.getSlaveAddress(), false));
+                slavesRead.emplace(group.getSlaveAddress(), false);
                 m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::OFFLINE;
             }
             return;
@@ -1238,7 +1231,7 @@ void ModbusBridge::readHoldingRegistersSensors(const ModbusRegisterGroup& group,
         LOG(TRACE) << "readHoldingRegisters (REAL32) " << group.getSlaveAddress() << ", "
                    << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
         LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
-        for (auto const& mapping : group.getRegisters())
+        for (const auto& mapping : group.getRegisters())
         {
             LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
                        << mapping->getSlaveAddress() << ", " << mapping->getValue();
@@ -1250,7 +1243,7 @@ void ModbusBridge::readHoldingRegistersSensors(const ModbusRegisterGroup& group,
                        << " from address '" << group.getStartingRegisterAddress() << "'";
             if (slavesRead.count(group.getSlaveAddress()) == 0)
             {
-                slavesRead.insert(std::make_pair(group.getSlaveAddress(), false));
+                slavesRead.emplace(group.getSlaveAddress(), false);
                 m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::OFFLINE;
             }
             return;
@@ -1298,7 +1291,7 @@ void ModbusBridge::readInputRegisters(const ModbusRegisterGroup& group, std::map
         LOG(TRACE) << "readInputRegisters (INT16) " << group.getSlaveAddress() << ", "
                    << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
         LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
-        for (auto const& mapping : group.getRegisters())
+        for (const auto& mapping : group.getRegisters())
         {
             LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
                        << mapping->getSlaveAddress() << ", " << mapping->getValue();
@@ -1310,7 +1303,7 @@ void ModbusBridge::readInputRegisters(const ModbusRegisterGroup& group, std::map
                        << " from address '" << group.getStartingRegisterAddress() << "'";
             if (slavesRead.count(group.getSlaveAddress()) == 0)
             {
-                slavesRead.insert(std::make_pair(group.getSlaveAddress(), false));
+                slavesRead.emplace(group.getSlaveAddress(), false);
                 m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::OFFLINE;
             }
             return;
@@ -1345,7 +1338,7 @@ void ModbusBridge::readInputRegisters(const ModbusRegisterGroup& group, std::map
         LOG(TRACE) << "readInputRegisters (UINT16) " << group.getSlaveAddress() << ", "
                    << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
         LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
-        for (auto const& mapping : group.getRegisters())
+        for (const auto& mapping : group.getRegisters())
         {
             LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
                        << mapping->getSlaveAddress() << ", " << mapping->getValue();
@@ -1357,7 +1350,7 @@ void ModbusBridge::readInputRegisters(const ModbusRegisterGroup& group, std::map
                        << " from address '" << group.getStartingRegisterAddress() << "'";
             if (slavesRead.count(group.getSlaveAddress()) == 0)
             {
-                slavesRead.insert(std::make_pair(group.getSlaveAddress(), false));
+                slavesRead.emplace(group.getSlaveAddress(), false);
                 m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::OFFLINE;
             }
             return;
@@ -1392,7 +1385,7 @@ void ModbusBridge::readInputRegisters(const ModbusRegisterGroup& group, std::map
         LOG(TRACE) << "readInputRegisters (REAL32) " << group.getSlaveAddress() << ", "
                    << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
         LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
-        for (auto const& mapping : group.getRegisters())
+        for (const auto& mapping : group.getRegisters())
         {
             LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
                        << mapping->getSlaveAddress() << ", " << mapping->getValue();
@@ -1404,7 +1397,7 @@ void ModbusBridge::readInputRegisters(const ModbusRegisterGroup& group, std::map
                        << " from address '" << group.getStartingRegisterAddress() << "'";
             if (slavesRead.count(group.getSlaveAddress()) == 0)
             {
-                slavesRead.insert(std::make_pair(group.getSlaveAddress(), false));
+                slavesRead.emplace(group.getSlaveAddress(), false);
                 m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::OFFLINE;
             }
             return;
@@ -1447,7 +1440,7 @@ void ModbusBridge::readCoils(const ModbusRegisterGroup& group, std::map<int, boo
     LOG(TRACE) << "readCoils " << group.getSlaveAddress() << ", " << group.getStartingRegisterAddress() << ", "
                << group.getRegisterCount();
     LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
-    for (auto const& mapping : group.getRegisters())
+    for (const auto& mapping : group.getRegisters())
     {
         LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", " << mapping->getSlaveAddress()
                    << ", " << mapping->getValue();
@@ -1460,7 +1453,7 @@ void ModbusBridge::readCoils(const ModbusRegisterGroup& group, std::map<int, boo
 
         if (slavesRead.count(group.getSlaveAddress()) == 0)
         {
-            slavesRead.insert(std::make_pair(group.getSlaveAddress(), false));
+            slavesRead.emplace(group.getSlaveAddress(), false);
             m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::OFFLINE;
         }
         return;
@@ -1469,7 +1462,8 @@ void ModbusBridge::readCoils(const ModbusRegisterGroup& group, std::map<int, boo
     slavesRead[group.getSlaveAddress()] = true;
     m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::CONNECTED;
 
-    for (uint i = 0; i < group.getMappingsCount(); ++i)
+    const uint count = static_cast<uint>(group.getMappingsCount());
+    for (uint i = 0; i < count; ++i)
     {
         bool value = values[i];
         auto mapping = group.getRegisters()[i];
@@ -1515,7 +1509,7 @@ void ModbusBridge::readDiscreteInputs(const ModbusRegisterGroup& group, std::map
     LOG(TRACE) << "readInputContacts " << group.getSlaveAddress() << ", " << group.getStartingRegisterAddress() << ", "
                << group.getRegisterCount();
     LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
-    for (auto const& mapping : group.getRegisters())
+    for (const auto& mapping : group.getRegisters())
     {
         LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", " << mapping->getSlaveAddress()
                    << ", " << mapping->getValue();
@@ -1527,7 +1521,7 @@ void ModbusBridge::readDiscreteInputs(const ModbusRegisterGroup& group, std::map
                    << " from address '" << group.getStartingRegisterAddress() << "'";
         if (slavesRead.count(group.getSlaveAddress()) == 0)
         {
-            slavesRead.insert(std::make_pair(group.getSlaveAddress(), false));
+            slavesRead.emplace(group.getSlaveAddress(), false);
             m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::OFFLINE;
         }
         return;
@@ -1576,11 +1570,11 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 
     std::map<int, bool> slavesRead;
 
-    for (auto const& pair : m_registerGroupsBySlaveAddress)
+    for (const auto& pair : m_registerGroupsBySlaveAddress)
     {
         LOG(TRACE) << "ModbusBridge: Device slave address : " << pair.first;
 
-        for (auto const& group : pair.second)
+        for (const auto& group : pair.second)
         {
             switch (group.getRegisterType())
             {
