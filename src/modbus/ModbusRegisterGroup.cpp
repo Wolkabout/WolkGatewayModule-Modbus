@@ -69,7 +69,12 @@ ModbusRegisterMapping::DataType ModbusRegisterGroup::getDataType() const
 int ModbusRegisterGroup::getStartingRegisterAddress() const
 {
     const auto& front = m_modbusRegisterMappings.front();
-    if (front != nullptr || front->getLabelsAndAddresses().empty())
+    if (m_modbusRegisterMappings.empty() || front == nullptr)
+    {
+        // If there's no mappings
+        return -1;
+    }
+    else if (front->getLabelsAndAddresses().empty())
     {
         // if it's only a single address
         return front->getAddress();
