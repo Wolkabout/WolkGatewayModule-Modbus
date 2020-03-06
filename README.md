@@ -44,84 +44,82 @@ invoking `make` in terminal
 Note: If you're working in CLion, setup the project by importing the project as existing CMake project,
 installing the conan plugin, and setting the CMake generation path in Settings/Build, Execution, Deployment to 'out'
 
-Module Configuration
+Configuring Module
 --------------------
-Module configuration consists of 3 configurations files
+Module configuration consists of 2 configurations files
 
-* Device configuration
-* Modbus configuration
-* Modbus register mapping
+* moduleConfiguration.json
+* devicesConfiguration.json
 
 Below are sections describing each of these configuration files that need to be edited with the parameters of your modbus devices before running the application.
 These files are located in `out` directory, and are passed to Modbus module executable in following manner:
 ```sh
-./modbusModule deviceConfiguration.json modbusConfiguration.json modbusRegisterMapping.json
+./modbusModule moduleConfiguration.json devicesConfiguration.json
 ```
 
-Device configuration
+moduleConfiguration.json
 --------------------
-Device configuration file contains settings that relate to communication with WolkGateway Module.
+Module configuration file contains settings that relate to communication with WolkGateway,
+and outgoing Modbus connection, reading period time and response timeout.
 
 ```json5
 {
-    "name": "DEVICE_NAME",                  // Device name
-    "key": "DEVICE_KEY",                    // Device key
-    "protocol": "JsonProtocol",             // Protocol used on WolkGateway
-    "localMqttUri": "tcp://localhost:1883"  // WolkGateway Bus
+    "mqttHost": "tcp://localhost:1883",  // Address of local MQTT broker (connection with WolkGateway) 
+    "connectionType": "SERIAL/RTU",      // Modbus connection type, choice between "SERIAL/RTU" and "TCP/IP" 
+    "tcp/ip": {                          // TCP/IP connection properties (ignored if connectionType is "SERIAL/RTU")
+        "host": "192.168.x.x",           // IP address of Modbus server (mandatory if connectionType is "TCP/IP") 
+        "port": 502                      // Port of Modbus server (default is 502, if not stated)
+    },
+    "serial/rtu": {                      // Serial/RTU connection properties (ignored if connectionType is "TCP/IP") 
+        "serialPort": "SERIAL_PORT",     // Serial port location such as /dev/ttyS0 (mandatory if connection type is "SERIAL/RTU")
+        "baudRate": 115200,              // Baud rate for serial connection (default is 115200, if not stated)
+        "dataBits": 8,                   // DataBits for Modbus RTU (default is 8, if not stated) 
+        "stopBits": 1,                   // StopBits for Modbus RTU (default is 1, if not stated)
+        "bitParity": "NONE"              // BitParity for Modbus RTU, can be "NONE", "EVEN", "ODD" (default is "NONE", if not stated)
+    },
+    "responseTimeoutMs": 200,            // Wait time for respond from slaves/servers (default is 200, if not stated)
+    "registerReadPeriodMs": 500          // Period of reading all registers/devices (default is 500, if not stated) 
 }
 ```
 
-Modbus configuration
---------------------
-Modbus configuration file contains setting that relate to Modbus communication protocol settings,
-such as slave IP address, port, response timeout etc.
-
-Here one can select between two modes of modbus communication:
-
-* TCP/IP modbus - supports only one device, use additional WolkGateway-ModbusModules for more devices.
-
-```json5
-{
-    // TCP/IP Configuration
-    "ip": "192.168.x.x",          // Slave IP address
-    "port": 502,                  // Slave port
-```
-
-* Serial RTU - supports communication with multiple slaves
-
-```json5
-    // SERIAL/RTU Configuration
-    "serialPort": "SERIAL_PORT",    // Serial port
-    "baudRate": BAUD_RATE,          // Baud rate
-    "dataBits": 8,                  // Number of data bits
-    "stopBits": 1,                  // Number of stop bits
-    "bitParity": "NONE",            // Bit parity - "NONE" or "EVEN" or "ODD"
-    "slaveAddress" : 1              // Initial slave address
-```
-
-Select preferred connection type and register read parameters
-
-```json5
-    // Modbus connection type configuration
-    "connectionType": "SERIAL/RTU", // Connection type - "SERIAL/RTU" or "TCP/IP"
-
-    // Modbus register read parameters
-    "responseTimeoutMs": 200,       // Register read/write timeout
-    "registerReadPeriodMs": 500     // Register pool period
-}
-```
-
-Modbus register mapping
+devicesConfiguration.json
 -----------------------
-Modbus register mapping file contains settings that map modbus registers to WolkAbout IoT Platform sensors/actuators/alarms/configurations.
+Devices configuration file contains information necessary to define templates, which include registers that bind to
+Wolkabout IoT Platform sensors/actuators/alarms/configurations, and then devices, with their information, and a template.
+This is the guide by which the module will register devices, and then send data for.
 
-* Actuators (read & write):
-    - `COIL`
-    - `HOLDING_REGISTER_ACTUATOR`
-* Sensors (read only):
-    - `HOLDING_REGISTER_SENSOR`
-    - `INPUT_REGISTER`
-    - `INPUT_CONTACT`
+You define templates, that are described by their name, and mappings. 
+
+```json5
+{
+  "templates": [
+     {
+        "name": "<TEMPLATE_NAME>",
+        "mappings": [
+            // define mappings
+        ]
+     }
+  ]
+}
+```
+
+After doing so, you define all the mappings inside a template. If you happen to be familiar with how 
+this worked in earlier versions, this will look familiar. The only change happens with the slaveAddress,
+which isn't listed here anymore. We will get back to that later.
+
+Single mapping includes one or more Modbus registers that produce a single sensor/actuator/alarm/configuration on
+a device, on the platform. They're characterized by a name and a reference key, used to identify them, by their register
+type, data type, and mapping type.
+
+Register types:
+
+* Read & Write:
+    - `COIL` (implies a single bit, or boolean on platform)
+    - `HOLDING_REGISTER_ACTUATOR` (implies either a 16bit or 32bit register, data type must be specified)
+* Read Only:
+    - `HOLDING_REGISTER_SENSOR` (same as `HOLDING_REGISTER_ACTUATOR`)
+    - `INPUT_REGISTER` (same as `HOLDING_REGISTER_ACTUATOR`)
+    - `INPUT_CONTACT` (same as `COIL`)
     
 Mappings are by default registered as:
 - Sensors for read only types
@@ -131,67 +129,57 @@ You can override this behaviour by adding a field to the mapping, stating one of
 - `SENSOR`
 - `ACTUATOR`
 - `ALARM` - only for `INPUT_CONTACT`
-- `CONFIGURATION` - only for `COIL` and `HOLDING_REGISTER_ACTUATOR` (can be also multi value)
+- `CONFIGURATION` - only for `COIL` and `HOLDING_REGISTER_ACTUATOR` (where `HOLDING_REGISTER_ACTUATOR` can also be multi value)
 
 A mapping that has the register type `HOLDING_REGISTER_ACTUATOR` and is a `CONFIGURATION` can be multi-value.
 What that means, is that it can combine multiple registers into a single configuration. That configuration has label
 for each of its values, which you assign in the `labelMap`.
-*Note that you can have a total maximum of <b>3</b> values inside a multi-value configuration*
+*Note that you can have a total maximum of <b>3</b> values inside a multi-value configuration!*
 
 ```json5
 {
-   "modbusRegisterMapping":[
+   // Inside of a template
+   "name": "<TEMPLATE_NAME>",
+   "mappings": [
       {
          "name":"mappingName",              // Register name
          "reference": "mappingReference",   // Unique reference used to differ register on WolkAbout IoT Platform
-
          "minimum": -32768,                 // Minimum value that can be held in register. Required for visualization on WolkAbout IoT Platform
          "maximum": 32767,                  // Maximum value that can be held in register. Required for visualization on WolkAbout IoT Platform
-
          "address": 0,                      // Register address
          "registerType": "INPUT_REGISTER",  // Register type - "INPUT_REGISTER" or "HOLDING_REGISTER_ACTUATOR" or "HOLDING_REGISTER_SENSOR" or "INPUT_CONTACT" or "COIL"
-         "dataType": "INT16",               // Data type stored in register - "INT16" or "UINT16" or "REAL32" for "INPUT_REGISTER"/"HOLDING_REGISTER_ACTUATOR"/"HOLDING_REGISTER_SENSOR" register type, and "BOOL" for "COIL"/"INPUT_CONTACT"
-         "slaveAddress": 1                  // Slave address where the register is located - Ignored for TCP/IP (by default set to 1)
+         "dataType": "INT16"                // Data type stored in register - "INT16" or "UINT16" or "REAL32" for "INPUT_REGISTER"/"HOLDING_REGISTER_ACTUATOR"/"HOLDING_REGISTER_SENSOR" register type, and "BOOL" for "COIL"/"INPUT_CONTACT"
       },
       {
          "name":"mappingName2",
          "reference": "mappingReference2",
-
          "minimum": -4000,
          "maximum": 4000,
-
          "address": 1,
          "registerType": "HOLDING_REGISTER_ACTUATOR",
-         "dataType": "REAL32",
-         "slaveAddress" : 1
+         "dataType": "REAL32"
       },
       {
          "name": "mappingName3",
          "reference": "mappingReference3",
-
          "address": 1,
          "registerType": "INPUT_CONTACT",
          "dataType": "BOOL",
-         "mappingType": "ALARM",             // This is where for the first time, we override the default Mapping type
-         "slaveAddress" : 1
+         "mappingType": "ALARM"              // This is where for the first time, we override the default Mapping type
       },
       {
          "name":"mappingName4",
          "reference": "mappingReference4",
-
          "address": 2,
          "registerType": "COIL",
          "dataType": "BOOL",
-         "mappingType": "CONFIGURATION",
-         "slaveAddress" : 2
+         "mappingType": "CONFIGURATION"
       },
       {
          "name": "mappingName5",
          "reference": "mappingReference5",
-
          "minimum": 0,
          "maximum": 1000,
-
          "labelMap": {                       // If you want to use a multi-value numeric configuration
             "firstConfig": 0,                // You can use the label map, to name the labels inside the configuration
             "secondConfig": 1,               // And assign a register address to each of them
@@ -199,18 +187,38 @@ for each of its values, which you assign in the `labelMap`.
          },
          "registerType": "HOLDING_REGISTER_ACTUATOR",
          "dataType": "INT16",
-         "mappingType": "CONFIGURATION",
-         "slaveAddress": 2
+         "mappingType": "CONFIGURATION"
       },
       {
          "name":"mappingName6",
          "reference": "mappingReference6",
-
          "address": 3,
          "registerType": "COIL",
-         "dataType": "BOOL",
-         "slaveAddress" : 2
+         "dataType": "BOOL"
       }
    ]
 }
 ```
+
+After you completely defined a template, you can list a device.
+
+```json5
+{
+    "devices": [
+        {
+            "name": "<DEVICE_NAME>",         // User readable device name, necessary to register a device
+            "key": "<DEVICE_KEY>",           // Unique device key
+            "slaveAddress": 1,               // Slave address (obligatory if connection type is "SERIAL/RTU"), must be unique in this list 
+            "template": "<TEMPLATE_NAME>"    // Name of defined template 
+        }
+        // other devices
+    ]
+    // templates
+}
+```
+
+In "TCP/IP" mode, device count is maxed at 1, and you don't need to state a slaveAddress for the device.
+
+If the user happens to enter an invalid template name, the device won't be created.
+Module will function if at least one device is valid. If there's no devices that have been inputted correctly,
+the module will exit out, and used will be notified.

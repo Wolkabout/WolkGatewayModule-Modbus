@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 WolkAbout Technology s.r.o.
+ * Copyright 2020 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,12 @@
 #include "ActuatorStatusProviderPerDevice.h"
 #include "DeviceStatusProvider.h"
 #include "modbus/ModbusClient.h"
-#include "modbus/ModbusConfiguration.h"
 #include "modbus/ModbusRegisterMapping.h"
 #include "modbus/libmodbus/modbus.h"
 #include "utilities/Logger.h"
 #include "utilities/StringUtils.h"
 
 #include <algorithm>
-#include <atomic>
-#include <cassert>
 #include <chrono>
 #include <functional>
 #include <map>
@@ -39,93 +36,113 @@
 
 namespace wolkabout
 {
-ModbusBridge::ModbusBridge(ModbusClient& modbusClient, std::vector<ModbusRegisterMapping> modbusRegisterMappings,
-                           std::chrono::milliseconds registerReadPeriod)
-: m_modbusClient(modbusClient), m_registerReadPeriod(std::move(registerReadPeriod)), m_readerShouldRun(false)
+ModbusBridge::ModbusBridge(
+  ModbusClient& modbusClient,
+  const std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& configurationTemplates,
+  const std::map<std::string, std::vector<int>>& deviceAddressesByTemplate,
+  const std::map<int, std::unique_ptr<Device>>& devices, std::chrono::milliseconds registerReadPeriod)
+: m_modbusClient(modbusClient)
+, m_timeoutIterator(0)
+, m_shouldReconnect(false)
+, m_deviceKeyBySlaveAddress()
+, m_registerGroupsBySlaveAddress()
+, m_devicesStatusBySlaveAddress()
+, m_registerMappingByReference()
+, m_configurationMappingByDevice()
+, m_registerReadPeriod(registerReadPeriod)
+, m_readerShouldRun(false)
 {
-    if (modbusRegisterMappings.empty())
+    // By deviceAddressesByTemplate, take all the templates that are in use. From configurationTemplates
+    // take the necessary info about the registers of the template, and by that, template the ModbusRegisterGroups
+    // accordingly, then when that is prepared, for each device of that specific template, create instances of
+    // ModbusRegisterGroups for the device (mostly for the slaveAddress).
+
+    for (const auto& templateRegistered : deviceAddressesByTemplate)
     {
-        throw std::logic_error("You have passed 0 mappings to the bridge.");
-    }
+        // Take the template, make groups for the template
+        DevicesConfigurationTemplate& configurationTemplate = *(configurationTemplates.at(templateRegistered.first));
 
-    std::sort(modbusRegisterMappings.begin(), modbusRegisterMappings.end(),
-              [](const ModbusRegisterMapping& lhs, const ModbusRegisterMapping& rhs) {
-                  if (lhs.getSlaveAddress() != rhs.getSlaveAddress())
-                  {
-                      return lhs.getSlaveAddress() < rhs.getSlaveAddress();
-                  }
+        std::vector<ModbusRegisterGroup> templatesGroups;
+        auto& firstMapping = configurationTemplate.getMappings()[0];
+        int previousSlaveAddress = firstMapping.getSlaveAddress();
+        ModbusRegisterMapping::RegisterType previousRegisterType = firstMapping.getRegisterType();
+        ModbusRegisterMapping::DataType previousDataType = firstMapping.getDataType();
+        int previousAddress = firstMapping.getAddress() - 1;
 
-                  if (static_cast<int>(lhs.getRegisterType()) != static_cast<int>(rhs.getRegisterType()))
-                  {
-                      return static_cast<int>(lhs.getRegisterType()) < static_cast<int>(rhs.getRegisterType());
-                  }
+        ModbusRegisterGroup group(previousSlaveAddress, previousRegisterType, previousDataType);
+        templatesGroups.push_back(group);
 
-                  if (static_cast<int>(lhs.getDataType()) != static_cast<int>(rhs.getDataType()))
-                  {
-                      return static_cast<int>(lhs.getDataType()) < static_cast<int>(rhs.getDataType());
-                  }
-
-                  return lhs.getAddress() < rhs.getAddress();
-              });
-
-    int previousSlaveAddress = modbusRegisterMappings.front().getSlaveAddress();
-    ModbusRegisterMapping::RegisterType previousRegisterType = modbusRegisterMappings.front().getRegisterType();
-    ModbusRegisterMapping::DataType previousDataType = modbusRegisterMappings.front().getDataType();
-    int previousAddress = modbusRegisterMappings.front().getAddress() - 1;
-
-    ModbusRegisterGroup modbusRegisterGroup(previousSlaveAddress, previousRegisterType, previousDataType);
-    m_modbusRegisterGroups.push_back(modbusRegisterGroup);
-
-    for (const ModbusRegisterMapping& modbusRegisterMapping : modbusRegisterMappings)
-    {
-        if (modbusRegisterMapping.getSlaveAddress() == previousSlaveAddress)
+        for (const auto& mapping : configurationTemplate.getMappings())
         {
-            if (static_cast<int>(modbusRegisterMapping.getRegisterType()) == static_cast<int>(previousRegisterType))
+            if (static_cast<int>(mapping.getRegisterType()) == static_cast<int>(previousRegisterType))
             {
-                if (static_cast<int>(modbusRegisterMapping.getDataType()) == static_cast<int>(previousDataType))
+                if (static_cast<int>(mapping.getDataType()) == static_cast<int>(previousDataType))
                 {
-                    if (modbusRegisterMapping.getAddress() == previousAddress + 1)
+                    if ((mapping.getAddress() + mapping.getRegisterCount() - 1) == previousAddress + 1)
                     {
-                        previousSlaveAddress = modbusRegisterMapping.getSlaveAddress();
-                        previousRegisterType = modbusRegisterMapping.getRegisterType();
-                        previousDataType = modbusRegisterMapping.getDataType();
-                        previousAddress = modbusRegisterMapping.getAddress();
-
-                        m_modbusRegisterGroups.back().addRegister(modbusRegisterMapping);
+                        previousSlaveAddress = mapping.getSlaveAddress();
+                        previousRegisterType = mapping.getRegisterType();
+                        previousDataType = mapping.getDataType();
+                        previousAddress = mapping.getAddress();
+                        templatesGroups.back().addRegister(std::make_shared<ModbusRegisterMapping>(mapping));
                         continue;
                     }
                 }
             }
+
+            previousSlaveAddress = mapping.getSlaveAddress();
+            previousRegisterType = mapping.getRegisterType();
+            previousDataType = mapping.getDataType();
+            previousAddress = mapping.getAddress();
+
+            ModbusRegisterGroup nextRegisterGroup(previousSlaveAddress, previousRegisterType, previousDataType);
+            nextRegisterGroup.addRegister(std::make_shared<ModbusRegisterMapping>(mapping));
+            templatesGroups.push_back(nextRegisterGroup);
         }
-        previousSlaveAddress = modbusRegisterMapping.getSlaveAddress();
-        previousRegisterType = modbusRegisterMapping.getRegisterType();
-        previousDataType = modbusRegisterMapping.getDataType();
-        previousAddress = modbusRegisterMapping.getAddress();
 
-        ModbusRegisterGroup nextRegisterGroup(previousSlaveAddress, previousRegisterType, previousDataType);
-        m_modbusRegisterGroups.push_back(nextRegisterGroup);
-        m_modbusRegisterGroups.back().addRegister(modbusRegisterMapping);
-    }
-
-    for (const ModbusRegisterGroup& modbusRegisterGroupMapper : m_modbusRegisterGroups)
-    {
-        for (const ModbusRegisterMapping& modbusRegisterMapping : modbusRegisterGroupMapper.getRegisters())
+        // Go through devices registered by this template
+        // and make their groups (by copying made groups and assinging slaveAddresses.
+        for (const auto& slaveAddress : templateRegistered.second)
         {
-            const std::string& reference = modbusRegisterMapping.getReference();
+            // Copy over the templates groups (deep copy, objects are recreated)
+            std::vector<ModbusRegisterGroup> devicesGroups;
 
-            m_referenceToModbusRegisterMapping.emplace(reference, modbusRegisterMapping);
-            m_referenceToModbusRegisterWatcherMapping.emplace(reference, ModbusRegisterWatcher{});
+            m_deviceKeyBySlaveAddress.emplace(slaveAddress, devices.at(slaveAddress)->getKey());
+            m_devicesStatusBySlaveAddress.emplace(slaveAddress, DeviceStatus::Status::OFFLINE);
 
-            if (modbusRegisterMapping.getMappingType() == ModbusRegisterMapping::MappingType::CONFIGURATION)
+            for (const auto& templateGroup : templatesGroups)
             {
-                m_referenceToConfigurationModbusRegisterMapping.emplace(reference, modbusRegisterMapping);
+                // Set slave address to the devices group.
+                ModbusRegisterGroup deviceGroup(templateGroup);
+                deviceGroup.setSlaveAddress(slaveAddress);
+
+                for (const auto& mapping : deviceGroup.getRegisters())
+                {
+                    mapping->setSlaveAddress(slaveAddress);
+                    auto deviceKey = devices.at(slaveAddress)->getKey();
+                    auto mappingPair =
+                      m_registerMappingByReference.emplace(deviceKey + '.' + mapping->getReference(), mapping).first;
+
+                    // If the mapping is configuration, add it to the log of configurations for devices.
+                    if (mapping->getMappingType() == ModbusRegisterMapping::MappingType::CONFIGURATION)
+                    {
+                        if (m_configurationMappingByDevice.find(deviceKey) == m_configurationMappingByDevice.end())
+                        {
+                            m_configurationMappingByDevice.emplace(
+                              deviceKey, std::map<std::string, std::shared_ptr<ModbusRegisterMapping>>());
+                        }
+
+                        m_configurationMappingByDevice[deviceKey].emplace(mapping->getReference(), mappingPair->second);
+                    }
+                }
+
+                devicesGroups.emplace_back(deviceGroup);
             }
+
+            // Place the device slave address in memory with its ModbusRegisterGroups
+            m_registerGroupsBySlaveAddress.emplace(slaveAddress, devicesGroups);
         }
     }
-
-    LOG(DEBUG) << "There are " << m_referenceToModbusRegisterMapping.size() << " mappings!";
-    LOG(DEBUG) << "There are " << m_referenceToModbusRegisterWatcherMapping.size() << " watchers!";
-    LOG(DEBUG) << "There are " << m_referenceToConfigurationModbusRegisterMapping.size() << " configuration mappings!";
 }
 
 ModbusBridge::~ModbusBridge()
@@ -134,52 +151,170 @@ ModbusBridge::~ModbusBridge()
     stop();
 }
 
-void ModbusBridge::onSensorReading(
-  std::function<void(const std::string& reference, const std::string& value)> onSensorReading)
+bool ModbusBridge::isRunning() const
 {
-    m_onSensorReading = std::move(onSensorReading);
+    return m_readerShouldRun;
 }
 
-void ModbusBridge::onActuatorStatusChange(std::function<void(const std::string& reference)> onActuatorStatusChange)
+int ModbusBridge::getSlaveAddress(const std::string& deviceKey)
 {
-    m_onActuatorStatusChange = std::move(onActuatorStatusChange);
-}
+    auto iterator =
+      std::find_if(m_deviceKeyBySlaveAddress.begin(), m_deviceKeyBySlaveAddress.end(),
+                   [&](const std::pair<int, std::string>& element) { return element.second == deviceKey; });
 
-void ModbusBridge::onAlarmChange(std::function<void(const std::string& reference, bool active)> onAlarmChange)
-{
-    m_onAlarmChange = std::move(onAlarmChange);
-}
-
-void ModbusBridge::onConfigurationChange(std::function<void()> onConfigurationChange)
-{
-    m_onConfigurationChange = std::move(onConfigurationChange);
-}
-
-void ModbusBridge::onDeviceStatusChange(std::function<void(wolkabout::DeviceStatus::Status)> onDeviceStatusChange)
-{
-    m_onDeviceStatusChange = std::move(onDeviceStatusChange);
-}
-
-void ModbusBridge::handleActuation(const std::string& /* deviceKey */, const std::string& reference,
-                                   const std::string& value)
-{
-    LOG(INFO) << "ModbusBridge: Handling actuation for reference '" << reference << "' - Value: '" << value << "'";
-    if (m_referenceToModbusRegisterMapping.find(reference) == m_referenceToModbusRegisterMapping.cend())
+    if (iterator == m_deviceKeyBySlaveAddress.end())
     {
-        LOG(ERROR) << "ModbusBridge: No modbus register mapped to reference '" << reference << "'";
+        return -1;
+    }
+    return iterator->first;
+}
+
+// Setters for necessary callbacks, for sending data to Wolk when register change has been noticed.
+
+void ModbusBridge::setOnSensorChange(
+  const std::function<void(const std::string&, const std::string&, const std::string&)>& onSensorChange)
+{
+    m_onSensorChange = onSensorChange;
+}
+
+void ModbusBridge::setOnActuatorStatusChange(
+  const std::function<void(const std::string&, const std::string&, const std::string&)>& onActuatorStatusChange)
+{
+    m_onActuatorStatusChange = onActuatorStatusChange;
+}
+
+void ModbusBridge::setOnAlarmChange(
+  const std::function<void(const std::string&, const std::string&, bool)>& onAlarmChange)
+{
+    m_onAlarmChange = onAlarmChange;
+}
+
+void ModbusBridge::setOnConfigurationChange(
+  const std::function<void(const std::string&, std::vector<ConfigurationItem>&)>& onConfigurationChange)
+{
+    m_onConfigurationChange = onConfigurationChange;
+}
+
+void ModbusBridge::setOnDeviceStatusChange(
+  const std::function<void(const std::string&, wolkabout::DeviceStatus::Status)>& onDeviceStatusChange)
+{
+    m_onDeviceStatusChange = onDeviceStatusChange;
+}
+
+// handleActuation and helper methods
+// void handleActuatorForHoldingRegister() -
+void ModbusBridge::handleActuationForHoldingRegister(ModbusRegisterMapping& mapping, const std::string& value)
+{
+    if (mapping.getDataType() == ModbusRegisterMapping::DataType::INT16)
+    {
+        short shortValue;
+        try
+        {
+            shortValue = static_cast<short>(std::stoi(value));
+        }
+        catch (std::exception&)
+        {
+            LOG(ERROR)
+              << "ModbusBridge: Unable to convert value from platform for holding register - Register address: "
+              << mapping.getAddress() << " Value: " << value;
+            mapping.setValid(false);
+            return;
+        }
+
+        if (!m_modbusClient.writeHoldingRegister(static_cast<int>(mapping.getSlaveAddress()), mapping.getAddress(),
+                                                 shortValue))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
+                       << mapping.getAddress() << " Value: " << value;
+            mapping.setValid(false);
+        }
+    }
+    else if (mapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
+    {
+        unsigned short unsignedShortValue;
+        try
+        {
+            unsignedShortValue = static_cast<unsigned short>(std::stoi(value));
+        }
+        catch (std::exception&)
+        {
+            LOG(ERROR)
+              << "ModbusBridge: Unable to convert value from platform for holding register - Register address: "
+              << mapping.getAddress() << " Value: " << value;
+            mapping.setValid(false);
+            return;
+        }
+
+        if (!m_modbusClient.writeHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), unsignedShortValue))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
+                       << mapping.getAddress() << " Value: " << value;
+            mapping.setValid(false);
+        }
+    }
+    else if (mapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
+    {
+        float floatValue;
+        try
+        {
+            floatValue = std::stof(value);
+        }
+        catch (std::exception&)
+        {
+            LOG(ERROR)
+              << "ModbusBridge: Unable to convert value from platform for holding register - Register address: "
+              << mapping.getAddress() << " Value: " << value;
+            mapping.setValid(false);
+            return;
+        }
+
+        if (!m_modbusClient.writeHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), floatValue))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
+                       << mapping.getAddress() << " Value: " << value;
+            mapping.setValid(false);
+        }
+    }
+}
+// void handleActuatorForCoil() -
+void ModbusBridge::handleActuationForCoil(ModbusRegisterMapping& mapping, const std::string& value)
+{
+    bool boolValue =
+      std::any_of(TRUE_VALUES.begin(), TRUE_VALUES.end(), [&](const std::string& ref) { return ref == value; });
+
+    if (!m_modbusClient.writeCoil(mapping.getSlaveAddress(), mapping.getAddress(), boolValue))
+    {
+        LOG(ERROR) << "ModbusBridge: Unable to write coil value - Register address: " << mapping.getAddress()
+                   << " Value: " << value;
+        mapping.setValid(false);
+    }
+}
+// void handleActuator() - decides on the handler for incoming actuation
+void ModbusBridge::handleActuation(const std::string& deviceKey, const std::string& reference, const std::string& value)
+{
+    // Find the device if it exists, find the reference in his data, and change the value.
+    LOG(INFO) << "ModbusBridge: Handling actuation on " << deviceKey << " reference '" << reference << "' - Value: '"
+              << value << "'";
+
+    int slaveAddress = getSlaveAddress(deviceKey);
+    if (slaveAddress == -1 || m_deviceKeyBySlaveAddress.find(slaveAddress) == m_deviceKeyBySlaveAddress.end())
+    {
+        LOG(ERROR) << "ModbusBridge: No device with key '" << deviceKey << "'";
         return;
     }
 
-    if (m_referenceToModbusRegisterWatcherMapping.find(reference) == m_referenceToModbusRegisterWatcherMapping.cend())
+    // After we found the device, check for the reference existence, and then the type of reference. Pass on to handler.
+    if (m_registerMappingByReference.find(deviceKey + '.' + reference) == m_registerMappingByReference.end())
     {
-        m_referenceToModbusRegisterWatcherMapping.emplace(reference, ModbusRegisterWatcher{});
+        LOG(ERROR) << "ModbusBridge: Reference '" << reference << "' does not exist for device '" << deviceKey << "'";
+        return;
     }
 
-    const ModbusRegisterMapping& modbusRegisterMapping = m_referenceToModbusRegisterMapping.at(reference);
-    ModbusRegisterWatcher& modbusRegisterWatcher = m_referenceToModbusRegisterWatcherMapping.at(reference);
+    auto mapping = *m_registerMappingByReference[deviceKey + '.' + reference];
 
-    if (modbusRegisterMapping.getRegisterType() != ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR &&
-        modbusRegisterMapping.getRegisterType() != ModbusRegisterMapping::RegisterType::COIL)
+    // Discard if the mapping is incorrect
+    if (mapping.getRegisterType() != ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR &&
+        mapping.getRegisterType() != ModbusRegisterMapping::RegisterType::COIL)
     {
         LOG(ERROR)
           << "ModbusBridge: Modbus register mapped to reference '" << reference
@@ -187,285 +322,258 @@ void ModbusBridge::handleActuation(const std::string& /* deviceKey */, const std
         return;
     }
 
-    if (modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR)
+    // Pass through the appropriate handler
+    if (mapping.getRegisterType() == ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR)
     {
-        handleActuationForHoldingRegister(modbusRegisterMapping, modbusRegisterWatcher, value);
+        handleActuationForHoldingRegister(mapping, value);
     }
-    else if (modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::COIL)
+    else if (mapping.getRegisterType() == ModbusRegisterMapping::RegisterType::COIL)
     {
-        handleActuationForCoil(modbusRegisterMapping, modbusRegisterWatcher, value);
-    }
-}
-
-void ModbusBridge::handleConfigurationForHoldingRegister(const ModbusRegisterMapping& modbusRegisterMapping,
-                                                         ModbusRegisterWatcher& modbusRegisterWatcher,
-                                                         const std::string& value)
-{
-    if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::INT16)
-    {
-        short shortValue = static_cast<short>(atoi(value.c_str()));
-        if (!m_modbusClient.writeHoldingRegister(modbusRegisterMapping.getSlaveAddress(),
-                                                 modbusRegisterMapping.getAddress(), shortValue))
-        {
-            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
-                       << modbusRegisterMapping.getAddress() << " Value: " << shortValue;
-            modbusRegisterWatcher.setValid(false);
-        }
-    }
-    else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
-    {
-        unsigned short uShortValue = static_cast<unsigned short>(atoi(value.c_str()));
-        if (!m_modbusClient.writeHoldingRegister(modbusRegisterMapping.getSlaveAddress(),
-                                                 modbusRegisterMapping.getAddress(), uShortValue))
-        {
-            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
-                       << modbusRegisterMapping.getAddress() << " Value: " << uShortValue;
-            modbusRegisterWatcher.setValid(false);
-        }
-    }
-    else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
-    {
-        float floatValue = atof(value.c_str());
-        if (!m_modbusClient.writeHoldingRegister(modbusRegisterMapping.getSlaveAddress(),
-                                                 modbusRegisterMapping.getAddress(), floatValue))
-        {
-            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
-                       << modbusRegisterMapping.getAddress() << " Value: " << floatValue;
-            modbusRegisterWatcher.setValid(false);
-        }
+        handleActuationForCoil(mapping, value);
     }
 }
 
-void ModbusBridge::handleConfigurationForHoldingRegister(const ModbusRegisterMapping& modbusRegisterMapping,
-                                                         ModbusRegisterWatcher& modbusRegisterWatcher,
-                                                         std::vector<std::string> value)
+// handleConfiguration and helper methods
+// handleConfigurationForHoldingRegister() - handles
+void ModbusBridge::handleConfigurationForHoldingRegister(ModbusRegisterMapping& mapping, const std::string& value)
 {
-    if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::INT16)
+    if (mapping.getDataType() == ModbusRegisterMapping::DataType::INT16)
+    {
+        short shortValue;
+        try
+        {
+            shortValue = static_cast<short>(std::stoi(value));
+        }
+        catch (std::exception&)
+        {
+            LOG(ERROR)
+              << "ModbusBridge: Unable to convert value from platform for holding register - Register address: "
+              << mapping.getAddress() << " Value: " << value;
+            mapping.setValid(false);
+            return;
+        }
+
+        if (!m_modbusClient.writeHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), shortValue))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
+                       << mapping.getAddress() << " Value: " << shortValue;
+            mapping.setValid(false);
+        }
+    }
+    else if (mapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
+    {
+        unsigned short unsignedShortValue;
+        try
+        {
+            unsignedShortValue = static_cast<unsigned short>(std::stoi(value));
+        }
+        catch (std::exception&)
+        {
+            LOG(ERROR)
+              << "ModbusBridge: Unable to convert value from platform for holding register - Register address: "
+              << mapping.getAddress() << " Value: " << value;
+            mapping.setValid(false);
+            return;
+        }
+
+        if (!m_modbusClient.writeHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), unsignedShortValue))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
+                       << mapping.getAddress() << " Value: " << unsignedShortValue;
+            mapping.setValid(false);
+        }
+    }
+    else if (mapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
+    {
+        float floatValue;
+        try
+        {
+            floatValue = std::stof(value);
+        }
+        catch (std::exception&)
+        {
+            LOG(ERROR)
+              << "ModbusBridge: Unable to convert value from platform for holding register - Register address: "
+              << mapping.getAddress() << " Value: " << value;
+            mapping.setValid(false);
+            return;
+        }
+
+        if (!m_modbusClient.writeHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), floatValue))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
+                       << mapping.getAddress() << " Value: " << floatValue;
+            mapping.setValid(false);
+        }
+    }
+}
+// handleConfigurationForHoldingRegisters() - handles
+void ModbusBridge::handleConfigurationForHoldingRegisters(ModbusRegisterMapping& mapping,
+                                                          const std::vector<std::string>& value)
+{
+    if (mapping.getDataType() == ModbusRegisterMapping::DataType::INT16)
     {
         std::vector<short> shorts;
         shorts.reserve(value.size());
         for (const std::string& shortString : value)
         {
-            shorts.push_back(static_cast<short>(atoi(shortString.c_str())));
+            try
+            {
+                shorts.push_back(static_cast<short>(std::stoi(shortString)));
+            }
+            catch (std::exception&)
+            {
+                LOG(ERROR)
+                  << "ModbusBridge: Unable to convert value from platform for holding registers - Register address: "
+                  << mapping.getAddress() << " Value: " << shortString;
+                mapping.setValid(false);
+                return;
+            }
         }
-        if (!m_modbusClient.writeHoldingRegisters(modbusRegisterMapping.getSlaveAddress(),
-                                                  modbusRegisterMapping.getAddress(), shorts))
+        if (!m_modbusClient.writeHoldingRegisters(mapping.getSlaveAddress(), mapping.getAddress(), shorts))
         {
             LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
-                       << modbusRegisterMapping.getAddress();
-            modbusRegisterWatcher.setValid(false);
+                       << mapping.getAddress();
+            mapping.setValid(false);
         }
     }
-    else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
+    else if (mapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
     {
-        std::vector<unsigned short> uShorts;
-        uShorts.reserve(value.size());
+        std::vector<unsigned short> unsignedShorts;
+        unsignedShorts.reserve(value.size());
         for (const std::string& shortString : value)
         {
-            uShorts.push_back(static_cast<unsigned short>(atoi(shortString.c_str())));
+            try
+            {
+                unsignedShorts.push_back(static_cast<unsigned short>(std::stoi(shortString)));
+            }
+            catch (std::exception&)
+            {
+                LOG(ERROR)
+                  << "ModbusBridge: Unable to convert value from platform for holding registers - Register address: "
+                  << mapping.getAddress() << " Value: " << shortString;
+                mapping.setValid(false);
+                return;
+            }
         }
-        if (!m_modbusClient.writeHoldingRegisters(modbusRegisterMapping.getSlaveAddress(),
-                                                  modbusRegisterMapping.getAddress(), uShorts))
+        if (!m_modbusClient.writeHoldingRegisters(mapping.getSlaveAddress(), mapping.getAddress(), unsignedShorts))
         {
             LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
-                       << modbusRegisterMapping.getAddress();
-            modbusRegisterWatcher.setValid(false);
+                       << mapping.getAddress();
+            mapping.setValid(false);
         }
     }
-    else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
+    else if (mapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
     {
         std::vector<float> floats;
         floats.reserve(value.size());
         for (const std::string& shortString : value)
         {
-            floats.push_back(static_cast<float>(atof(shortString.c_str())));
+            try
+            {
+                floats.push_back(static_cast<float>(std::stof(shortString)));
+            }
+            catch (std::exception&)
+            {
+                LOG(ERROR)
+                  << "ModbusBridge: Unable to convert value from platform for holding registers - Register address: "
+                  << mapping.getAddress() << " Value: " << shortString;
+                mapping.setValid(false);
+                return;
+            }
         }
-        if (!m_modbusClient.writeHoldingRegisters(modbusRegisterMapping.getSlaveAddress(),
-                                                  modbusRegisterMapping.getAddress(), floats))
+        if (!m_modbusClient.writeHoldingRegisters(mapping.getSlaveAddress(), mapping.getAddress(), floats))
         {
             LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
-                       << modbusRegisterMapping.getAddress();
-            modbusRegisterWatcher.setValid(false);
+                       << mapping.getAddress();
+            mapping.setValid(false);
         }
     }
 }
-
-void ModbusBridge::handleConfigurationForCoil(const ModbusRegisterMapping& modbusRegisterMapping,
-                                              ModbusRegisterWatcher& modbusRegisterWatcher, const std::string& value)
+// handleConfigurationForCoil() - handles
+void ModbusBridge::handleConfigurationForCoil(ModbusRegisterMapping& mapping, const std::string& value)
 {
-    std::vector<std::string> trueValues = {"true", "1", "1.0", "ON"};
-    bool boolValue = std::find(trueValues.begin(), trueValues.end(), value) != trueValues.end();
-    if (!m_modbusClient.writeCoil(modbusRegisterMapping.getSlaveAddress(), modbusRegisterMapping.getAddress(),
-                                  boolValue))
+    bool boolValue = std::find(TRUE_VALUES.begin(), TRUE_VALUES.end(), value) != TRUE_VALUES.end();
+    if (!m_modbusClient.writeCoil(mapping.getSlaveAddress(), mapping.getAddress(), boolValue))
     {
         LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
-                   << modbusRegisterMapping.getAddress() << " Value: " << boolValue;
-        modbusRegisterWatcher.setValid(false);
+                   << mapping.getAddress() << " Value: " << boolValue;
+        mapping.setValid(false);
     }
 }
-
-void ModbusBridge::handleConfiguration(const std::string& /* deviceKey */,
+// handleConfiguration() - decides on the handler to handle incoming data
+void ModbusBridge::handleConfiguration(const std::string& deviceKey,
                                        const std::vector<ConfigurationItem>& configuration)
 {
     for (auto& config : configuration)
     {
         const std::string& reference = config.getReference();
-        const ModbusRegisterMapping& modbusRegisterMapping = m_referenceToModbusRegisterMapping.at(reference);
-        ModbusRegisterWatcher& modbusRegisterWatcher = m_referenceToModbusRegisterWatcherMapping.at(reference);
+        auto mapping = *m_registerMappingByReference[deviceKey + '.' + reference];
 
-        if (modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::COIL)
+        if (mapping.getRegisterType() == ModbusRegisterMapping::RegisterType::COIL)
         {
-            handleConfigurationForCoil(modbusRegisterMapping, modbusRegisterWatcher, config.getValues()[0]);
+            handleConfigurationForCoil(mapping, config.getValues()[0]);
         }
         else
         {
-            if (!modbusRegisterMapping.getLabelsAndAddresses().empty())
+            if (!mapping.getLabelsAndAddresses().empty())
             {
-                handleConfigurationForHoldingRegister(modbusRegisterMapping, modbusRegisterWatcher, config.getValues());
+                handleConfigurationForHoldingRegisters(mapping, config.getValues());
             }
             else
             {
-                handleConfigurationForHoldingRegister(modbusRegisterMapping, modbusRegisterWatcher,
-                                                      config.getValues()[0]);
+                handleConfigurationForHoldingRegister(mapping, config.getValues()[0]);
             }
         }
     }
 }
 
-void ModbusBridge::handleActuationForHoldingRegister(const wolkabout::ModbusRegisterMapping& modbusRegisterMapping,
-                                                     ModbusRegisterWatcher& modbusRegisterWatcher,
-                                                     const std::string& value)
+// getActuatorStatus and helper methods
+// getActuatorStatusFromHoldingRegister() - handles
+wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromHoldingRegister(ModbusRegisterMapping& mapping)
 {
-    if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::INT16)
-    {
-        signed short typedValue = static_cast<signed short>(std::atol(value.c_str()));
-        if (!m_modbusClient.writeHoldingRegister(modbusRegisterMapping.getSlaveAddress(),
-                                                 modbusRegisterMapping.getAddress(), typedValue))
-        {
-            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
-                       << modbusRegisterMapping.getAddress() << " Value: " << value;
-            modbusRegisterWatcher.setValid(false);
-        }
-    }
-    else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
-    {
-        unsigned short typedValue = static_cast<unsigned short>(std::stoul(value.c_str()));
-        if (!m_modbusClient.writeHoldingRegister(modbusRegisterMapping.getSlaveAddress(),
-                                                 modbusRegisterMapping.getAddress(), typedValue))
-        {
-            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
-                       << modbusRegisterMapping.getAddress() << " Value: " << value;
-            modbusRegisterWatcher.setValid(false);
-        }
-    }
-    else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
-    {
-        float typedValue = std::stof(value.c_str());
-        if (!m_modbusClient.writeHoldingRegister(modbusRegisterMapping.getSlaveAddress(),
-                                                 modbusRegisterMapping.getAddress(), typedValue))
-        {
-            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
-                       << modbusRegisterMapping.getAddress() << " Value: " << value;
-            modbusRegisterWatcher.setValid(false);
-        }
-    }
-}
-
-void ModbusBridge::handleActuationForCoil(const wolkabout::ModbusRegisterMapping& modbusRegisterMapping,
-                                          ModbusRegisterWatcher& modbusRegisterWatcher, const std::string& value)
-{
-    if (!m_modbusClient.writeCoil(modbusRegisterMapping.getSlaveAddress(), modbusRegisterMapping.getAddress(),
-                                  value == "true"))
-    {
-        LOG(ERROR) << "ModbusBridge: Unable to write coil value - Register address: "
-                   << modbusRegisterMapping.getAddress() << " Value: " << value;
-        modbusRegisterWatcher.setValid(false);
-    }
-}
-
-wolkabout::ActuatorStatus ModbusBridge::getActuatorStatus(const std::string& /* deviceKey */,
-                                                          const std::string& reference)
-{
-    LOG(INFO) << "ModbusBridge: Getting actuator status for reference '" << reference << "'";
-    if (m_referenceToModbusRegisterMapping.find(reference) == m_referenceToModbusRegisterMapping.cend())
-    {
-        LOG(ERROR) << "ModbusBridge: No modbus register mapped to reference '" << reference << "'";
-        return ActuatorStatus("", ActuatorStatus::State::ERROR);
-    }
-
-    if (m_referenceToModbusRegisterWatcherMapping.find(reference) == m_referenceToModbusRegisterWatcherMapping.cend())
-    {
-        m_referenceToModbusRegisterWatcherMapping.emplace(reference, ModbusRegisterWatcher{});
-    }
-
-    const ModbusRegisterMapping& modbusRegisterMapping = m_referenceToModbusRegisterMapping.at(reference);
-    ModbusRegisterWatcher& modbusRegisterWatcher = m_referenceToModbusRegisterWatcherMapping.at(reference);
-
-    if (modbusRegisterMapping.getRegisterType() != ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR &&
-        modbusRegisterMapping.getRegisterType() != ModbusRegisterMapping::RegisterType::COIL)
-    {
-        LOG(ERROR)
-          << "ModbusBridge: Modbus register mapped to reference '" << reference
-          << "' can not be treated as actuator - Modbus register must be of type 'HOLDING_REGISTER_ACTUATOR' or 'COIL'";
-        return ActuatorStatus("", ActuatorStatus::State::ERROR);
-    }
-
-    return modbusRegisterMapping.getRegisterType() == ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR ?
-             getActuatorStatusFromHoldingRegister(modbusRegisterMapping, modbusRegisterWatcher) :
-             getActuatorStatusFromCoil(modbusRegisterMapping, modbusRegisterWatcher);
-}
-
-wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromHoldingRegister(
-  const wolkabout::ModbusRegisterMapping& modbusRegisterMapping, ModbusRegisterWatcher& modbusRegisterWatcher)
-{
-    if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::INT16)
+    if (mapping.getDataType() == ModbusRegisterMapping::DataType::INT16)
     {
         signed short value;
-        if (!m_modbusClient.readHoldingRegister(modbusRegisterMapping.getSlaveAddress(),
-                                                modbusRegisterMapping.getAddress(), value))
+        if (!m_modbusClient.readHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), value))
         {
-            LOG(ERROR) << "ModbusBridge: Unable to read holding register with address '"
-                       << modbusRegisterMapping.getAddress() << "'";
+            LOG(ERROR) << "ModbusBridge: Unable to read holding register with address '" << mapping.getAddress() << "'";
 
-            modbusRegisterWatcher.setValid(false);
+            mapping.setValid(false);
             return ActuatorStatus("", ActuatorStatus::State::ERROR);
         }
 
-        modbusRegisterWatcher.update(value);
+        mapping.update(value);
 
         return ActuatorStatus(std::to_string(value), ActuatorStatus::State::READY);
     }
-    else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
+    else if (mapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
     {
         unsigned short value;
-        if (!m_modbusClient.readHoldingRegister(modbusRegisterMapping.getSlaveAddress(),
-                                                modbusRegisterMapping.getAddress(), value))
+        if (!m_modbusClient.readHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), value))
         {
-            LOG(ERROR) << "ModbusBridge: Unable to read holding register with address '"
-                       << modbusRegisterMapping.getAddress() << "'";
+            LOG(ERROR) << "ModbusBridge: Unable to read holding register with address '" << mapping.getAddress() << "'";
 
-            modbusRegisterWatcher.setValid(false);
+            mapping.setValid(false);
             return ActuatorStatus("", ActuatorStatus::State::ERROR);
         }
 
-        modbusRegisterWatcher.update(value);
+        mapping.update(value);
 
         return ActuatorStatus(std::to_string(value), ActuatorStatus::State::READY);
     }
-    else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
+    else if (mapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
     {
         float value;
-        if (!m_modbusClient.readHoldingRegister(modbusRegisterMapping.getSlaveAddress(),
-                                                modbusRegisterMapping.getAddress(), value))
+        if (!m_modbusClient.readHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), value))
         {
-            LOG(ERROR) << "ModbusBridge: Unable to read holding register with address '"
-                       << modbusRegisterMapping.getAddress() << "'";
+            LOG(ERROR) << "ModbusBridge: Unable to read holding register with address '" << mapping.getAddress() << "'";
 
-            modbusRegisterWatcher.setValid(false);
+            mapping.setValid(false);
             return ActuatorStatus("", ActuatorStatus::State::ERROR);
         }
 
-        modbusRegisterWatcher.update(value);
+        mapping.update(value);
 
         return ActuatorStatus(std::to_string(value), ActuatorStatus::State::READY);
     }
@@ -473,183 +581,211 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromHoldingRegister(
     LOG(ERROR) << "ModbusBridge: Could not obtain actuator status from holding register - Unsupported data type";
     return ActuatorStatus("", ActuatorStatus::State::ERROR);
 }
-
-wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromCoil(
-  const wolkabout::ModbusRegisterMapping& modbusRegisterMapping, ModbusRegisterWatcher& modbusRegisterWatcher)
+// getActuatorStatusFromCoil() - handles
+wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromCoil(ModbusRegisterMapping& mapping)
 {
-    bool value;
-    if (!m_modbusClient.readCoil(modbusRegisterMapping.getSlaveAddress(), modbusRegisterMapping.getAddress(), value))
+    bool value = false;
+    if (!m_modbusClient.readCoil(mapping.getSlaveAddress(), mapping.getAddress(), value))
     {
-        LOG(ERROR) << "ModbusBridge: Unable to read coil with address '" << modbusRegisterMapping.getAddress() << "'";
+        LOG(ERROR) << "ModbusBridge: Unable to read coil with address '" << mapping.getAddress() << "'";
 
-        modbusRegisterWatcher.setValid(false);
+        mapping.setValid(false);
         return ActuatorStatus("", ActuatorStatus::State::ERROR);
     }
 
-    modbusRegisterWatcher.update(value);
+    mapping.update(value);
 
     return ActuatorStatus(value ? "true" : "false", ActuatorStatus::State::READY);
 }
+// getActuatorStatus() - decides on the handler to handle the status request
+wolkabout::ActuatorStatus ModbusBridge::getActuatorStatus(const std::string& deviceKey, const std::string& reference)
+{
+    // Find the device if it exists, find the reference in his data, and change the value.
+    LOG(INFO) << "ModbusBridge: Getting actuation status on " << deviceKey << " reference '" << reference << "'";
 
-std::vector<ConfigurationItem> ModbusBridge::getConfiguration(const std::string& /* deviceKey */)
+    int slaveAddress = getSlaveAddress(deviceKey);
+    if (slaveAddress == -1 || m_deviceKeyBySlaveAddress.find(slaveAddress) == m_deviceKeyBySlaveAddress.end())
+    {
+        LOG(ERROR) << "ModbusBridge: No device with key '" << deviceKey << "'";
+        return ActuatorStatus("", ActuatorStatus::State::ERROR);
+    }
+
+    // After we found the device, check for the reference existence, and then the type of reference. Pass on to handler.
+    if (m_registerMappingByReference.find(deviceKey + '.' + reference) == m_registerMappingByReference.end())
+    {
+        LOG(ERROR) << "ModbusBridge: Reference '" << reference << "' does not exist for device '" << deviceKey << "'";
+        return ActuatorStatus("", ActuatorStatus::State::ERROR);
+    }
+
+    auto mapping = *(m_registerMappingByReference[deviceKey + '.' + reference]);
+
+    if (mapping.getRegisterType() != ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR &&
+        mapping.getRegisterType() != ModbusRegisterMapping::RegisterType::COIL)
+    {
+        LOG(ERROR)
+          << "ModbusBridge: Modbus register mapped to reference '" << reference
+          << "' can not be treated as actuator - Modbus register must be of type 'HOLDING_REGISTER_ACTUATOR' or 'COIL'";
+        return ActuatorStatus("", ActuatorStatus::State::ERROR);
+    }
+
+    return mapping.getRegisterType() == ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR ?
+             getActuatorStatusFromHoldingRegister(mapping) :
+             getActuatorStatusFromCoil(mapping);
+}
+
+// getConfiguration and helper methods
+// getConfigurationStatusFromHoldingRegister() - handles
+ConfigurationItem ModbusBridge::getConfigurationStatusFromHoldingRegister(ModbusRegisterMapping& mapping)
+{
+    std::vector<std::string> configurationValues;
+    if (mapping.getDataType() == ModbusRegisterMapping::DataType::INT16)
+    {
+        if (!mapping.getLabelsAndAddresses().empty())
+        {
+            std::vector<short> values;
+            if (!m_modbusClient.readHoldingRegisters(mapping.getSlaveAddress(), mapping.getAddress(),
+                                                     static_cast<int>(mapping.getLabelsAndAddresses().size()), values))
+            {
+                LOG(ERROR) << "ModbusBridge: Unable to read holding registers from address '" << mapping.getAddress()
+                           << "'";
+
+                mapping.setValid(false);
+                return ConfigurationItem(std::vector<std::string>(), "");
+            }
+            mapping.update(values);
+        }
+        else
+        {
+            short value;
+            if (!m_modbusClient.readHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), value))
+            {
+                LOG(ERROR) << "ModbusBridge: Unable to read holding registers from address '" << mapping.getAddress()
+                           << "'";
+
+                mapping.setValid(false);
+                return ConfigurationItem(std::vector<std::string>(), "");
+            }
+            mapping.update(value);
+        }
+    }
+    else if (mapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
+    {
+        if (!mapping.getLabelsAndAddresses().empty())
+        {
+            std::vector<unsigned short> values;
+            if (!m_modbusClient.readHoldingRegisters(mapping.getSlaveAddress(), mapping.getAddress(),
+                                                     static_cast<int>(mapping.getLabelsAndAddresses().size()), values))
+            {
+                LOG(ERROR) << "ModbusBridge: Unable to read holding registers from address '" << mapping.getAddress()
+                           << "'";
+
+                mapping.setValid(false);
+                return ConfigurationItem(std::vector<std::string>(), "");
+            }
+            mapping.update(values);
+        }
+        else
+        {
+            unsigned short value;
+            if (!m_modbusClient.readHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), value))
+            {
+                LOG(ERROR) << "ModbusBridge: Unable to read holding registers from address '" << mapping.getAddress()
+                           << "'";
+
+                mapping.setValid(false);
+                return ConfigurationItem(std::vector<std::string>(), "");
+            }
+            mapping.update(value);
+        }
+    }
+    else if (mapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
+    {
+        if (!mapping.getLabelsAndAddresses().empty())
+        {
+            std::vector<float> values;
+            if (!m_modbusClient.readHoldingRegisters(mapping.getSlaveAddress(), mapping.getAddress(),
+                                                     static_cast<int>(mapping.getLabelsAndAddresses().size()), values))
+            {
+                LOG(ERROR) << "ModbusBridge: Unable to read holding registers from address '" << mapping.getAddress()
+                           << "'";
+
+                mapping.setValid(false);
+                return ConfigurationItem(std::vector<std::string>(), "");
+            }
+            mapping.update(values);
+        }
+        else
+        {
+            float value;
+            if (!m_modbusClient.readHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), value))
+            {
+                LOG(ERROR) << "ModbusBridge: Unable to read holding registers from address '" << mapping.getAddress()
+                           << "'";
+
+                mapping.setValid(false);
+                return ConfigurationItem(std::vector<std::string>(), "");
+            }
+            mapping.update(value);
+        }
+    }
+
+    auto values = StringUtils::tokenize(mapping.getValue(), ",");
+    for (auto& value : values)
+    {
+        configurationValues.emplace_back(value);
+    }
+
+    return ConfigurationItem(configurationValues, mapping.getReference());
+}
+// getConfigurationStatusFromCoil() - handles
+ConfigurationItem ModbusBridge::getConfigurationStatusFromCoil(ModbusRegisterMapping& mapping)
+{
+    bool value;
+    if (!m_modbusClient.readCoil(mapping.getSlaveAddress(), mapping.getAddress(), value))
+    {
+        LOG(ERROR) << "ModbusBridge: Unable to read coil on address '" << mapping.getAddress() << "'";
+
+        mapping.setValid(false);
+        return ConfigurationItem(std::vector<std::string>(), "");
+    }
+    mapping.update(value);
+    return ConfigurationItem({mapping.getValue()}, mapping.getReference());
+}
+// getConfiguration() - decides on the handler to handle the status request
+std::vector<ConfigurationItem> ModbusBridge::getConfiguration(const std::string& deviceKey)
 {
     std::vector<ConfigurationItem> configurations;
-    for (auto& mapping : m_referenceToConfigurationModbusRegisterMapping)
+    for (const auto& referenceMappingPair : m_configurationMappingByDevice[deviceKey])
     {
-        if (m_referenceToModbusRegisterWatcherMapping.find(mapping.first) ==
-            m_referenceToModbusRegisterWatcherMapping.cend())
-        {
-            m_referenceToModbusRegisterWatcherMapping.emplace(mapping.first, ModbusRegisterWatcher{});
-        }
+        auto& mapping = *referenceMappingPair.second;
 
-        ModbusRegisterWatcher& watcher = m_referenceToModbusRegisterWatcherMapping.at(mapping.first);
-
-        switch (mapping.second.getRegisterType())
+        switch (mapping.getRegisterType())
         {
         case ModbusRegisterMapping::RegisterType::COIL:
-            configurations.emplace_back(getConfigurationStatusFromCoil(mapping.second, watcher));
+            configurations.emplace_back(getConfigurationStatusFromCoil(mapping));
             break;
         case ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
-            configurations.emplace_back(getConfigurationStatusFromHoldingRegister(mapping.second, watcher));
+            configurations.emplace_back(getConfigurationStatusFromHoldingRegister(mapping));
             break;
+        default:
+            throw std::logic_error("Invalid type of register for a configuration at reference '" +
+                                   referenceMappingPair.first + "'!");
         }
     }
 
     return configurations;
 }
 
-ConfigurationItem ModbusBridge::getConfigurationStatusFromCoil(const ModbusRegisterMapping& modbusRegisterMapping,
-                                                               ModbusRegisterWatcher& modbusRegisterWatcher)
+// getDeviceStatus() - handles status request about a specific device
+wolkabout::DeviceStatus::Status ModbusBridge::getDeviceStatus(const std::string& deviceKey)
 {
-    bool value;
-    if (!m_modbusClient.readCoil(modbusRegisterMapping.getSlaveAddress(), modbusRegisterMapping.getAddress(), value))
-    {
-        LOG(ERROR) << "ModbusBridge: Unable to read coil on address '" << modbusRegisterMapping.getAddress() << "'";
-
-        modbusRegisterWatcher.setValid(false);
-        return ConfigurationItem(std::vector<std::string>(), "");
-    }
-    modbusRegisterWatcher.update(value);
-    return ConfigurationItem({modbusRegisterWatcher.getValue()}, modbusRegisterMapping.getReference());
+    return m_devicesStatusBySlaveAddress[getSlaveAddress(deviceKey)];
 }
 
-ConfigurationItem ModbusBridge::getConfigurationStatusFromHoldingRegister(
-  const ModbusRegisterMapping& modbusRegisterMapping, ModbusRegisterWatcher& modbusRegisterWatcher)
-{
-    std::vector<std::string> configurationValues;
-    if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::INT16)
-    {
-        if (!modbusRegisterMapping.getLabelsAndAddresses().empty())
-        {
-            std::vector<short> values;
-            if (!m_modbusClient.readHoldingRegisters(
-                  modbusRegisterMapping.getSlaveAddress(), modbusRegisterMapping.getAddress(),
-                  static_cast<int>(modbusRegisterMapping.getLabelsAndAddresses().size()), values))
-            {
-                LOG(ERROR) << "ModbusBridge: Unable to read holding registers from address '"
-                           << modbusRegisterMapping.getAddress() << "'";
-
-                modbusRegisterWatcher.setValid(false);
-                return ConfigurationItem(std::vector<std::string>(), "");
-            }
-            modbusRegisterWatcher.update(values);
-        }
-        else
-        {
-            short value;
-            if (!m_modbusClient.readHoldingRegister(modbusRegisterMapping.getSlaveAddress(),
-                                                    modbusRegisterMapping.getAddress(), value))
-            {
-                LOG(ERROR) << "ModbusBridge: Unable to read holding registers from address '"
-                           << modbusRegisterMapping.getAddress() << "'";
-
-                modbusRegisterWatcher.setValid(false);
-                return ConfigurationItem(std::vector<std::string>(), "");
-            }
-            modbusRegisterWatcher.update(value);
-        }
-    }
-    else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
-    {
-        if (!modbusRegisterMapping.getLabelsAndAddresses().empty())
-        {
-            std::vector<unsigned short> values;
-            if (!m_modbusClient.readHoldingRegisters(
-                  modbusRegisterMapping.getSlaveAddress(), modbusRegisterMapping.getAddress(),
-                  static_cast<int>(modbusRegisterMapping.getLabelsAndAddresses().size()), values))
-            {
-                LOG(ERROR) << "ModbusBridge: Unable to read holding registers from address '"
-                           << modbusRegisterMapping.getAddress() << "'";
-
-                modbusRegisterWatcher.setValid(false);
-                return ConfigurationItem(std::vector<std::string>(), "");
-            }
-            modbusRegisterWatcher.update(values);
-        }
-        else
-        {
-            unsigned short value;
-            if (!m_modbusClient.readHoldingRegister(modbusRegisterMapping.getSlaveAddress(),
-                                                    modbusRegisterMapping.getAddress(), value))
-            {
-                LOG(ERROR) << "ModbusBridge: Unable to read holding registers from address '"
-                           << modbusRegisterMapping.getAddress() << "'";
-
-                modbusRegisterWatcher.setValid(false);
-                return ConfigurationItem(std::vector<std::string>(), "");
-            }
-            modbusRegisterWatcher.update(value);
-        }
-    }
-    else if (modbusRegisterMapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
-    {
-        if (!modbusRegisterMapping.getLabelsAndAddresses().empty())
-        {
-            std::vector<float> values;
-            if (!m_modbusClient.readHoldingRegisters(
-                  modbusRegisterMapping.getSlaveAddress(), modbusRegisterMapping.getAddress(),
-                  static_cast<int>(modbusRegisterMapping.getLabelsAndAddresses().size()), values))
-            {
-                LOG(ERROR) << "ModbusBridge: Unable to read holding registers from address '"
-                           << modbusRegisterMapping.getAddress() << "'";
-
-                modbusRegisterWatcher.setValid(false);
-                return ConfigurationItem(std::vector<std::string>(), "");
-            }
-            modbusRegisterWatcher.update(values);
-        }
-        else
-        {
-            float value;
-            if (!m_modbusClient.readHoldingRegister(modbusRegisterMapping.getSlaveAddress(),
-                                                    modbusRegisterMapping.getAddress(), value))
-            {
-                LOG(ERROR) << "ModbusBridge: Unable to read holding registers from address '"
-                           << modbusRegisterMapping.getAddress() << "'";
-
-                modbusRegisterWatcher.setValid(false);
-                return ConfigurationItem(std::vector<std::string>(), "");
-            }
-            modbusRegisterWatcher.update(value);
-        }
-    }
-
-    auto values = StringUtils::tokenize(modbusRegisterWatcher.getValue(), ",");
-    for (auto& value : values)
-    {
-        configurationValues.emplace_back(value);
-    }
-
-    return ConfigurationItem(configurationValues, modbusRegisterMapping.getReference());
-}
-
-wolkabout::DeviceStatus::Status ModbusBridge::getDeviceStatus(const std::string& /* deviceKey */)
-{
-    return m_modbusClient.isConnected() ? DeviceStatus::Status::CONNECTED : DeviceStatus::Status::OFFLINE;
-}
-
+// methods for the running logic of modbusBridge
 void ModbusBridge::start()
 {
+    LOG(DEBUG) << "Starting ModbusBridge.";
     if (m_readerShouldRun)
     {
         return;
@@ -657,12 +793,22 @@ void ModbusBridge::start()
 
     m_readerShouldRun = true;
     m_reader = std::unique_ptr<std::thread>(new std::thread(&ModbusBridge::run, this));
+    LOG(DEBUG) << "Started ModbusBridge.";
 }
 
 void ModbusBridge::stop()
 {
     m_readerShouldRun = false;
-    m_reader->join();
+    if (m_reader->joinable())
+    {
+        m_reader->join();
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    for (const auto& device : m_deviceKeyBySlaveAddress)
+    {
+        m_onDeviceStatusChange(device.second, DeviceStatus::Status::OFFLINE);
+    }
 }
 
 void ModbusBridge::run()
@@ -679,11 +825,14 @@ void ModbusBridge::run()
         else
         {
             // just disconnecting
-            m_modbusClient.disconnect();
             if (m_onDeviceStatusChange)
             {
-                m_onDeviceStatusChange(wolkabout::DeviceStatus::Status::OFFLINE);
+                for (const auto& pair : m_deviceKeyBySlaveAddress)
+                {
+                    m_onDeviceStatusChange(pair.second, wolkabout::DeviceStatus::Status::OFFLINE);
+                }
             }
+            m_modbusClient.disconnect();
 
             // attempting to connect
             LOG(INFO) << "ModbusBridge: Attempting to connect";
@@ -700,12 +849,718 @@ void ModbusBridge::run()
 
             if (m_onDeviceStatusChange)
             {
-                m_onDeviceStatusChange(wolkabout::DeviceStatus::Status::CONNECTED);
+                for (const auto& pair : m_deviceKeyBySlaveAddress)
+                {
+                    m_onDeviceStatusChange(pair.second, wolkabout::DeviceStatus::Status::CONNECTED);
+                }
             }
             readAndReportModbusRegistersValues();
         }
 
         std::this_thread::sleep_for(m_registerReadPeriod);
+    }
+}
+
+// readAndReport - loop for reading all devices and their groups
+// with helper methods, for reading specific type of group
+
+void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& group, std::map<int, bool>& slavesRead)
+{
+    int slaveAddress = group.getSlaveAddress();
+    std::string deviceKey = m_deviceKeyBySlaveAddress[slaveAddress];
+
+    switch (group.getDataType())
+    {
+    case ModbusRegisterMapping::DataType::INT16:
+    {
+        std::vector<short> values;
+        LOG(TRACE) << "readHoldingRegisters (INT16) " << group.getSlaveAddress() << ", "
+                   << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
+        LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
+        for (const auto& mapping : group.getRegisters())
+        {
+            LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
+                       << mapping->getSlaveAddress() << ", " << mapping->getValue();
+        }
+        if (!m_modbusClient.readHoldingRegisters(group.getSlaveAddress(),
+                                                 static_cast<int>(group.getStartingRegisterAddress()),
+                                                 static_cast<int>(group.getRegisterCount()), values))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to read holding registers on slave " << group.getSlaveAddress()
+                       << " from address '" << group.getStartingRegisterAddress() << "'";
+            if (slavesRead.count(group.getSlaveAddress()) == 0)
+            {
+                slavesRead.emplace(group.getSlaveAddress(), false);
+                m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::OFFLINE;
+            }
+            return;
+        }
+
+        slavesRead[group.getSlaveAddress()] = true;
+        m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::CONNECTED;
+
+        for (int i = 0, j = 0; i < group.getMappingsCount(); ++i)
+        {
+            auto mapping = group.getRegisters()[static_cast<uint>(i)];
+            LOG(TRACE) << "Old value : " << mapping->getValue() << " (Mapping : " << (i + 1) << ")";
+
+            bool updated;
+            // separate the values of group for each mapping they need to go to
+            if (mapping->getLabelsAndAddresses().empty())
+            {
+                signed short value = values[static_cast<uint>(j++)];
+                LOG(TRACE) << "Received value : " << value;
+                updated = mapping->update(value);
+            }
+            else
+            {
+                std::vector<short> groupValues;
+                LOG(TRACE) << "Received values : ";
+                for (uint k = 0; k < mapping->getLabelsAndAddresses().size(); k++)
+                {
+                    groupValues.push_back(values[static_cast<uint>(j++)]);
+                    LOG(TRACE) << values[static_cast<uint>(j++)];
+                }
+                updated = mapping->update(groupValues);
+            }
+
+            if (updated)
+            {
+                LOG(INFO) << "ModbusBridge: "
+                          << ((mapping->getMappingType() == ModbusRegisterMapping::MappingType::CONFIGURATION) ?
+                                "Configuration" :
+                                "Actuator")
+                          << " value changed - Reference: '" << mapping->getReference() << "' Value: '"
+                          << mapping->getValue() << "'";
+
+                switch (mapping->getMappingType())
+                {
+                case ModbusRegisterMapping::MappingType::DEFAULT:
+                case ModbusRegisterMapping::MappingType::ACTUATOR:
+                    if (m_onActuatorStatusChange)
+                    {
+                        m_onActuatorStatusChange(m_deviceKeyBySlaveAddress[group.getSlaveAddress()],
+                                                 mapping->getReference(), mapping->getValue());
+                    }
+                    break;
+                case ModbusRegisterMapping::MappingType::CONFIGURATION:
+                    if (m_onConfigurationChange)
+                    {
+                        auto vector = std::vector<ConfigurationItem>{
+                          ConfigurationItem(StringUtils::tokenize(mapping->getValue(), ","), mapping->getReference())};
+                        m_onConfigurationChange(m_deviceKeyBySlaveAddress[group.getSlaveAddress()], vector);
+                    }
+                    break;
+                default:
+                    LOG(ERROR) << "This mapping wasn\'t declared properly!";
+                    break;
+                }
+            }
+        }
+        break;
+    }
+    case ModbusRegisterMapping::DataType::UINT16:
+    {
+        std::vector<unsigned short> values;
+        LOG(TRACE) << "readHoldingRegisters (UINT16) " << group.getSlaveAddress() << ", "
+                   << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
+        LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
+        for (const auto& mapping : group.getRegisters())
+        {
+            LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
+                       << mapping->getSlaveAddress() << ", " << mapping->getValue();
+        }
+        if (!m_modbusClient.readHoldingRegisters(group.getSlaveAddress(), group.getStartingRegisterAddress(),
+                                                 group.getRegisterCount(), values))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to read holding registers on slave " << group.getSlaveAddress()
+                       << " from address '" << group.getStartingRegisterAddress() << "'";
+            if (slavesRead.count(group.getSlaveAddress()) == 0)
+            {
+                slavesRead.emplace(group.getSlaveAddress(), false);
+                m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::OFFLINE;
+            }
+            return;
+        }
+
+        slavesRead[group.getSlaveAddress()] = true;
+        m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::CONNECTED;
+
+        for (int i = 0, j = 0; i < group.getMappingsCount(); ++i)
+        {
+            auto mapping = group.getRegisters()[static_cast<uint>(i)];
+            LOG(TRACE) << "Old value : " << mapping->getValue() << " (Mapping : " << (i + 1) << ")";
+            bool updated;
+            // separate the values of group for each mapping they need to go to
+            if (mapping->getLabelsAndAddresses().empty())
+            {
+                unsigned short value = values[static_cast<uint>(j++)];
+                LOG(TRACE) << "Received value : " << value;
+                updated = mapping->update(value);
+            }
+            else
+            {
+                std::vector<unsigned short> groupValues;
+                LOG(TRACE) << "Received values : ";
+                for (uint k = 0; k < mapping->getLabelsAndAddresses().size(); k++)
+                {
+                    groupValues.push_back(values[static_cast<uint>(j++)]);
+                    LOG(TRACE) << values[static_cast<uint>(j++)];
+                }
+                updated = mapping->update(groupValues);
+            }
+            if (updated)
+            {
+                LOG(INFO) << "ModbusBridge: Actuator value changed - Reference: '" << mapping->getReference()
+                          << "' Value: '" << mapping->getValue() << "'";
+
+                switch (mapping->getMappingType())
+                {
+                case ModbusRegisterMapping::MappingType::DEFAULT:
+                case ModbusRegisterMapping::MappingType::ACTUATOR:
+                    if (m_onActuatorStatusChange)
+                    {
+                        m_onActuatorStatusChange(deviceKey, mapping->getReference(), mapping->getValue());
+                    }
+                    break;
+                case ModbusRegisterMapping::MappingType::CONFIGURATION:
+                    if (m_onConfigurationChange)
+                    {
+                        auto vector = std::vector<ConfigurationItem>{
+                          ConfigurationItem(StringUtils::tokenize(mapping->getValue(), ","), mapping->getReference())};
+                        m_onConfigurationChange(deviceKey, vector);
+                    }
+                    break;
+                default:
+                    LOG(ERROR) << "This mapping wasn\'t declared properly!";
+                    break;
+                }
+            }
+        }
+        break;
+    }
+    case ModbusRegisterMapping::DataType::REAL32:
+    {
+        std::vector<float> values;
+        LOG(TRACE) << "readHoldingRegisters (REAL32) " << group.getSlaveAddress() << ", "
+                   << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
+        LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
+        for (const auto& mapping : group.getRegisters())
+        {
+            LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
+                       << mapping->getSlaveAddress() << ", " << mapping->getValue();
+        }
+        if (!m_modbusClient.readHoldingRegisters(group.getSlaveAddress(), group.getStartingRegisterAddress(),
+                                                 group.getRegisterCount(), values))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to read holding registers on slave " << group.getSlaveAddress()
+                       << " from address '" << group.getStartingRegisterAddress() << "'";
+            if (slavesRead.count(group.getSlaveAddress()) == 0)
+            {
+                slavesRead.emplace(group.getSlaveAddress(), false);
+                m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::OFFLINE;
+            }
+            return;
+        }
+
+        slavesRead[group.getSlaveAddress()] = true;
+        m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::CONNECTED;
+
+        for (int i = 0, j = 0; i < group.getMappingsCount(); ++i)
+        {
+            auto mapping = group.getRegisters()[static_cast<uint>(i)];
+            LOG(TRACE) << "Old value : " << mapping->getValue() << " (Mapping : " << (i + 1) << ")";
+            bool updated;
+            // separate the values of group for each mapping they need to go to
+            if (mapping->getLabelsAndAddresses().empty())
+            {
+                float value = values[static_cast<uint>(j++)];
+                LOG(TRACE) << "Received value : " << value;
+                updated = mapping->update(value);
+            }
+            else
+            {
+                std::vector<float> groupValues;
+                LOG(TRACE) << "Received values : ";
+                for (uint k = 0; k < mapping->getLabelsAndAddresses().size(); k++)
+                {
+                    groupValues.push_back(values[static_cast<uint>(j++)]);
+                    LOG(TRACE) << values[static_cast<uint>(j++)];
+                }
+                updated = mapping->update(groupValues);
+            }
+            if (updated)
+            {
+                LOG(INFO) << "ModbusBridge: Actuator value changed - Reference: '" << mapping->getReference()
+                          << "' Value: '" << mapping->getValue() << "'";
+
+                switch (mapping->getMappingType())
+                {
+                case ModbusRegisterMapping::MappingType::DEFAULT:
+                case ModbusRegisterMapping::MappingType::ACTUATOR:
+                    if (m_onActuatorStatusChange)
+                    {
+                        m_onActuatorStatusChange(deviceKey, mapping->getReference(), mapping->getValue());
+                    }
+                    break;
+                case ModbusRegisterMapping::MappingType::CONFIGURATION:
+                    if (m_onConfigurationChange)
+                    {
+                        auto vector = std::vector<ConfigurationItem>{
+                          ConfigurationItem(StringUtils::tokenize(mapping->getValue(), ","), mapping->getReference())};
+                        m_onConfigurationChange(deviceKey, vector);
+                    }
+                    break;
+                default:
+                    LOG(ERROR) << "This mapping wasn\'t declared properly!";
+                    break;
+                }
+            }
+        }
+        break;
+    }
+    case ModbusRegisterMapping::DataType::BOOL:
+        throw std::logic_error(&"Invalid type for HoldingRegisterActuator at slaveAddress "[group.getSlaveAddress()]);
+    }
+}
+
+void ModbusBridge::readHoldingRegistersSensors(const ModbusRegisterGroup& group, std::map<int, bool>& slavesRead)
+{
+    int slaveAddress = group.getSlaveAddress();
+    std::string deviceKey = m_deviceKeyBySlaveAddress[slaveAddress];
+
+    switch (group.getDataType())
+    {
+    case ModbusRegisterMapping::DataType::INT16:
+    {
+        std::vector<signed short> values;
+        LOG(TRACE) << "readHoldingRegisters (INT16) " << group.getSlaveAddress() << ", "
+                   << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
+        LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
+        for (const auto& mapping : group.getRegisters())
+        {
+            LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
+                       << mapping->getSlaveAddress() << ", " << mapping->getValue();
+        }
+        if (!m_modbusClient.readHoldingRegisters(group.getSlaveAddress(), group.getStartingRegisterAddress(),
+                                                 group.getRegisterCount(), values))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to read holding registers on slave " << group.getSlaveAddress()
+                       << " from address '" << group.getStartingRegisterAddress() << "'";
+            if (slavesRead.count(group.getSlaveAddress()) == 0)
+            {
+                slavesRead.emplace(group.getSlaveAddress(), false);
+                m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::OFFLINE;
+            }
+            return;
+        }
+
+        slavesRead[group.getSlaveAddress()] = true;
+        m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::CONNECTED;
+
+        for (int i = 0; i < group.getMappingsCount(); ++i)
+        {
+            signed short value = values[static_cast<uint>(i)];
+            auto mapping = group.getRegisters()[static_cast<uint>(i)];
+            LOG(TRACE) << "Old value : " << mapping->getValue() << " (Mapping : " << (i + 1) << ")";
+            LOG(TRACE) << "Received value : " << value;
+            if (mapping->update(value))
+            {
+                LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping->getReference() << "' Value: '"
+                          << mapping->getValue() << "'";
+
+                if (m_onSensorChange)
+                {
+                    m_onSensorChange(deviceKey, mapping->getReference(), mapping->getValue());
+                }
+            }
+        }
+        break;
+    }
+    case ModbusRegisterMapping::DataType::UINT16:
+    {
+        std::vector<unsigned short> values;
+        LOG(TRACE) << "readHoldingRegisters (UINT16) " << group.getSlaveAddress() << ", "
+                   << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
+        LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
+        for (const auto& mapping : group.getRegisters())
+        {
+            LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
+                       << mapping->getSlaveAddress() << ", " << mapping->getValue();
+        }
+        if (!m_modbusClient.readHoldingRegisters(group.getSlaveAddress(), group.getStartingRegisterAddress(),
+                                                 group.getRegisterCount(), values))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to read holding registers on slave " << group.getSlaveAddress()
+                       << " from address '" << group.getStartingRegisterAddress() << "'";
+            if (slavesRead.count(group.getSlaveAddress()) == 0)
+            {
+                slavesRead.emplace(group.getSlaveAddress(), false);
+                m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::OFFLINE;
+            }
+            return;
+        }
+
+        slavesRead[group.getSlaveAddress()] = true;
+        m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::CONNECTED;
+
+        for (int i = 0; i < group.getMappingsCount(); ++i)
+        {
+            unsigned short value = values[static_cast<uint>(i)];
+            auto mapping = group.getRegisters()[static_cast<uint>(i)];
+            LOG(TRACE) << "Old value : " << mapping->getValue() << " (Mapping : " << (i + 1) << ")";
+            LOG(TRACE) << "Received value : " << value;
+            if (mapping->update(value))
+            {
+                LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping->getReference() << "' Value: '"
+                          << mapping->getValue() << "'";
+
+                // This here isn't edited because the holding_register_sensor can't be anything else than a
+                // sensor!
+                if (m_onSensorChange)
+                {
+                    m_onSensorChange(deviceKey, mapping->getReference(), mapping->getValue());
+                }
+            }
+        }
+        break;
+    }
+    case ModbusRegisterMapping::DataType::REAL32:
+    {
+        std::vector<float> values;
+        LOG(TRACE) << "readHoldingRegisters (REAL32) " << group.getSlaveAddress() << ", "
+                   << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
+        LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
+        for (const auto& mapping : group.getRegisters())
+        {
+            LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
+                       << mapping->getSlaveAddress() << ", " << mapping->getValue();
+        }
+        if (!m_modbusClient.readHoldingRegisters(group.getSlaveAddress(), group.getStartingRegisterAddress(),
+                                                 group.getRegisterCount(), values))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to read holding registers on slave " << group.getSlaveAddress()
+                       << " from address '" << group.getStartingRegisterAddress() << "'";
+            if (slavesRead.count(group.getSlaveAddress()) == 0)
+            {
+                slavesRead.emplace(group.getSlaveAddress(), false);
+                m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::OFFLINE;
+            }
+            return;
+        }
+
+        slavesRead[group.getSlaveAddress()] = true;
+        m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::CONNECTED;
+
+        for (int i = 0; i < group.getMappingsCount(); ++i)
+        {
+            float value = values[static_cast<uint>(i)];
+            auto mapping = group.getRegisters()[static_cast<uint>(i)];
+            LOG(TRACE) << "Old value : " << mapping->getValue() << " (Mapping : " << (i + 1) << ")";
+            LOG(TRACE) << "Received value : " << value;
+            if (mapping->update(value))
+            {
+                LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping->getReference() << "' Value: '"
+                          << mapping->getValue() << "'";
+
+                // This here isn't edited because the holding_register_sensor can't be anything else than a
+                // sensor!
+                if (m_onSensorChange)
+                {
+                    m_onSensorChange(deviceKey, mapping->getReference(), mapping->getValue());
+                }
+            }
+        }
+        break;
+    }
+    case ModbusRegisterMapping::DataType::BOOL:
+        throw std::logic_error(&"Invalid type for HoldingRegisterSensor at slaveAddress "[group.getSlaveAddress()]);
+    }
+}
+
+void ModbusBridge::readInputRegisters(const ModbusRegisterGroup& group, std::map<int, bool>& slavesRead)
+{
+    int slaveAddress = group.getSlaveAddress();
+    std::string deviceKey = m_deviceKeyBySlaveAddress[slaveAddress];
+
+    switch (group.getDataType())
+    {
+    case ModbusRegisterMapping::DataType::INT16:
+    {
+        std::vector<signed short> values;
+        LOG(TRACE) << "readInputRegisters (INT16) " << group.getSlaveAddress() << ", "
+                   << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
+        LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
+        for (const auto& mapping : group.getRegisters())
+        {
+            LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
+                       << mapping->getSlaveAddress() << ", " << mapping->getValue();
+        }
+        if (!m_modbusClient.readInputRegisters(group.getSlaveAddress(), group.getStartingRegisterAddress(),
+                                               group.getRegisterCount(), values))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to read input registers on slave " << group.getSlaveAddress()
+                       << " from address '" << group.getStartingRegisterAddress() << "'";
+            if (slavesRead.count(group.getSlaveAddress()) == 0)
+            {
+                slavesRead.emplace(group.getSlaveAddress(), false);
+                m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::OFFLINE;
+            }
+            return;
+        }
+
+        slavesRead[group.getSlaveAddress()] = true;
+        m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::CONNECTED;
+
+        for (int i = 0; i < group.getMappingsCount(); ++i)
+        {
+            signed short value = values[static_cast<uint>(i)];
+            auto mapping = group.getRegisters()[static_cast<uint>(i)];
+            LOG(TRACE) << "Old value : " << mapping->getValue() << " (Mapping : " << (i + 1) << ")";
+            LOG(TRACE) << "Received value : " << value;
+            if (mapping->update(value))
+            {
+                LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping->getReference() << "' Value: '"
+                          << mapping->getValue() << "'";
+
+                // This here isn't edited because the input_register can't be anything else than a sensor!
+                if (m_onSensorChange)
+                {
+                    m_onSensorChange(deviceKey, mapping->getReference(), mapping->getValue());
+                }
+            }
+        }
+        break;
+    }
+    case ModbusRegisterMapping::DataType::UINT16:
+    {
+        std::vector<unsigned short> values;
+        LOG(TRACE) << "readInputRegisters (UINT16) " << group.getSlaveAddress() << ", "
+                   << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
+        LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
+        for (const auto& mapping : group.getRegisters())
+        {
+            LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
+                       << mapping->getSlaveAddress() << ", " << mapping->getValue();
+        }
+        if (!m_modbusClient.readInputRegisters(group.getSlaveAddress(), group.getStartingRegisterAddress(),
+                                               group.getRegisterCount(), values))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to read input registers on slave " << group.getSlaveAddress()
+                       << " from address '" << group.getStartingRegisterAddress() << "'";
+            if (slavesRead.count(group.getSlaveAddress()) == 0)
+            {
+                slavesRead.emplace(group.getSlaveAddress(), false);
+                m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::OFFLINE;
+            }
+            return;
+        }
+
+        slavesRead[group.getSlaveAddress()] = true;
+        m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::CONNECTED;
+
+        for (int i = 0; i < group.getMappingsCount(); ++i)
+        {
+            unsigned short value = values[static_cast<uint>(i)];
+            auto mapping = group.getRegisters()[static_cast<uint>(i)];
+            LOG(TRACE) << "Old value : " << mapping->getValue() << " (Mapping : " << (i + 1) << ")";
+            LOG(TRACE) << "Received value : " << value;
+            if (mapping->update(value))
+            {
+                LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping->getReference() << "' Value: '"
+                          << mapping->getValue() << "'";
+
+                // This here isn't edited because the input_register can't be anything else than a sensor!
+                if (m_onSensorChange)
+                {
+                    m_onSensorChange(deviceKey, mapping->getReference(), mapping->getValue());
+                }
+            }
+        }
+        break;
+    }
+    case ModbusRegisterMapping::DataType::REAL32:
+    {
+        std::vector<float> values;
+        LOG(TRACE) << "readInputRegisters (REAL32) " << group.getSlaveAddress() << ", "
+                   << group.getStartingRegisterAddress() << ", " << group.getRegisterCount();
+        LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
+        for (const auto& mapping : group.getRegisters())
+        {
+            LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", "
+                       << mapping->getSlaveAddress() << ", " << mapping->getValue();
+        }
+        if (!m_modbusClient.readInputRegisters(group.getSlaveAddress(), group.getStartingRegisterAddress(),
+                                               group.getRegisterCount(), values))
+        {
+            LOG(ERROR) << "ModbusBridge: Unable to read input registers on slave " << group.getSlaveAddress()
+                       << " from address '" << group.getStartingRegisterAddress() << "'";
+            if (slavesRead.count(group.getSlaveAddress()) == 0)
+            {
+                slavesRead.emplace(group.getSlaveAddress(), false);
+                m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::OFFLINE;
+            }
+            return;
+        }
+
+        slavesRead[group.getSlaveAddress()] = true;
+        m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::CONNECTED;
+
+        for (int i = 0; i < group.getMappingsCount(); ++i)
+        {
+            float value = values[static_cast<uint>(i)];
+            auto mapping = group.getRegisters()[static_cast<uint>(i)];
+            LOG(TRACE) << "Old value : " << mapping->getValue() << " (Mapping : " << (i + 1) << ")";
+            LOG(TRACE) << "Received value : " << value;
+            if (mapping->update(value))
+            {
+                LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping->getReference() << "' Value: '"
+                          << mapping->getValue() << "'";
+
+                // This here isn't edited because the input_register can't be anything else than a sensor!
+                if (m_onSensorChange)
+                {
+                    m_onSensorChange(deviceKey, mapping->getReference(), mapping->getValue());
+                }
+            }
+        }
+        break;
+    }
+    case ModbusRegisterMapping::DataType::BOOL:
+        throw std::logic_error(&"Invalid type for HoldingRegisterActuator at slaveAddress "[group.getSlaveAddress()]);
+    }
+}
+
+void ModbusBridge::readCoils(const ModbusRegisterGroup& group, std::map<int, bool>& slavesRead)
+{
+    int slaveAddress = group.getSlaveAddress();
+    std::string deviceKey = m_deviceKeyBySlaveAddress[slaveAddress];
+
+    std::vector<bool> values;
+    LOG(TRACE) << "readCoils " << group.getSlaveAddress() << ", " << group.getStartingRegisterAddress() << ", "
+               << group.getRegisterCount();
+    LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
+    for (const auto& mapping : group.getRegisters())
+    {
+        LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", " << mapping->getSlaveAddress()
+                   << ", " << mapping->getValue();
+    }
+    if (!m_modbusClient.readCoils(group.getSlaveAddress(), group.getStartingRegisterAddress(), group.getRegisterCount(),
+                                  values))
+    {
+        LOG(ERROR) << "ModbusBridge: Unable to read coils on slave " << group.getSlaveAddress() << " from address '"
+                   << group.getStartingRegisterAddress() << "'";
+
+        if (slavesRead.count(group.getSlaveAddress()) == 0)
+        {
+            slavesRead.emplace(group.getSlaveAddress(), false);
+            m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::OFFLINE;
+        }
+        return;
+    }
+
+    slavesRead[group.getSlaveAddress()] = true;
+    m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::CONNECTED;
+
+    const uint count = static_cast<uint>(group.getMappingsCount());
+    for (uint i = 0; i < count; ++i)
+    {
+        bool value = values[i];
+        auto mapping = group.getRegisters()[i];
+        LOG(TRACE) << "Old value : " << mapping->getValue() << " (Mapping : " << (i + 1) << ")";
+        LOG(TRACE) << "Received value : " << value;
+        if (mapping->update(value))
+        {
+            LOG(INFO) << "ModbusBridge: Actuator value changed - Reference: '" << mapping->getReference()
+                      << "' Value: '" << mapping->getValue() << "'";
+
+            switch (mapping->getMappingType())
+            {
+            case ModbusRegisterMapping::MappingType::DEFAULT:
+            case ModbusRegisterMapping::MappingType::ACTUATOR:
+                if (m_onActuatorStatusChange)
+                {
+                    m_onActuatorStatusChange(deviceKey, mapping->getReference(), mapping->getValue());
+                }
+                break;
+            case ModbusRegisterMapping::MappingType::CONFIGURATION:
+                if (m_onConfigurationChange)
+                {
+                    auto vector = std::vector<ConfigurationItem>{
+                      ConfigurationItem(StringUtils::tokenize(mapping->getValue(), ","), mapping->getReference())};
+                    m_onConfigurationChange(deviceKey, vector);
+                }
+                break;
+            default:
+                LOG(ERROR) << "Mapping " << mapping->getName() << " (address: " << mapping->getAddress() << ") "
+                           << "can't be that mapping type!";
+                break;
+            }
+        }
+    }
+}
+
+void ModbusBridge::readDiscreteInputs(const ModbusRegisterGroup& group, std::map<int, bool>& slavesRead)
+{
+    int slaveAddress = group.getSlaveAddress();
+    std::string deviceKey = m_deviceKeyBySlaveAddress[slaveAddress];
+
+    std::vector<bool> values;
+    LOG(TRACE) << "readInputContacts " << group.getSlaveAddress() << ", " << group.getStartingRegisterAddress() << ", "
+               << group.getRegisterCount();
+    LOG(TRACE) << "Group (" << &group << ") contains mappings : ";
+    for (const auto& mapping : group.getRegisters())
+    {
+        LOG(TRACE) << "Mapping (" << mapping << ") : " << mapping->getReference() << ", " << mapping->getSlaveAddress()
+                   << ", " << mapping->getValue();
+    }
+    if (!m_modbusClient.readInputContacts(group.getSlaveAddress(), group.getStartingRegisterAddress(),
+                                          group.getRegisterCount(), values))
+    {
+        LOG(ERROR) << "ModbusBridge: Unable to read input contacts on slave " << group.getSlaveAddress()
+                   << " from address '" << group.getStartingRegisterAddress() << "'";
+        if (slavesRead.count(group.getSlaveAddress()) == 0)
+        {
+            slavesRead.emplace(group.getSlaveAddress(), false);
+            m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::OFFLINE;
+        }
+        return;
+    }
+
+    slavesRead[group.getSlaveAddress()] = true;
+    m_devicesStatusBySlaveAddress[group.getSlaveAddress()] = DeviceStatus::Status::CONNECTED;
+
+    for (int i = 0; i < group.getMappingsCount(); ++i)
+    {
+        bool value = values[static_cast<uint>(i)];
+        auto mapping = group.getRegisters()[static_cast<uint>(i)];
+        LOG(TRACE) << "Old value : " << mapping->getValue() << " (Mapping : " << (i + 1) << ")";
+        LOG(TRACE) << "Received value : " << value;
+        if (mapping->update(value))
+        {
+            LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << mapping->getReference() << "' Value: '"
+                      << mapping->getValue() << "'";
+
+            switch (mapping->getMappingType())
+            {
+            case ModbusRegisterMapping::MappingType::DEFAULT:
+            case ModbusRegisterMapping::MappingType::SENSOR:
+                if (m_onSensorChange)
+                {
+                    m_onSensorChange(deviceKey, mapping->getReference(), mapping->getValue());
+                }
+                break;
+            case ModbusRegisterMapping::MappingType::ALARM:
+                if (m_onAlarmChange)
+                {
+                    m_onAlarmChange(deviceKey, mapping->getReference(), value);
+                }
+                break;
+            default:
+                LOG(ERROR) << "This mapping wasn\'t declared properly!";
+                break;
+            }
+        }
     }
 }
 
@@ -715,593 +1570,40 @@ void ModbusBridge::readAndReportModbusRegistersValues()
 
     std::map<int, bool> slavesRead;
 
-    for (ModbusRegisterGroup& modbusRegisterGroup : m_modbusRegisterGroups)
+    for (const auto& pair : m_registerGroupsBySlaveAddress)
     {
-        switch (modbusRegisterGroup.getRegisterType())
+        LOG(TRACE) << "ModbusBridge: Device slave address : " << pair.first;
+
+        for (const auto& group : pair.second)
         {
-        case ModbusRegisterMapping::RegisterType::COIL:
-        {
-            std::vector<bool> values;
-            if (!m_modbusClient.readCoils(modbusRegisterGroup.getSlaveAddress(),
-                                          modbusRegisterGroup.getStartingRegisterAddress(),
-                                          modbusRegisterGroup.getRegisterCount(), values))
+            switch (group.getRegisterType())
             {
-                LOG(ERROR) << "ModbusBridge: Unable to read coils on slave " << modbusRegisterGroup.getSlaveAddress()
-                           << " from address '" << modbusRegisterGroup.getStartingRegisterAddress() << "'";
-
-                if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
-                {
-                    slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), false));
-                }
-                continue;
-            }
-
-            slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
-
-            for (int i = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
+            case ModbusRegisterMapping::RegisterType::COIL:
             {
-                bool value = values[i];
-                const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
-                ModbusRegisterWatcher& modbusRegisterWatcher =
-                  m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
-                if (modbusRegisterWatcher.update(value))
-                {
-                    LOG(INFO) << "ModbusBridge: Actuator value changed - Reference: '"
-                              << modbusRegisterMapping.getReference() << "' Value: '"
-                              << modbusRegisterWatcher.getValue() << "'";
-
-                    switch (modbusRegisterMapping.getMappingType())
-                    {
-                    case ModbusRegisterMapping::MappingType::DEFAULT:
-                    case ModbusRegisterMapping::MappingType::ACTUATOR:
-                        if (m_onActuatorStatusChange)
-                        {
-                            m_onActuatorStatusChange(modbusRegisterMapping.getReference());
-                        }
-                        break;
-                    case ModbusRegisterMapping::MappingType::CONFIGURATION:
-                        if (m_onConfigurationChange)
-                        {
-                            m_onConfigurationChange();
-                        }
-                        break;
-                    default:
-                        LOG(ERROR) << "Mapping " << modbusRegisterMapping.getName()
-                                   << " (address: " << modbusRegisterMapping.getAddress() << ") "
-                                   << "can't be that mapping type!";
-                        break;
-                    }
-                }
-            }
-            break;
-        }
-
-        case ModbusRegisterMapping::RegisterType::INPUT_CONTACT:
-        {
-            std::vector<bool> values;
-            if (!m_modbusClient.readInputContacts(modbusRegisterGroup.getSlaveAddress(),
-                                                  modbusRegisterGroup.getStartingRegisterAddress(),
-                                                  modbusRegisterGroup.getRegisterCount(), values))
-            {
-                LOG(ERROR) << "ModbusBridge: Unable to read input contacts on slave "
-                           << modbusRegisterGroup.getSlaveAddress() << " from address '"
-                           << modbusRegisterGroup.getStartingRegisterAddress() << "'";
-                if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
-                {
-                    slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), false));
-                }
-                continue;
-            }
-
-            slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
-
-            for (int i = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
-            {
-                bool value = values[i];
-                const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
-                ModbusRegisterWatcher& modbusRegisterWatcher =
-                  m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
-                if (modbusRegisterWatcher.update(value))
-                {
-                    LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << modbusRegisterMapping.getReference()
-                              << "' Value: '" << modbusRegisterWatcher.getValue() << "'";
-
-                    switch (modbusRegisterMapping.getMappingType())
-                    {
-                    case ModbusRegisterMapping::MappingType::DEFAULT:
-                    case ModbusRegisterMapping::MappingType::SENSOR:
-                        if (m_onSensorReading)
-                        {
-                            m_onSensorReading(modbusRegisterMapping.getReference(), modbusRegisterWatcher.getValue());
-                        }
-                        break;
-                    case ModbusRegisterMapping::MappingType::ALARM:
-                        if (m_onAlarmChange)
-                        {
-                            m_onAlarmChange(modbusRegisterMapping.getReference(), value);
-                        }
-                        break;
-                    default:
-                        LOG(ERROR) << "This mapping wasn\'t declared properly!";
-                        break;
-                    }
-                }
-            }
-            break;
-        }
-        case ModbusRegisterMapping::RegisterType::INPUT_REGISTER:
-        {
-            switch (modbusRegisterGroup.getDataType())
-            {
-            case ModbusRegisterMapping::DataType::INT16:
-            {
-                std::vector<signed short> values;
-                if (!m_modbusClient.readInputRegisters(modbusRegisterGroup.getSlaveAddress(),
-                                                       modbusRegisterGroup.getStartingRegisterAddress(),
-                                                       modbusRegisterGroup.getRegisterCount(), values))
-                {
-                    LOG(ERROR) << "ModbusBridge: Unable to read input registers on slave "
-                               << modbusRegisterGroup.getSlaveAddress() << " from address '"
-                               << modbusRegisterGroup.getStartingRegisterAddress() << "'";
-                    if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
-                    {
-                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), false));
-                    }
-                    continue;
-                }
-
-                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
-
-                for (int i = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
-                {
-                    signed short value = values[i];
-                    const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
-                    ModbusRegisterWatcher& modbusRegisterWatcher =
-                      m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
-                    if (modbusRegisterWatcher.update(value))
-                    {
-                        LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << modbusRegisterMapping.getReference()
-                                  << "' Value: '" << modbusRegisterWatcher.getValue() << "'";
-
-                        // This here isn't edited because the input_register can't be anything else than a sensor!
-                        if (m_onSensorReading)
-                        {
-                            m_onSensorReading(modbusRegisterMapping.getReference(), modbusRegisterWatcher.getValue());
-                        }
-                    }
-                }
+                readCoils(group, slavesRead);
                 break;
             }
-            case ModbusRegisterMapping::DataType::UINT16:
+            case ModbusRegisterMapping::RegisterType::INPUT_CONTACT:
             {
-                std::vector<unsigned short> values;
-                if (!m_modbusClient.readInputRegisters(modbusRegisterGroup.getSlaveAddress(),
-                                                       modbusRegisterGroup.getStartingRegisterAddress(),
-                                                       modbusRegisterGroup.getRegisterCount(), values))
-                {
-                    LOG(ERROR) << "ModbusBridge: Unable to read input registers on slave "
-                               << modbusRegisterGroup.getSlaveAddress() << " from address '"
-                               << modbusRegisterGroup.getStartingRegisterAddress() << "'";
-                    if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
-                    {
-                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), false));
-                    }
-                    continue;
-                }
-
-                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
-
-                for (int i = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
-                {
-                    unsigned short value = values[i];
-                    const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
-                    ModbusRegisterWatcher& modbusRegisterWatcher =
-                      m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
-                    if (modbusRegisterWatcher.update(value))
-                    {
-                        LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << modbusRegisterMapping.getReference()
-                                  << "' Value: '" << modbusRegisterWatcher.getValue() << "'";
-
-                        // This here isn't edited because the input_register can't be anything else than a sensor!
-                        if (m_onSensorReading)
-                        {
-                            m_onSensorReading(modbusRegisterMapping.getReference(), modbusRegisterWatcher.getValue());
-                        }
-                    }
-                }
+                readDiscreteInputs(group, slavesRead);
                 break;
             }
-            case ModbusRegisterMapping::DataType::REAL32:
+            case ModbusRegisterMapping::RegisterType::INPUT_REGISTER:
             {
-                std::vector<float> values;
-                if (!m_modbusClient.readInputRegisters(modbusRegisterGroup.getSlaveAddress(),
-                                                       modbusRegisterGroup.getStartingRegisterAddress(),
-                                                       modbusRegisterGroup.getRegisterCount(), values))
-                {
-                    LOG(ERROR) << "ModbusBridge: Unable to read input registers on slave "
-                               << modbusRegisterGroup.getSlaveAddress() << " from address '"
-                               << modbusRegisterGroup.getStartingRegisterAddress() << "'";
-                    if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
-                    {
-                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), false));
-                    }
-                    continue;
-                }
-
-                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
-
-                for (int i = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
-                {
-                    float value = values[i];
-                    const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
-                    ModbusRegisterWatcher& modbusRegisterWatcher =
-                      m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
-                    if (modbusRegisterWatcher.update(value))
-                    {
-                        LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << modbusRegisterMapping.getReference()
-                                  << "' Value: '" << modbusRegisterWatcher.getValue() << "'";
-
-                        // This here isn't edited because the input_register can't be anything else than a sensor!
-                        if (m_onSensorReading)
-                        {
-                            m_onSensorReading(modbusRegisterMapping.getReference(), modbusRegisterWatcher.getValue());
-                        }
-                    }
-                }
+                readInputRegisters(group, slavesRead);
+                break;
+            }
+            case ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR:
+            {
+                readHoldingRegistersSensors(group, slavesRead);
+                break;
+            }
+            case ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
+            {
+                readHoldingRegistersActuators(group, slavesRead);
                 break;
             }
             }
-            break;
-        }
-        case ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR:
-        {
-            switch (modbusRegisterGroup.getDataType())
-            {
-            case ModbusRegisterMapping::DataType::INT16:
-            {
-                std::vector<signed short> values;
-                if (!m_modbusClient.readHoldingRegisters(modbusRegisterGroup.getSlaveAddress(),
-                                                         modbusRegisterGroup.getStartingRegisterAddress(),
-                                                         modbusRegisterGroup.getRegisterCount(), values))
-                {
-                    LOG(ERROR) << "ModbusBridge: Unable to read holding registers on slave "
-                               << modbusRegisterGroup.getSlaveAddress() << " from address '"
-                               << modbusRegisterGroup.getStartingRegisterAddress() << "'";
-                    if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
-                    {
-                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), false));
-                    }
-                    continue;
-                }
-
-                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
-
-                for (int i = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
-                {
-                    signed short value = values[i];
-                    const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
-                    ModbusRegisterWatcher& modbusRegisterWatcher =
-                      m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
-                    if (modbusRegisterWatcher.update(value))
-                    {
-                        LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << modbusRegisterMapping.getReference()
-                                  << "' Value: '" << modbusRegisterWatcher.getValue() << "'";
-
-                        // This here isn't edited because the holding_register_sensor can't be anything else than a
-                        // sensor!
-                        if (m_onSensorReading)
-                        {
-                            m_onSensorReading(modbusRegisterMapping.getReference(), modbusRegisterWatcher.getValue());
-                        }
-                    }
-                }
-                break;
-            }
-            case ModbusRegisterMapping::DataType::UINT16:
-            {
-                std::vector<unsigned short> values;
-                if (!m_modbusClient.readHoldingRegisters(modbusRegisterGroup.getSlaveAddress(),
-                                                         modbusRegisterGroup.getStartingRegisterAddress(),
-                                                         modbusRegisterGroup.getRegisterCount(), values))
-                {
-                    LOG(ERROR) << "ModbusBridge: Unable to read holding registers on slave "
-                               << modbusRegisterGroup.getSlaveAddress() << " from address '"
-                               << modbusRegisterGroup.getStartingRegisterAddress() << "'";
-                    if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
-                    {
-                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), false));
-                    }
-                    continue;
-                }
-
-                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
-
-                for (int i = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
-                {
-                    unsigned short value = values[i];
-                    const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
-                    ModbusRegisterWatcher& modbusRegisterWatcher =
-                      m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
-                    if (modbusRegisterWatcher.update(value))
-                    {
-                        LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << modbusRegisterMapping.getReference()
-                                  << "' Value: '" << modbusRegisterWatcher.getValue() << "'";
-
-                        // This here isn't edited because the holding_register_sensor can't be anything else than a
-                        // sensor!
-                        if (m_onSensorReading)
-                        {
-                            m_onSensorReading(modbusRegisterMapping.getReference(), modbusRegisterWatcher.getValue());
-                        }
-                    }
-                }
-                break;
-            }
-            case ModbusRegisterMapping::DataType::REAL32:
-            {
-                std::vector<float> values;
-                if (!m_modbusClient.readHoldingRegisters(modbusRegisterGroup.getSlaveAddress(),
-                                                         modbusRegisterGroup.getStartingRegisterAddress(),
-                                                         modbusRegisterGroup.getRegisterCount(), values))
-                {
-                    LOG(ERROR) << "ModbusBridge: Unable to read holding registers on slave "
-                               << modbusRegisterGroup.getSlaveAddress() << " from address '"
-                               << modbusRegisterGroup.getStartingRegisterAddress() << "'";
-                    if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
-                    {
-                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), false));
-                    }
-                    continue;
-                }
-
-                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
-
-                for (int i = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
-                {
-                    float value = values[i];
-                    const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
-                    ModbusRegisterWatcher& modbusRegisterWatcher =
-                      m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
-                    if (modbusRegisterWatcher.update(value))
-                    {
-                        LOG(INFO) << "ModbusBridge: Sensor value - Reference: '" << modbusRegisterMapping.getReference()
-                                  << "' Value: '" << modbusRegisterWatcher.getValue() << "'";
-
-                        // This here isn't edited because the holding_register_sensor can't be anything else than a
-                        // sensor!
-                        if (m_onSensorReading)
-                        {
-                            m_onSensorReading(modbusRegisterMapping.getReference(), modbusRegisterWatcher.getValue());
-                        }
-                    }
-                }
-                break;
-            }
-            }
-            break;
-        }
-        case ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
-        {
-            switch (modbusRegisterGroup.getDataType())
-            {
-            case ModbusRegisterMapping::DataType::INT16:
-            {
-                std::vector<signed short> values;
-                if (!m_modbusClient.readHoldingRegisters(modbusRegisterGroup.getSlaveAddress(),
-                                                         modbusRegisterGroup.getStartingRegisterAddress(),
-                                                         modbusRegisterGroup.getRegisterCount(), values))
-                {
-                    LOG(ERROR) << "ModbusBridge: Unable to read holding registers on slave "
-                               << modbusRegisterGroup.getSlaveAddress() << " from address '"
-                               << modbusRegisterGroup.getStartingRegisterAddress() << "'";
-                    if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
-                    {
-                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), false));
-                    }
-                    continue;
-                }
-
-                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
-
-                for (int i = 0, j = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
-                {
-                    const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
-                    ModbusRegisterWatcher& modbusRegisterWatcher =
-                      m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
-
-                    bool updated;
-                    // separate the values of group for each mapping they need to go to
-                    if (modbusRegisterMapping.getLabelsAndAddresses().empty())
-                    {
-                        signed short value = values[j++];
-                        updated = modbusRegisterWatcher.update(value);
-                    }
-                    else
-                    {
-                        std::vector<short> groupValues;
-                        for (int k = 0; k < modbusRegisterMapping.getLabelsAndAddresses().size(); k++)
-                        {
-                            groupValues.push_back(values[j++]);
-                        }
-                        updated = modbusRegisterWatcher.update(groupValues);
-                    }
-
-                    if (updated)
-                    {
-                        LOG(INFO) << "ModbusBridge: "
-                                  << ((modbusRegisterMapping.getMappingType() ==
-                                       ModbusRegisterMapping::MappingType::CONFIGURATION) ?
-                                        "Configuration" :
-                                        "Actuator")
-                                  << " value changed - Reference: '" << modbusRegisterMapping.getReference()
-                                  << "' Value: '" << modbusRegisterWatcher.getValue() << "'";
-
-                        switch (modbusRegisterMapping.getMappingType())
-                        {
-                        case ModbusRegisterMapping::MappingType::DEFAULT:
-                        case ModbusRegisterMapping::MappingType::ACTUATOR:
-                            if (m_onActuatorStatusChange)
-                            {
-                                m_onActuatorStatusChange(modbusRegisterMapping.getReference());
-                            }
-                            break;
-                        case ModbusRegisterMapping::MappingType::CONFIGURATION:
-                            if (m_onConfigurationChange)
-                            {
-                                m_onConfigurationChange();
-                            }
-                            break;
-                        default:
-                            LOG(ERROR) << "This mapping wasn\'t declared properly!";
-                            break;
-                        }
-                    }
-                }
-                break;
-            }
-            case ModbusRegisterMapping::DataType::UINT16:
-            {
-                std::vector<unsigned short> values;
-                if (!m_modbusClient.readHoldingRegisters(modbusRegisterGroup.getSlaveAddress(),
-                                                         modbusRegisterGroup.getStartingRegisterAddress(),
-                                                         modbusRegisterGroup.getRegisterCount(), values))
-                {
-                    LOG(ERROR) << "ModbusBridge: Unable to read holding registers on slave "
-                               << modbusRegisterGroup.getSlaveAddress() << " from address '"
-                               << modbusRegisterGroup.getStartingRegisterAddress() << "'";
-                    if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
-                    {
-                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), false));
-                    }
-                    continue;
-                }
-
-                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
-
-                for (int i = 0, j = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
-                {
-                    const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
-                    ModbusRegisterWatcher& modbusRegisterWatcher =
-                      m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
-
-                    bool updated;
-                    // separate the values of group for each mapping they need to go to
-                    if (modbusRegisterMapping.getLabelsAndAddresses().empty())
-                    {
-                        unsigned short value = values[j++];
-                        updated = modbusRegisterWatcher.update(value);
-                    }
-                    else
-                    {
-                        std::vector<unsigned short> groupValues;
-                        for (int k = 0; k < modbusRegisterMapping.getLabelsAndAddresses().size(); k++)
-                        {
-                            groupValues.push_back(values[j++]);
-                        }
-                        updated = modbusRegisterWatcher.update(groupValues);
-                    }
-                    if (updated)
-                    {
-                        LOG(INFO) << "ModbusBridge: Actuator value changed - Reference: '"
-                                  << modbusRegisterMapping.getReference() << "' Value: '"
-                                  << modbusRegisterWatcher.getValue() << "'";
-
-                        switch (modbusRegisterMapping.getMappingType())
-                        {
-                        case ModbusRegisterMapping::MappingType::DEFAULT:
-                        case ModbusRegisterMapping::MappingType::ACTUATOR:
-                            if (m_onActuatorStatusChange)
-                            {
-                                m_onActuatorStatusChange(modbusRegisterMapping.getReference());
-                            }
-                            break;
-                        case ModbusRegisterMapping::MappingType::CONFIGURATION:
-                            if (m_onConfigurationChange)
-                            {
-                                m_onConfigurationChange();
-                            }
-                            break;
-                        default:
-                            LOG(ERROR) << "This mapping wasn\'t declared properly!";
-                            break;
-                        }
-                    }
-                }
-                break;
-            }
-            case ModbusRegisterMapping::DataType::REAL32:
-            {
-                std::vector<float> values;
-                if (!m_modbusClient.readHoldingRegisters(modbusRegisterGroup.getSlaveAddress(),
-                                                         modbusRegisterGroup.getStartingRegisterAddress(),
-                                                         modbusRegisterGroup.getRegisterCount(), values))
-                {
-                    LOG(ERROR) << "ModbusBridge: Unable to read holding registers on slave "
-                               << modbusRegisterGroup.getSlaveAddress() << " from address '"
-                               << modbusRegisterGroup.getStartingRegisterAddress() << "'";
-                    if (slavesRead.count(modbusRegisterGroup.getSlaveAddress()) == 0)
-                    {
-                        slavesRead.insert(std::make_pair(modbusRegisterGroup.getSlaveAddress(), false));
-                    }
-                    continue;
-                }
-
-                slavesRead[modbusRegisterGroup.getSlaveAddress()] = true;
-
-                for (int i = 0, j = 0; i < modbusRegisterGroup.getMappingsCount(); ++i)
-                {
-                    const ModbusRegisterMapping& modbusRegisterMapping = modbusRegisterGroup.getRegisters()[i];
-                    ModbusRegisterWatcher& modbusRegisterWatcher =
-                      m_referenceToModbusRegisterWatcherMapping.at(modbusRegisterMapping.getReference());
-
-                    bool updated;
-                    // separate the values of group for each mapping they need to go to
-                    if (modbusRegisterMapping.getLabelsAndAddresses().empty())
-                    {
-                        float value = values[j++];
-                        updated = modbusRegisterWatcher.update(value);
-                    }
-                    else
-                    {
-                        std::vector<float> groupValues;
-                        for (int k = 0; k < modbusRegisterMapping.getLabelsAndAddresses().size(); k++)
-                        {
-                            groupValues.push_back(values[j++]);
-                        }
-                        updated = modbusRegisterWatcher.update(groupValues);
-                    }
-                    if (updated)
-                    {
-                        LOG(INFO) << "ModbusBridge: Actuator value changed - Reference: '"
-                                  << modbusRegisterMapping.getReference() << "' Value: '"
-                                  << modbusRegisterWatcher.getValue() << "'";
-
-                        switch (modbusRegisterMapping.getMappingType())
-                        {
-                        case ModbusRegisterMapping::MappingType::DEFAULT:
-                        case ModbusRegisterMapping::MappingType::ACTUATOR:
-                            if (m_onActuatorStatusChange)
-                            {
-                                m_onActuatorStatusChange(modbusRegisterMapping.getReference());
-                            }
-                            break;
-                        case ModbusRegisterMapping::MappingType::CONFIGURATION:
-                            if (m_onConfigurationChange)
-                            {
-                                m_onConfigurationChange();
-                            }
-                            break;
-                        default:
-                            LOG(ERROR) << "This mapping wasn\'t declared properly!";
-                            break;
-                        }
-                    }
-                }
-                break;
-            }
-            }
-            break;
-        }
         }
     }
 

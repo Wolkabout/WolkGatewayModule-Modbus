@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 WolkAbout Technology s.r.o.
+ * Copyright 2020 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 #ifndef MODBUSREGISTERMAPPING_H
 #define MODBUSREGISTERMAPPING_H
 
+#include "utilities/json.hpp"
+
 #include <map>
 #include <memory>
 #include <string>
@@ -24,6 +26,7 @@
 
 namespace wolkabout
 {
+using nlohmann::json;
 typedef std::vector<std::pair<std::string, int>> LabelMap;
 
 class ModbusRegisterMapping
@@ -56,12 +59,16 @@ public:
     };
 
     ModbusRegisterMapping(std::string name, std::string reference, std::string description, double minimum,
-                          double maximum, int address, RegisterType registerType, DataType dataType, int slaveAddress,
+                          double maximum, int address, RegisterType registerType, DataType dataType,
                           MappingType mappingType);
 
     ModbusRegisterMapping(std::string name, std::string reference, std::string description, double minimum,
                           double maximum, const LabelMap& labelsAndAddresses, RegisterType registerType,
-                          DataType dataType, int slaveAddress);
+                          DataType dataType);
+
+    ModbusRegisterMapping(const ModbusRegisterMapping& mapping);
+
+    explicit ModbusRegisterMapping(nlohmann::json j);
 
     const std::string& getName() const;
     const std::string& getReference() const;
@@ -72,35 +79,55 @@ public:
 
     LabelMap getLabelsAndAddresses() const;
     int getAddress() const;
+    int getRegisterCount() const;
 
     RegisterType getRegisterType() const;
     DataType getDataType() const;
     MappingType getMappingType() const;
+
+    bool update(const std::string& newRegisterValue);
+    bool update(signed short newRegisterValue);
+    bool update(unsigned short newRegisterValue);
+    bool update(float newRegisterValue);
+    bool update(bool newRegisterValue);
+    bool update(const std::vector<bool>& newRegisterValue);
+    bool update(const std::vector<short>& newRegisterValue);
+    bool update(const std::vector<unsigned short>& newRegisterValue);
+    bool update(const std::vector<float>& newRegisterValue);
+
     int getSlaveAddress() const;
+    void setSlaveAddress(int slaveAddress);
+
+    const std::string& getValue() const;
+    void setValid(bool valid);
 
 private:
     std::string m_name;
     std::string m_reference;
     std::string m_description;
 
-    double m_minimum;
-    double m_maximum;
+    double m_minimum = 0.0;
+    double m_maximum = 1.0;
 
-    int m_address;
+    int m_address = -1;
     LabelMap m_labelsAndAddresses{};
 
     RegisterType m_registerType;
     DataType m_dataType;
     MappingType m_mappingType;
+
     int m_slaveAddress;
+
+    // Watcher logic
+    bool m_isInitialized;
+    bool m_isValid;
+
+    std::string m_value;
 };
 
-class ModbusRegisterMappingFactory
+class MappingTypeConversion
 {
 public:
-    static std::vector<wolkabout::ModbusRegisterMapping> fromJsonFile(const std::string& modbusRegisterMappingFile);
-
-private:
     static ModbusRegisterMapping::RegisterType deserializeRegisterType(const std::string& registerType);
     static ModbusRegisterMapping::DataType deserializeDataType(const std::string& dataType);
     static ModbusRegisterMapping::MappingType deserializeMappingType(const std::string& mappingType);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 WolkAbout Technology s.r.o.
+ * Copyright 2020 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,23 +26,31 @@ namespace wolkabout
 class ModbusRegisterGroup
 {
 public:
+    explicit ModbusRegisterGroup(const std::shared_ptr<ModbusRegisterMapping>& mapping);
+
+    ModbusRegisterGroup(ModbusRegisterMapping::RegisterType registerType, ModbusRegisterMapping::DataType dataType);
+
     ModbusRegisterGroup(int slaveAddress, ModbusRegisterMapping::RegisterType registerType,
                         ModbusRegisterMapping::DataType dataType);
 
-    int getSlaveAddress();
-    ModbusRegisterMapping::RegisterType getRegisterType();
-    ModbusRegisterMapping::DataType getDataType();
-    int getStartingRegisterAddress();
-    int getRegisterCount();
-    int getMappingsCount();
-    void addRegister(ModbusRegisterMapping modbusRegisterMapping);
-    const std::vector<ModbusRegisterMapping>& getRegisters() const;
+    ModbusRegisterGroup(const ModbusRegisterGroup& group);
+
+    int getSlaveAddress() const;
+    ModbusRegisterMapping::RegisterType getRegisterType() const;
+    ModbusRegisterMapping::DataType getDataType() const;
+    int getStartingRegisterAddress() const;
+    int getRegisterCount() const;
+    int getMappingsCount() const;
+    const std::vector<std::shared_ptr<ModbusRegisterMapping>>& getRegisters() const;
+
+    void addRegister(const std::shared_ptr<ModbusRegisterMapping>& modbusRegisterMapping);
+    void setSlaveAddress(int slaveAddress);
 
 private:
     int m_slaveAddress;
     ModbusRegisterMapping::RegisterType m_registerType;
     ModbusRegisterMapping::DataType m_dataType;
-    std::vector<ModbusRegisterMapping> m_modbusRegisterMappings;
+    std::vector<std::shared_ptr<ModbusRegisterMapping>> m_modbusRegisterMappings;
 };
 }    // namespace wolkabout
 

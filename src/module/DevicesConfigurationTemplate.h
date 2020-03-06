@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 WolkAbout Technology s.r.o.
+ * Copyright 2020 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,35 +14,32 @@
  * limitations under the License.
  */
 
-#ifndef DEVICECONFIGURATION_H
-#define DEVICECONFIGURATION_H
+#ifndef DEVICETEMPLATEMODULE_H
+#define DEVICETEMPLATEMODULE_H
 
-#include <string>
+#include "modbus/ModbusRegisterMapping.h"
 
 namespace wolkabout
 {
-class DeviceConfiguration
+using nlohmann::json;
+
+class DevicesConfigurationTemplate
 {
 public:
-    DeviceConfiguration() = default;
+    DevicesConfigurationTemplate(const std::string& name, const std::vector<ModbusRegisterMapping>& mappings);
 
-    DeviceConfiguration(std::string name, std::string key, std::string localMqttUri);
+    DevicesConfigurationTemplate(const DevicesConfigurationTemplate& instance);
+
+    explicit DevicesConfigurationTemplate(nlohmann::json json);
 
     const std::string& getName() const;
 
-    const std::string& getKey() const;
-
-    const std::string& getLocalMqttUri() const;
-
-    static wolkabout::DeviceConfiguration fromJsonFile(const std::string& deviceConfigurationFile);
+    const std::vector<ModbusRegisterMapping>& getMappings() const;
 
 private:
     std::string m_name;
-
-    std::string m_key;
-
-    std::string m_localMqttUri;
+    std::vector<ModbusRegisterMapping> m_mappings;
 };
 }    // namespace wolkabout
 
-#endif
+#endif    // DEVICETEMPLATEMODULE_H

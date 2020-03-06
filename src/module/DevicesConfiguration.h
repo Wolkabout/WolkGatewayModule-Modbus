@@ -14,31 +14,28 @@
  * limitations under the License.
  */
 
-#ifndef LIBMODBUSTCPIPCLIENT_H
-#define LIBMODBUSTCPIPCLIENT_H
+#ifndef WOLKGATEWAYMODBUSMODULE_DEVICESCONFIGURATION_H
+#define WOLKGATEWAYMODBUSMODULE_DEVICESCONFIGURATION_H
 
-#include "modbus/ModbusClient.h"
-
-#include <chrono>
-#include <mutex>
-#include <string>
+#include "DeviceInformation.h"
 
 namespace wolkabout
 {
-class LibModbusTcpIpClient : public ModbusClient
+using nlohmann::json;
+
+class DevicesConfiguration
 {
 public:
-    LibModbusTcpIpClient(std::string ipAddress, int port, std::chrono::milliseconds responseTimeout);
+    explicit DevicesConfiguration(nlohmann::json j);
 
-    virtual ~LibModbusTcpIpClient();
+    const std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& getTemplates();
+
+    const std::map<std::string, std::unique_ptr<DeviceInformation>>& getDevices();
 
 private:
-    bool createContext() override;
-    bool destroyContext() override;
-
-    std::string m_ipAddress;
-    int m_port;
+    std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>> m_templates;
+    std::map<std::string, std::unique_ptr<DeviceInformation>> m_devices;
 };
 }    // namespace wolkabout
 
-#endif
+#endif    // WOLKGATEWAYMODBUSMODULE_DEVICESCONFIGURATION_H

@@ -14,31 +14,41 @@
  * limitations under the License.
  */
 
-#ifndef LIBMODBUSTCPIPCLIENT_H
-#define LIBMODBUSTCPIPCLIENT_H
-
-#include "modbus/ModbusClient.h"
-
-#include <chrono>
-#include <mutex>
-#include <string>
+#include "TcpIpConfiguration.h"
+#include "utilities/FileSystemUtils.h"
 
 namespace wolkabout
 {
-class LibModbusTcpIpClient : public ModbusClient
+TcpIpConfiguration::TcpIpConfiguration(std::string ip, int port) : m_ip(ip), m_port(port) {}
+
+TcpIpConfiguration::TcpIpConfiguration(nlohmann::json j)
 {
-public:
-    LibModbusTcpIpClient(std::string ipAddress, int port, std::chrono::milliseconds responseTimeout);
+    try
+    {
+        m_ip = j.at("host").get<std::string>();
+    }
+    catch (std::exception&)
+    {
+        throw std::logic_error("Missing configuration field : ip");
+    }
 
-    virtual ~LibModbusTcpIpClient();
+    try
+    {
+        m_port = j.at("port").get<int>();
+    }
+    catch (std::exception&)
+    {
+        m_port = 502;
+    }
+}
 
-private:
-    bool createContext() override;
-    bool destroyContext() override;
+const std::string& TcpIpConfiguration::getIp() const
+{
+    return m_ip;
+}
 
-    std::string m_ipAddress;
-    int m_port;
-};
+int TcpIpConfiguration::getPort() const
+{
+    return m_port;
+}
 }    // namespace wolkabout
-
-#endif

@@ -1,0 +1,20 @@
+*WolkGatewayModule-Modbus RELEASE NOTES**
+---------------------------------------
+
+*Wolkabout Technology s.r.o.*
+
+WolkGateway module for connecting Modbus devices to WolkAbout IoT Platform by communicating with WolkGateway.
+
+**Version 0.5.0**
+- [IMPROVEMENT] ModbusModule now registers multiple devices if the module targets multiple slave addresses.
+                This includes addition of templates, devices are now assigned templates, and that determines
+                registers and mappings that the device will have.
+
+**Version 0.4.0**
+- [IMPROVEMENT] ModbusModule can now register alarms and configurations for devices that connect to it.
+                This is done using the key "mappingType" in devices json file.
+- [IMPROVEMENT] ModbusModule also now allows mappings to take in multiple registers, this can be used to
+                make multi-value numeric configurations to the platform.
+
+**Version 0.3.1**
+- [BUGFIX] Added logic to detect devices being disconnected, module will now try to reconnect when devices are disconnected

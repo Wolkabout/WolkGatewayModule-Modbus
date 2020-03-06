@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 WolkAbout Technology s.r.o.
+ * Copyright 2020 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@
 namespace wolkabout
 {
 LibModbusSerialRtuClient::LibModbusSerialRtuClient(std::string serialPort, int baudRate, char dataBits, char stopBits,
-                                                   ModbusConfiguration::BitParity bitParity,
+                                                   SerialRtuConfiguration::BitParity bitParity,
                                                    std::chrono::milliseconds responseTimeout)
 : ModbusClient(std::move(responseTimeout))
 , m_serialPort(std::move(serialPort))
@@ -40,15 +40,15 @@ LibModbusSerialRtuClient::LibModbusSerialRtuClient(std::string serialPort, int b
 {
     switch (bitParity)
     {
-    case ModbusConfiguration::BitParity::NONE:
+    case SerialRtuConfiguration::BitParity::NONE:
         m_bitParity = 'N';
         break;
 
-    case ModbusConfiguration::BitParity::EVEN:
+    case SerialRtuConfiguration::BitParity::EVEN:
         m_bitParity = 'E';
         break;
 
-    case ModbusConfiguration::BitParity::ODD:
+    case SerialRtuConfiguration::BitParity::ODD:
         m_bitParity = 'O';
         break;
     }

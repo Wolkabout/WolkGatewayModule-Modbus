@@ -1,0 +1,17 @@
+{
+    "mqttHost": "tcp://localhost:1883",
+    "connectionType": "SERIAL/RTU",
+    "tcp/ip": {
+        "host": "192.168.x.x",
+        "port": 502
+    },
+    "serial/rtu": {
+        "serialPort": "SERIAL_PORT",
+        "baudRate": 115200,
+        "dataBits": 8,
+        "stopBits": 1,
+        "bitParity": "NONE"
+    },
+    "responseTimeoutMs": 200,
+    "registerReadPeriodMs": 500
+}

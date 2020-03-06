@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 WolkAbout Technology s.r.o.
+ * Copyright 2020 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,20 @@
  * limitations under the License.
  */
 
-#include "DeviceConfiguration.h"
 #include "Wolk.h"
 #include "modbus/LibModbusSerialRtuClient.h"
 #include "modbus/LibModbusTcpIpClient.h"
 #include "modbus/ModbusBridge.h"
 #include "modbus/ModbusClient.h"
-#include "modbus/ModbusConfiguration.h"
-#include "modbus/ModbusRegisterGroup.h"
-#include "modbus/ModbusRegisterMapping.h"
-#include "model/ActuatorTemplate.h"
-#include "model/DeviceTemplate.h"
-#include "model/SensorTemplate.h"
+#include "module/DevicePreparationFactory.h"
+#include "module/DevicesConfiguration.h"
+#include "module/ModuleConfiguration.h"
 #include "service/FirmwareInstaller.h"
 #include "utilities/ConsoleLogger.h"
+#include "utility/JsonReaderParser.h"
 
 #include <algorithm>
 #include <chrono>
-#include <iostream>
 #include <map>
 #include <memory>
 #include <random>
@@ -39,333 +35,150 @@
 #include <thread>
 #include <utility>
 
-namespace
-{
-bool loadDeviceConfigurationFromFile(const std::string& file, wolkabout::DeviceConfiguration& deviceConfiguration)
-{
-    try
-    {
-        deviceConfiguration = wolkabout::DeviceConfiguration::fromJsonFile(file);
-        LOG(INFO) << "WolkGatewayModbusModule Application: Loaded device configuration from '" << file << "'";
-        return true;
-    }
-    catch (std::logic_error& e)
-    {
-        LOG(ERROR) << "WolkGatewayModbusModule Application: Unable to parse device configuration file."
-                   << "Reason: " << e.what();
-        return false;
-    }
-}
-
-bool loadModbusConfigurationFromFile(const std::string& file, wolkabout::ModbusConfiguration& modbusConfiguration)
-{
-    try
-    {
-        modbusConfiguration = wolkabout::ModbusConfiguration::fromJsonFile(file);
-        LOG(INFO) << "WolkGatewayModbusModule Application: Loaded modbus configuration from '" << file << "'";
-        return true;
-    }
-    catch (std::logic_error& e)
-    {
-        LOG(ERROR) << "WolkGatewayModbusModule Application: Unable to parse modbus configuration file."
-                   << "Reason: " << e.what();
-        return false;
-    }
-}
-
-bool loadModbusRegisterMappingFromFile(const std::string& file,
-                                       std::vector<wolkabout::ModbusRegisterMapping>& modbusRegisterMappings)
-{
-    try
-    {
-        modbusRegisterMappings = wolkabout::ModbusRegisterMappingFactory::fromJsonFile(file);
-        LOG(INFO) << "WolkGatewayModbusModule Application: Loaded modbus register mapping from '" << file << "'";
-        return true;
-    }
-    catch (std::logic_error& e)
-    {
-        LOG(ERROR) << "WolkGatewayModbusModule Application: Unable to parse modbus register mapping file."
-                   << "Reason: " << e.what();
-        return false;
-    }
-}
-
-wolkabout::DataType getDataTypeFromRegisterType(wolkabout::ModbusRegisterMapping::RegisterType registerType)
-{
-    wolkabout::DataType dataType;
-    if (registerType == wolkabout::ModbusRegisterMapping::RegisterType::COIL ||
-        registerType == wolkabout::ModbusRegisterMapping::RegisterType::INPUT_CONTACT)
-    {
-        dataType = wolkabout::DataType::BOOLEAN;
-    }
-    else
-    {
-        dataType = wolkabout::DataType::NUMERIC;
-    }
-    return dataType;
-}
-
-void makeTemplatesFromMappings(const std::vector<wolkabout::ModbusRegisterMapping>& modbusRegisterMappings,
-                               std::vector<wolkabout::SensorTemplate>& sensorTemplates,
-                               std::vector<wolkabout::ActuatorTemplate>& actuatorTemplates,
-                               std::vector<wolkabout::AlarmTemplate>& alarmTemplates,
-                               std::vector<wolkabout::ConfigurationTemplate>& configurationTemplates)
-{
-    for (const wolkabout::ModbusRegisterMapping& modbusRegisterMapping : modbusRegisterMappings)
-    {
-        auto mappingType = modbusRegisterMapping.getMappingType();
-        auto registerType = modbusRegisterMapping.getRegisterType();
-
-        wolkabout::DataType dataType = getDataTypeFromRegisterType(registerType);
-
-        switch (mappingType)
-        {
-        case wolkabout::ModbusRegisterMapping::MappingType::DEFAULT:
-            switch (registerType)
-            {
-            case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
-            {
-                actuatorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                               dataType, modbusRegisterMapping.getDescription(),
-                                               modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
-                break;
-            }
-
-            case wolkabout::ModbusRegisterMapping::RegisterType::COIL:
-            {
-                actuatorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                               dataType, modbusRegisterMapping.getDescription(),
-                                               modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
-                break;
-            }
-
-            case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR:
-            {
-                sensorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                             dataType, modbusRegisterMapping.getDescription(),
-                                             modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
-                break;
-            }
-
-            case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_REGISTER:
-            {
-                sensorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                             dataType, modbusRegisterMapping.getDescription(),
-                                             modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
-                break;
-            }
-
-            case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_CONTACT:
-            {
-                sensorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                             dataType, modbusRegisterMapping.getDescription(),
-                                             modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
-                break;
-            }
-
-            default:
-            {
-                LOG(WARN) << "WolkGatewayModbusModule Application: Mapping with reference '"
-                          << modbusRegisterMapping.getReference()
-                          << "' not added to device manifest - Unknown register type";
-                break;
-            }
-            }
-            break;
-
-        case wolkabout::ModbusRegisterMapping::MappingType::SENSOR:
-            switch (registerType)
-            {
-            case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_CONTACT:
-            case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_REGISTER:
-            case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR:
-                sensorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                             dataType, modbusRegisterMapping.getDescription(),
-                                             modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
-                break;
-            default:
-                LOG(WARN) << "WolkGatewayModbusModule Application: Mapping with reference '"
-                          << modbusRegisterMapping.getReference()
-                          << "' not added to device manifest - Incompatible Mapping and Register type combination";
-                break;
-            }
-            break;
-
-        case wolkabout::ModbusRegisterMapping::MappingType::ACTUATOR:
-            switch (registerType)
-            {
-            case wolkabout::ModbusRegisterMapping::RegisterType::COIL:
-            case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
-                actuatorTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                               dataType, modbusRegisterMapping.getDescription(),
-                                               modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
-                break;
-            default:
-                LOG(WARN) << "WolkGatewayModbusModule Application: Mapping with reference '"
-                          << modbusRegisterMapping.getReference()
-                          << "' not added to device manifest - Incompatible Mapping and Register type combination";
-                break;
-            }
-            break;
-
-        case wolkabout::ModbusRegisterMapping::MappingType::ALARM:
-            switch (registerType)
-            {
-            case wolkabout::ModbusRegisterMapping::RegisterType::INPUT_CONTACT:
-                alarmTemplates.emplace_back(modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(),
-                                            modbusRegisterMapping.getDescription());
-                break;
-            default:
-                LOG(WARN) << "WolkGatewayModbusModule Application: Mapping with reference '"
-                          << modbusRegisterMapping.getReference()
-                          << "' not added to device manifest - Incompatible Mapping and Register type combination";
-                break;
-            }
-            break;
-
-        case wolkabout::ModbusRegisterMapping::MappingType::CONFIGURATION:
-            switch (registerType)
-            {
-            case wolkabout::ModbusRegisterMapping::RegisterType::COIL:
-            case wolkabout::ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
-                if (modbusRegisterMapping.getLabelsAndAddresses().empty())
-                {
-                    configurationTemplates.emplace_back(
-                      modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), dataType,
-                      modbusRegisterMapping.getDescription(), std::string(""), modbusRegisterMapping.getMinimum(),
-                      modbusRegisterMapping.getMaximum());
-                }
-                else
-                {
-                    std::vector<std::string> labels;
-                    for (auto const& kvp : modbusRegisterMapping.getLabelsAndAddresses())
-                    {
-                        labels.push_back(kvp.first);
-                    }
-                    configurationTemplates.emplace_back(
-                      modbusRegisterMapping.getName(), modbusRegisterMapping.getReference(), dataType,
-                      modbusRegisterMapping.getDescription(), std::string(""), labels,
-                      modbusRegisterMapping.getMinimum(), modbusRegisterMapping.getMaximum());
-                }
-                break;
-            default:
-                LOG(WARN) << "WolkGatewayModbusModule Application: Mapping with reference '"
-                          << modbusRegisterMapping.getReference()
-                          << "' not added to device manifest - Incompatible Mapping and Register type combination";
-                break;
-            }
-            break;
-
-        default:
-            break;
-        }
-    }
-}
-}    // namespace
-
 int main(int argc, char** argv)
 {
+    // Setup logger
     auto logger = std::unique_ptr<wolkabout::ConsoleLogger>(new wolkabout::ConsoleLogger());
     logger->setLogLevel(wolkabout::LogLevel::INFO);
     wolkabout::Logger::setInstance(std::move(logger));
 
-    if (argc < 4)
+    if (argc < 3)
     {
         LOG(ERROR) << "WolkGatewayModbusModule Application: Usage -  " << argv[0]
-                   << " [deviceConfigurationFilePath] [modbusConfigurationFilePath] [modbusRegisterMappingFilePath]";
+                   << " [moduleConfigurationFilePath] [devicesConfigurationFilePath]";
         return -1;
     }
 
-    wolkabout::DeviceConfiguration deviceConfiguration;
-    if (!loadDeviceConfigurationFromFile(argv[1], deviceConfiguration))
+    // Parse file passed in first arg - module configuration JSON file
+    wolkabout::ModuleConfiguration moduleConfiguration(wolkabout::JsonReaderParser::readFile(argv[1]));
+
+    // Parse file passed in second arg - devices configuration JSON file
+    wolkabout::DevicesConfiguration devicesConfiguration(wolkabout::JsonReaderParser::readFile(argv[2]));
+
+    // We need to do some checks to see if the inputted data is valid.
+    // We don't want there to be no devices.
+    if (devicesConfiguration.getDevices().empty())
     {
+        LOG(ERROR) << "You have not created any devices.";
         return -1;
     }
 
-    wolkabout::ModbusConfiguration modbusConfiguration;
-    if (!loadModbusConfigurationFromFile(argv[2], modbusConfiguration))
+    // Cut the execution right away if the user wants multiple TCP/IP devices.
+    // TODO talk about future upgrade to support multiple TCP/IP connections/devices
+    if (moduleConfiguration.getConnectionType() == wolkabout::ModuleConfiguration::ConnectionType::TCP_IP &&
+        devicesConfiguration.getDevices().size() != 1)
     {
+        LOG(ERROR) << "Application supports exactly one device in TCP/IP mode.";
         return -1;
     }
 
-    std::vector<wolkabout::ModbusRegisterMapping> modbusRegisterMappings;
-    if (!loadModbusRegisterMappingFromFile(argv[3], modbusRegisterMappings))
+    // Warn the user if they're using more templates in TCP/IP.
+    // Since TCP/IP supports only one device, you should have only one template.
+    if (moduleConfiguration.getConnectionType() == wolkabout::ModuleConfiguration::ConnectionType::TCP_IP &&
+        devicesConfiguration.getTemplates().size() != 1)
     {
-        return -1;
+        LOG(WARN) << "Using more than 1 template in TCP/IP mode is unnecessary. There can only be 1 TCP/IP device "
+                  << "per module, which can use only one template "
+                  << "We recommend using 1 template to improve performance.";
     }
 
-    if (modbusRegisterMappings.empty())
-    {
-        LOG(ERROR) << "WolkGatewayModbusModule Application: Register mapping file is empty";
-        return -1;
-    }
-
-    std::vector<wolkabout::SensorTemplate> sensorTemplates;
-    std::vector<wolkabout::ActuatorTemplate> actuatorTemplates;
-    std::vector<wolkabout::AlarmTemplate> alarmTemplates;
-    std::vector<wolkabout::ConfigurationTemplate> configurationTemplates;
-    makeTemplatesFromMappings(modbusRegisterMappings, sensorTemplates, actuatorTemplates, alarmTemplates,
-                              configurationTemplates);
-
+    // Create the modbus client based on parsed information
+    // Pass configuration parameters necessary to initialize the connection
+    // according to the type of connection that the user required and setup.
     auto libModbusClient = [&]() -> std::unique_ptr<wolkabout::ModbusClient> {
-        if (modbusConfiguration.getConnectionType() == wolkabout::ModbusConfiguration::ConnectionType::TCP_IP)
+        if (moduleConfiguration.getConnectionType() == wolkabout::ModuleConfiguration::ConnectionType::TCP_IP)
         {
+            const auto& tcpConfiguration = moduleConfiguration.getTcpIpConfiguration();
             return std::unique_ptr<wolkabout::LibModbusTcpIpClient>(new wolkabout::LibModbusTcpIpClient(
-              modbusConfiguration.getIp(), modbusConfiguration.getPort(), modbusConfiguration.getResponseTimeout()));
+              tcpConfiguration->getIp(), tcpConfiguration->getPort(), moduleConfiguration.getResponseTimeout()));
         }
-        else if (modbusConfiguration.getConnectionType() == wolkabout::ModbusConfiguration::ConnectionType::SERIAL_RTU)
+        else if (moduleConfiguration.getConnectionType() == wolkabout::ModuleConfiguration::ConnectionType::SERIAL_RTU)
         {
+            const auto& serialConfiguration = moduleConfiguration.getSerialRtuConfiguration();
             return std::unique_ptr<wolkabout::LibModbusSerialRtuClient>(new wolkabout::LibModbusSerialRtuClient(
-              modbusConfiguration.getSerialPort(), modbusConfiguration.getBaudRate(), modbusConfiguration.getDataBits(),
-              modbusConfiguration.getStopBits(), modbusConfiguration.getBitParity(),
-              modbusConfiguration.getResponseTimeout()));
+              serialConfiguration->getSerialPort(), serialConfiguration->getBaudRate(),
+              serialConfiguration->getDataBits(), serialConfiguration->getStopBits(),
+              serialConfiguration->getBitParity(), moduleConfiguration.getResponseTimeout()));
         }
 
-        throw std::logic_error("Unsupported Modbus implementation specified in modbus configuration file");
+        throw std::logic_error("Unsupported Modbus implementation specified in module configuration file");
     }();
 
-    auto modbusBridge = std::make_shared<wolkabout::ModbusBridge>(*libModbusClient, std::move(modbusRegisterMappings),
-                                                                  modbusConfiguration.getReadPeriod());
+    // Process the devices configuration and create and register devices.
+    wolkabout::DevicePreparationFactory factory(devicesConfiguration.getTemplates(), devicesConfiguration.getDevices(),
+                                                moduleConfiguration.getConnectionType());
+    const auto& templates = factory.getTemplates();
+    const auto& devices = factory.getDevices();
+    const auto& deviceTemplateMap = factory.getTemplateDeviceMap();
 
-    auto modbusBridgeTemplate = std::unique_ptr<wolkabout::DeviceTemplate>(new wolkabout::DeviceTemplate(
-      {configurationTemplates}, {sensorTemplates}, {alarmTemplates}, {actuatorTemplates}, "", {}, {}, {}));
+    // If no devices are valid, the application has no reason to work
+    if (devices.empty())
+    {
+        LOG(ERROR) << "No devices are valid. Quitting application...";
+        return -1;
+    }
 
-    auto modbusBridgeDevice = std::make_shared<wolkabout::Device>(deviceConfiguration.getName(),
-                                                                  deviceConfiguration.getKey(), *modbusBridgeTemplate);
+    // Report the device count to the user
+    LOG(INFO) << "Created " << devices.size() << " device(s)!";
+    auto invalidDevices = devicesConfiguration.getDevices().size() - devices.size();
+    if (invalidDevices > 0)
+    {
+        LOG(WARN) << "There were " << invalidDevices << " invalid device(s)!";
+    }
 
+    // Pass everything necessary to initialize the bridge
+    LOG(DEBUG) << "Initializing the bridge...";
+    auto modbusBridge = std::make_shared<wolkabout::ModbusBridge>(*libModbusClient, devicesConfiguration.getTemplates(),
+                                                                  deviceTemplateMap, devices,
+                                                                  moduleConfiguration.getRegisterReadPeriod());
+
+    // Connect the bridge to Wolk instance
+    LOG(DEBUG) << "Connecting with Wolk...";
     std::unique_ptr<wolkabout::Wolk> wolk = wolkabout::Wolk::newBuilder()
                                               .deviceStatusProvider(modbusBridge)
                                               .actuatorStatusProvider(modbusBridge)
                                               .actuationHandler(modbusBridge)
                                               .configurationProvider(modbusBridge)
                                               .configurationHandler(modbusBridge)
-                                              .host(deviceConfiguration.getLocalMqttUri())
+                                              .host(moduleConfiguration.getMqttHost())
                                               .build();
 
-    modbusBridge->onSensorReading([&](const std::string& reference, const std::string& value) {
-        wolk->addSensorReading(deviceConfiguration.getKey(), reference, value);
+    // Setup all the necessary callbacks for value changes from inside the modbusBridge
+    modbusBridge->setOnSensorChange(
+      [&](const std::string& deviceKey, const std::string& reference, const std::string& value) {
+          wolk->addSensorReading(deviceKey, reference, value);
+          wolk->publish();
+      });
+
+    modbusBridge->setOnActuatorStatusChange(
+      [&](const std::string& deviceKey, const std::string& reference, const std::string& value) {
+          wolk->publishActuatorStatus(deviceKey, reference, value);
+      });
+
+    modbusBridge->setOnAlarmChange([&](const std::string& deviceKey, const std::string& reference, bool active) {
+        wolk->addAlarm(deviceKey, reference, active);
         wolk->publish();
     });
 
-    modbusBridge->onActuatorStatusChange(
-      [&](const std::string& reference) { wolk->publishActuatorStatus(deviceConfiguration.getKey(), reference); });
+    modbusBridge->setOnConfigurationChange(
+      [&](const std::string& deviceKey, std::vector<wolkabout::ConfigurationItem>& values) {
+          wolk->publishConfiguration(deviceKey, values);
+      });
 
-    modbusBridge->onAlarmChange([&](const std::string& reference, bool active) {
-        wolk->addAlarm(deviceConfiguration.getKey(), reference, active);
-        wolk->publish();
+    modbusBridge->setOnDeviceStatusChange([&](const std::string& deviceKey, wolkabout::DeviceStatus::Status status) {
+        wolk->publishDeviceStatus(deviceKey, status);
     });
 
-    modbusBridge->onConfigurationChange([&]() { wolk->publishConfiguration(deviceConfiguration.getKey()); });
+    // Register all the devices created
+    for (const auto& device : devices)
+    {
+        wolk->addDevice(*device.second);
+    }
 
-    modbusBridge->onDeviceStatusChange(
-      [&](wolkabout::DeviceStatus::Status status) { wolk->publishDeviceStatus(deviceConfiguration.getKey(), status); });
-
-    wolk->addDevice(*modbusBridgeDevice);
     wolk->connect();
-
     modbusBridge->start();
 
-    while (true)
+    while (modbusBridge->isRunning())
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
