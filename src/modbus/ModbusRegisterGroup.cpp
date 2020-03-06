@@ -47,7 +47,7 @@ ModbusRegisterGroup::ModbusRegisterGroup(const ModbusRegisterGroup& group)
     m_modbusRegisterMappings.clear();
     for (const auto& mapping : group.m_modbusRegisterMappings)
     {
-        m_modbusRegisterMappings.push_back(std::make_shared<ModbusRegisterMapping>(*mapping));
+        m_modbusRegisterMappings.push_back(mapping);
     }
 }
 
@@ -68,8 +68,8 @@ ModbusRegisterMapping::DataType ModbusRegisterGroup::getDataType() const
 
 int ModbusRegisterGroup::getStartingRegisterAddress() const
 {
-    auto& front = m_modbusRegisterMappings.front();
-    if (front == nullptr || front->getLabelsAndAddresses().empty())
+    const auto& front = m_modbusRegisterMappings.front();
+    if (front != nullptr || front->getLabelsAndAddresses().empty())
     {
         // if it's only a single address
         return front->getAddress();
@@ -101,7 +101,7 @@ int ModbusRegisterGroup::getRegisterCount() const
     return count;
 }
 
-std::vector<std::shared_ptr<ModbusRegisterMapping>> ModbusRegisterGroup::getRegisters() const
+const std::vector<std::shared_ptr<ModbusRegisterMapping>>& ModbusRegisterGroup::getRegisters() const
 {
     return m_modbusRegisterMappings;
 }

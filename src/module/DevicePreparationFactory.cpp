@@ -20,8 +20,8 @@
 #include "utilities/Logger.h"
 
 wolkabout::DevicePreparationFactory::DevicePreparationFactory(
-  std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& inputTemplates,
-  std::map<std::string, std::unique_ptr<DeviceInformation>>& inputDevices,
+  const std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& inputTemplates,
+  const std::map<std::string, std::unique_ptr<DeviceInformation>>& inputDevices,
   ModuleConfiguration::ConnectionType connectionType)
 : m_inputTemplates(inputTemplates), m_inputDevices(inputDevices), m_connectionType(connectionType)
 {

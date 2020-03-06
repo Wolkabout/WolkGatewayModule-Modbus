@@ -32,8 +32,8 @@ namespace wolkabout
 class DevicePreparationFactory
 {
 public:
-    DevicePreparationFactory(std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& inputTemplates,
-                             std::map<std::string, std::unique_ptr<DeviceInformation>>& inputDevices,
+    DevicePreparationFactory(const std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& inputTemplates,
+                             const std::map<std::string, std::unique_ptr<DeviceInformation>>& inputDevices,
                              ModuleConfiguration::ConnectionType connectionType);
 
     const std::map<std::string, std::unique_ptr<wolkabout::DeviceTemplate>>& getTemplates() const;
@@ -43,8 +43,8 @@ public:
     const std::map<std::string, std::vector<int>>& getTemplateDeviceMap() const;
 
 private:
-    std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& m_inputTemplates;
-    std::map<std::string, std::unique_ptr<DeviceInformation>>& m_inputDevices;
+    std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>> m_inputTemplates;
+    std::map<std::string, std::unique_ptr<DeviceInformation>> m_inputDevices;
 
     ModuleConfiguration::ConnectionType m_connectionType;
 

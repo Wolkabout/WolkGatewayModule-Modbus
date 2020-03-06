@@ -41,7 +41,7 @@ public:
     int getStartingRegisterAddress() const;
     int getRegisterCount() const;
     int getMappingsCount() const;
-    std::vector<std::shared_ptr<ModbusRegisterMapping>> getRegisters() const;
+    const std::vector<std::shared_ptr<ModbusRegisterMapping>>& getRegisters() const;
 
     void addRegister(const std::shared_ptr<ModbusRegisterMapping>& modbusRegisterMapping);
     void setSlaveAddress(int slaveAddress);

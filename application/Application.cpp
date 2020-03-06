@@ -88,13 +88,13 @@ int main(int argc, char** argv)
     auto libModbusClient = [&]() -> std::unique_ptr<wolkabout::ModbusClient> {
         if (moduleConfiguration.getConnectionType() == wolkabout::ModuleConfiguration::ConnectionType::TCP_IP)
         {
-            auto const& tcpConfiguration = moduleConfiguration.getTcpIpConfiguration();
+            const auto& tcpConfiguration = moduleConfiguration.getTcpIpConfiguration();
             return std::unique_ptr<wolkabout::LibModbusTcpIpClient>(new wolkabout::LibModbusTcpIpClient(
               tcpConfiguration->getIp(), tcpConfiguration->getPort(), moduleConfiguration.getResponseTimeout()));
         }
         else if (moduleConfiguration.getConnectionType() == wolkabout::ModuleConfiguration::ConnectionType::SERIAL_RTU)
         {
-            auto const& serialConfiguration = moduleConfiguration.getSerialRtuConfiguration();
+            const auto& serialConfiguration = moduleConfiguration.getSerialRtuConfiguration();
             return std::unique_ptr<wolkabout::LibModbusSerialRtuClient>(new wolkabout::LibModbusSerialRtuClient(
               serialConfiguration->getSerialPort(), serialConfiguration->getBaudRate(),
               serialConfiguration->getDataBits(), serialConfiguration->getStopBits(),
@@ -170,7 +170,7 @@ int main(int argc, char** argv)
     });
 
     // Register all the devices created
-    for (auto const& device : devices)
+    for (const auto& device : devices)
     {
         wolk->addDevice(*device.second);
     }

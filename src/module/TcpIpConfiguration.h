@@ -25,8 +25,6 @@ using nlohmann::json;
 class TcpIpConfiguration
 {
 public:
-    TcpIpConfiguration() = default;
-
     TcpIpConfiguration(std::string ip, int port);
 
     TcpIpConfiguration(nlohmann::json j);

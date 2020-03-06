@@ -32,8 +32,6 @@ public:
         ODD
     };
 
-    SerialRtuConfiguration() = default;
-
     SerialRtuConfiguration(std::string& serialPort, int baudRate, char dataBits, char stopBits,
                            SerialRtuConfiguration::BitParity bitParity);
 
