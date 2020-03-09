@@ -17,11 +17,8 @@ project(WolkGatewayModbusModule C CXX)
 
 set_property(GLOBAL PROPERTY ALLOW_DUPLICATE_CUSTOM_TARGETS 1)
 
-include(${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo.cmake)
-conan_basic_setup(NO_OUTPUT_DIRS KEEP_RPATHS)
-
+set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 set(CMAKE_CXX_STANDARD 11)
-
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}    -Wall -Wextra -pedantic                                                    \
                                             -pedantic-errors -Wcast-align                                              \
                                             -Wcast-qual -Wconversion                                                   \
@@ -38,8 +35,9 @@ set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}    -Wall -Wextra -pedantic             
                                             -Wvariadic-macros                                                          \
                                             -Wwrite-strings -Werror=non-virtual-dtor")
 
-set(SSL_INCLUDE_DIR "${CONAN_INCLUDE_DIRS_OPENSSL}")
-set(SSL_LIBS "${CONAN_LIBS}")
+set(CMAKE_LIBRARY_INCLUDE_DIRECTORY ${CMAKE_BINARY_DIR}/include)
+link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+find_package(Threads REQUIRED)
 
 # library output
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -59,7 +57,7 @@ link_directories(${PROJECT_SOURCE_DIR}/out/lib)
 add_library(${PROJECT_NAME} SHARED ${HEADER_FILES} ${SOURCE_FILES})
 target_link_libraries(${PROJECT_NAME} WolkGatewayModule modbus)
 set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
-set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-Wl,-rpath,./")
+set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN/lib")
 
 # Example
 include_directories("application")
@@ -68,7 +66,7 @@ file(GLOB_RECURSE EXAMPLE_SOURCE_FILES "application/*.cpp")
 
 add_executable(modbusModule ${EXAMPLE_SOURCE_FILES})
 target_link_libraries(modbusModule ${PROJECT_NAME})
-set_target_properties(modbusModule PROPERTIES LINK_FLAGS "-Wl,-rpath,./lib")
+set_target_properties(modbusModule PROPERTIES INSTALL_RPATH "$ORIGIN/lib")
 
 add_subdirectory(cmake)
 
