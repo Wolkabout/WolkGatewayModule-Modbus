@@ -19,8 +19,8 @@
 #include "modbus/LibModbusTcpIpClient.h"
 #include "modbus/ModbusBridge.h"
 #include "modbus/ModbusClient.h"
-#include "module/DevicePreparationFactory.h"
 #include "module/DevicesConfiguration.h"
+#include "module/DevicesTemplateFactory.h"
 #include "module/ModuleConfiguration.h"
 #include "service/FirmwareInstaller.h"
 #include "utilities/ConsoleLogger.h"
@@ -34,6 +34,91 @@
 #include <string>
 #include <thread>
 #include <utility>
+
+std::map<std::string, std::unique_ptr<wolkabout::DeviceTemplate>> generateTemplates(
+  wolkabout::DevicesConfiguration* devicesConfiguration)
+{
+    std::map<std::string, std::unique_ptr<wolkabout::DeviceTemplate>> templates;
+
+    // Parse templates to wolkabout::DeviceTemplate
+    for (const auto& deviceTemplate : devicesConfiguration->getTemplates())
+    {
+        wolkabout::DevicesConfigurationTemplate& info = *deviceTemplate.second;
+        templates.emplace(deviceTemplate.first,
+                          wolkabout::DevicesTemplateFactory::makeTemplateFromDeviceConfigTemplate(info));
+    }
+
+    return templates;
+}
+
+void generateDevices(wolkabout::ModuleConfiguration* moduleConfiguration,
+                     wolkabout::DevicesConfiguration* devicesConfiguration,
+                     const std::map<std::string, std::unique_ptr<wolkabout::DeviceTemplate>>& templates,
+                     std::map<int, std::unique_ptr<wolkabout::Device>>& devices,
+                     std::map<std::string, std::vector<int>>& deviceTemplateMap)
+{
+    // Parse devices with templates to wolkabout::Device
+    // We need to check, in the SERIAL/RTU, that all devices have a slave address
+    // and that they're different from one another. In TCP/IP mode, we can have only
+    // one device, so we need to check for that (and assign it a slaveAddress, because -1 is an invalid address).
+    std::vector<int> occupiedSlaveAddresses;
+    int assigningSlaveAddress = 1;
+
+    for (const auto& deviceInformation : devicesConfiguration->getDevices())
+    {
+        wolkabout::DeviceInformation& info = *deviceInformation.second;
+        if (moduleConfiguration->getConnectionType() == wolkabout::ModuleConfiguration::ConnectionType::SERIAL_RTU)
+        {
+            // If it doesn't at all have a slaveAddress or if the slaveAddress is already occupied
+            // device is not valid.
+
+            if (info.getSlaveAddress() == -1)
+            {
+                LOG(WARN) << "Device " << info.getName() << " (" << info.getKey() << ") is missing a slaveAddress!"
+                          << "\nIgnoring device...";
+                continue;
+            }
+            else if (std::any_of(occupiedSlaveAddresses.begin(), occupiedSlaveAddresses.end(),
+                                 [&](int i) { return i == info.getSlaveAddress(); }))
+            {
+                LOG(WARN) << "Device " << info.getName() << " (" << info.getKey() << ") "
+                          << "has a conflicting slaveAddress!\nIgnoring device...";
+                continue;
+            }
+        }
+        else
+        {
+            // If it's an TCP/IP device, assign it the next free slaveAddress.
+            info.setSlaveAddress(assigningSlaveAddress++);
+        }
+
+        const std::string& templateName = info.getTemplateString();
+        const auto& pair = templates.find(templateName);
+        if (pair != templates.end())
+        {
+            // Create the device with found template, push the slaveAddress as occupied
+            wolkabout::DeviceTemplate& deviceTemplate = *pair->second;
+            occupiedSlaveAddresses.push_back(info.getSlaveAddress());
+            devices.emplace(info.getSlaveAddress(),
+                            new wolkabout::Device(info.getName(), info.getKey(), deviceTemplate));
+
+            // Emplace the template name in usedTemplates array for modbusBridge, and the slaveAddress
+            if (deviceTemplateMap.find(templateName) != deviceTemplateMap.end())
+            {
+                deviceTemplateMap[templateName].emplace_back(info.getSlaveAddress());
+            }
+            else
+            {
+                deviceTemplateMap.emplace(templateName, std::vector<int>{info.getSlaveAddress()});
+            }
+        }
+        else
+        {
+            LOG(WARN) << "Device " << info.getName() << " (" << info.getKey() << ") doesn't have a valid template!"
+                      << "\nIgnoring device...";
+        }
+    }
+}
 
 int main(int argc, char** argv)
 {
@@ -56,6 +141,13 @@ int main(int argc, char** argv)
     wolkabout::DevicesConfiguration devicesConfiguration(wolkabout::JsonReaderParser::readFile(argv[2]));
 
     // We need to do some checks to see if the inputted data is valid.
+    // We don't want there to be no templates.
+    if (devicesConfiguration.getTemplates().empty())
+    {
+        LOG(ERROR) << "You have not created any templates.";
+        return -1;
+    }
+
     // We don't want there to be no devices.
     if (devicesConfiguration.getDevices().empty())
     {
@@ -104,12 +196,14 @@ int main(int argc, char** argv)
         throw std::logic_error("Unsupported Modbus implementation specified in module configuration file");
     }();
 
-    // Process the devices configuration and create and register devices.
-    wolkabout::DevicePreparationFactory factory(devicesConfiguration.getTemplates(), devicesConfiguration.getDevices(),
-                                                moduleConfiguration.getConnectionType());
-    const auto& templates = factory.getTemplates();
-    const auto& devices = factory.getDevices();
-    const auto& deviceTemplateMap = factory.getTemplateDeviceMap();
+    std::map<std::string, std::unique_ptr<wolkabout::DeviceTemplate>> templates =
+      generateTemplates(&devicesConfiguration);
+
+    std::map<int, std::unique_ptr<wolkabout::Device>> devices;
+    std::map<std::string, std::vector<int>> deviceTemplateMap;
+
+    // Execute linking logic
+    generateDevices(&moduleConfiguration, &devicesConfiguration, templates, devices, deviceTemplateMap);
 
     // If no devices are valid, the application has no reason to work
     if (devices.empty())
