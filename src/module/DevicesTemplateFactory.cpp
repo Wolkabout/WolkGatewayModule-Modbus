@@ -32,24 +32,24 @@ DataType DevicesTemplateFactory::getDataTypeFromRegisterType(ModbusRegisterMappi
 }
 
 bool DevicesTemplateFactory::processDefaultMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
-                                                   std::vector<SensorTemplate>& sensorTemplates,
-                                                   std::vector<ActuatorTemplate>& actuatorTemplates)
+                                                   const std::shared_ptr<DeviceTemplate>& deviceTemplate)
 {
     switch (mapping.getRegisterType())
     {
     case ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
     case ModbusRegisterMapping::RegisterType::COIL:
     {
-        actuatorTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType, mapping.getDescription(),
-                                       mapping.getMinimum(), mapping.getMaximum());
+        deviceTemplate->addActuator(ActuatorTemplate(mapping.getName(), mapping.getReference(), dataType,
+                                                     mapping.getDescription(), mapping.getMinimum(),
+                                                     mapping.getMaximum()));
         return true;
     }
     case ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR:
     case ModbusRegisterMapping::RegisterType::INPUT_REGISTER:
     case ModbusRegisterMapping::RegisterType::INPUT_CONTACT:
     {
-        sensorTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType, mapping.getDescription(),
-                                     mapping.getMinimum(), mapping.getMaximum());
+        deviceTemplate->addSensor(SensorTemplate(mapping.getName(), mapping.getReference(), dataType,
+                                                 mapping.getDescription(), mapping.getMinimum(), mapping.getMaximum()));
         return true;
     }
     default:
@@ -61,15 +61,15 @@ bool DevicesTemplateFactory::processDefaultMapping(const ModbusRegisterMapping& 
 }
 
 bool DevicesTemplateFactory::processSensorMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
-                                                  std::vector<SensorTemplate>& sensorTemplates)
+                                                  const std::shared_ptr<DeviceTemplate>& deviceTemplate)
 {
     switch (mapping.getRegisterType())
     {
     case ModbusRegisterMapping::RegisterType::INPUT_CONTACT:
     case ModbusRegisterMapping::RegisterType::INPUT_REGISTER:
     case ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR:
-        sensorTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType, mapping.getDescription(),
-                                     mapping.getMinimum(), mapping.getMaximum());
+        deviceTemplate->addSensor(SensorTemplate(mapping.getName(), mapping.getReference(), dataType,
+                                                 mapping.getDescription(), mapping.getMinimum(), mapping.getMaximum()));
         return true;
     default:
         throw std::logic_error("WolkGatewayModbusModule Application: Mapping with reference '" +
@@ -79,14 +79,15 @@ bool DevicesTemplateFactory::processSensorMapping(const ModbusRegisterMapping& m
 }
 
 bool DevicesTemplateFactory::processActuatorMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
-                                                    std::vector<ActuatorTemplate>& actuatorTemplates)
+                                                    const std::shared_ptr<DeviceTemplate>& deviceTemplate)
 {
     switch (mapping.getRegisterType())
     {
     case ModbusRegisterMapping::RegisterType::COIL:
     case ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
-        actuatorTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType, mapping.getDescription(),
-                                       mapping.getMinimum(), mapping.getMaximum());
+        deviceTemplate->addActuator(ActuatorTemplate(mapping.getName(), mapping.getReference(), dataType,
+                                                     mapping.getDescription(), mapping.getMinimum(),
+                                                     mapping.getMaximum()));
         return true;
     default:
         throw std::logic_error("WolkGatewayModbusModule Application: Mapping with reference '" +
@@ -96,12 +97,12 @@ bool DevicesTemplateFactory::processActuatorMapping(const ModbusRegisterMapping&
 }
 
 bool DevicesTemplateFactory::processAlarmMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
-                                                 std::vector<AlarmTemplate>& alarmTemplates)
+                                                 std::shared_ptr<DeviceTemplate> deviceTemplate)
 {
     switch (mapping.getRegisterType())
     {
     case ModbusRegisterMapping::RegisterType::INPUT_CONTACT:
-        alarmTemplates.emplace_back(mapping.getName(), mapping.getReference(), mapping.getDescription());
+        deviceTemplate->addAlarm(AlarmTemplate(mapping.getName(), mapping.getReference(), mapping.getDescription()));
         return true;
     default:
         throw std::logic_error("WolkGatewayModbusModule Application: Mapping with reference '" +
@@ -111,7 +112,7 @@ bool DevicesTemplateFactory::processAlarmMapping(const ModbusRegisterMapping& ma
 }
 
 bool DevicesTemplateFactory::processConfigurationMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
-                                                         std::vector<ConfigurationTemplate>& configurationTemplates)
+                                                         const std::shared_ptr<DeviceTemplate>& deviceTemplate)
 {
     switch (mapping.getRegisterType())
     {
@@ -119,9 +120,9 @@ bool DevicesTemplateFactory::processConfigurationMapping(const ModbusRegisterMap
     case ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
         if (mapping.getLabelsAndAddresses().empty())
         {
-            configurationTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType,
-                                                mapping.getDescription(), std::string(""), mapping.getMinimum(),
-                                                mapping.getMaximum());
+            deviceTemplate->addConfiguration(ConfigurationTemplate(mapping.getName(), mapping.getReference(), dataType,
+                                                                   mapping.getDescription(), std::string(""),
+                                                                   mapping.getMinimum(), mapping.getMaximum()));
         }
         else
         {
@@ -130,9 +131,10 @@ bool DevicesTemplateFactory::processConfigurationMapping(const ModbusRegisterMap
             {
                 labels.push_back(kvp.first);
             }
-            configurationTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType,
-                                                mapping.getDescription(), std::string(""), labels, mapping.getMinimum(),
-                                                mapping.getMaximum());
+
+            deviceTemplate->addConfiguration(ConfigurationTemplate(mapping.getName(), mapping.getReference(), dataType,
+                                                                   mapping.getDescription(), std::string(""), labels,
+                                                                   mapping.getMinimum(), mapping.getMaximum()));
         }
         return true;
     default:
@@ -150,6 +152,8 @@ std::unique_ptr<DeviceTemplate> DevicesTemplateFactory::makeTemplateFromDeviceCo
     std::vector<AlarmTemplate> alarmTemplates;
     std::vector<ConfigurationTemplate> configurationTemplates;
 
+    const auto pointer = std::make_shared<DeviceTemplate>();
+
     for (const ModbusRegisterMapping& mapping : configTemplate.getMappings())
     {
         auto mappingType = mapping.getMappingType();
@@ -160,23 +164,23 @@ std::unique_ptr<DeviceTemplate> DevicesTemplateFactory::makeTemplateFromDeviceCo
         switch (mappingType)
         {
         case ModbusRegisterMapping::MappingType::DEFAULT:
-            processDefaultMapping(mapping, dataType, sensorTemplates, actuatorTemplates);
+            processDefaultMapping(mapping, dataType, pointer);
             break;
 
         case ModbusRegisterMapping::MappingType::SENSOR:
-            processSensorMapping(mapping, dataType, sensorTemplates);
+            processSensorMapping(mapping, dataType, pointer);
             break;
 
         case ModbusRegisterMapping::MappingType::ACTUATOR:
-            processActuatorMapping(mapping, dataType, actuatorTemplates);
+            processActuatorMapping(mapping, dataType, pointer);
             break;
 
         case ModbusRegisterMapping::MappingType::ALARM:
-            processAlarmMapping(mapping, dataType, alarmTemplates);
+            processAlarmMapping(mapping, dataType, pointer);
             break;
 
         case ModbusRegisterMapping::MappingType::CONFIGURATION:
-            processConfigurationMapping(mapping, dataType, configurationTemplates);
+            processConfigurationMapping(mapping, dataType, pointer);
             break;
 
         default:

@@ -28,20 +28,19 @@ private:
     static DataType getDataTypeFromRegisterType(ModbusRegisterMapping::RegisterType registerType);
 
     static bool processDefaultMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
-                                      std::vector<SensorTemplate>& sensorTemplates,
-                                      std::vector<ActuatorTemplate>& actuatorTemplates);
+                                      const std::shared_ptr<DeviceTemplate>& deviceTemplate);
 
     static bool processSensorMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
-                                     std::vector<SensorTemplate>& sensorTemplates);
+                                     const std::shared_ptr<DeviceTemplate>& deviceTemplate);
 
     static bool processActuatorMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
-                                       std::vector<ActuatorTemplate>& actuatorTemplates);
+                                       const std::shared_ptr<DeviceTemplate>& deviceTemplate);
 
     static bool processAlarmMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
-                                    std::vector<AlarmTemplate>& alarmTemplates);
+                                    std::shared_ptr<DeviceTemplate> deviceTemplate);
 
     static bool processConfigurationMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
-                                            std::vector<ConfigurationTemplate>& configurationTemplates);
+                                            const std::shared_ptr<DeviceTemplate>& deviceTemplate);
 
 public:
     static std::unique_ptr<wolkabout::DeviceTemplate> makeTemplateFromDeviceConfigTemplate(
