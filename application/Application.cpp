@@ -35,99 +35,28 @@
 #include <thread>
 #include <utility>
 
-int main(int argc, char** argv)
+std::map<std::string, std::unique_ptr<wolkabout::DeviceTemplate>> generateTemplates(
+  wolkabout::DevicesConfiguration* devicesConfiguration)
 {
-    // Setup logger
-    auto logger = std::unique_ptr<wolkabout::ConsoleLogger>(new wolkabout::ConsoleLogger());
-    logger->setLogLevel(wolkabout::LogLevel::INFO);
-    wolkabout::Logger::setInstance(std::move(logger));
-
-    if (argc < 3)
-    {
-        LOG(ERROR) << "WolkGatewayModbusModule Application: Usage -  " << argv[0]
-                   << " [moduleConfigurationFilePath] [devicesConfigurationFilePath]";
-        return -1;
-    }
-
-    // Parse file passed in first arg - module configuration JSON file
-    wolkabout::ModuleConfiguration moduleConfiguration(wolkabout::JsonReaderParser::readFile(argv[1]));
-
-    // Parse file passed in second arg - devices configuration JSON file
-    wolkabout::DevicesConfiguration devicesConfiguration(wolkabout::JsonReaderParser::readFile(argv[2]));
-
-    // We need to do some checks to see if the inputted data is valid.
-    // We don't want there to be no devices.
-    if (devicesConfiguration.getDevices().empty())
-    {
-        LOG(ERROR) << "You have not created any devices.";
-        return -1;
-    }
-
-    // Cut the execution right away if the user wants multiple TCP/IP devices.
-    // TODO talk about future upgrade to support multiple TCP/IP connections/devices
-    if (moduleConfiguration.getConnectionType() == wolkabout::ModuleConfiguration::ConnectionType::TCP_IP &&
-        devicesConfiguration.getDevices().size() != 1)
-    {
-        LOG(ERROR) << "Application supports exactly one device in TCP/IP mode.";
-        return -1;
-    }
-
-    // Warn the user if they're using more templates in TCP/IP.
-    // Since TCP/IP supports only one device, you should have only one template.
-    if (moduleConfiguration.getConnectionType() == wolkabout::ModuleConfiguration::ConnectionType::TCP_IP &&
-        devicesConfiguration.getTemplates().size() != 1)
-    {
-        LOG(WARN) << "Using more than 1 template in TCP/IP mode is unnecessary. There can only be 1 TCP/IP device "
-                  << "per module, which can use only one template "
-                  << "We recommend using 1 template to improve performance.";
-    }
-
-    // Create the modbus client based on parsed information
-    // Pass configuration parameters necessary to initialize the connection
-    // according to the type of connection that the user required and setup.
-    auto libModbusClient = [&]() -> std::unique_ptr<wolkabout::ModbusClient> {
-        if (moduleConfiguration.getConnectionType() == wolkabout::ModuleConfiguration::ConnectionType::TCP_IP)
-        {
-            const auto& tcpConfiguration = moduleConfiguration.getTcpIpConfiguration();
-            return std::unique_ptr<wolkabout::LibModbusTcpIpClient>(new wolkabout::LibModbusTcpIpClient(
-              tcpConfiguration->getIp(), tcpConfiguration->getPort(), moduleConfiguration.getResponseTimeout()));
-        }
-        else if (moduleConfiguration.getConnectionType() == wolkabout::ModuleConfiguration::ConnectionType::SERIAL_RTU)
-        {
-            const auto& serialConfiguration = moduleConfiguration.getSerialRtuConfiguration();
-            return std::unique_ptr<wolkabout::LibModbusSerialRtuClient>(new wolkabout::LibModbusSerialRtuClient(
-              serialConfiguration->getSerialPort(), serialConfiguration->getBaudRate(),
-              serialConfiguration->getDataBits(), serialConfiguration->getStopBits(),
-              serialConfiguration->getBitParity(), moduleConfiguration.getResponseTimeout()));
-        }
-
-        throw std::logic_error("Unsupported Modbus implementation specified in module configuration file");
-    }();
-
     std::map<std::string, std::unique_ptr<wolkabout::DeviceTemplate>> templates;
-    std::map<int, std::unique_ptr<wolkabout::Device>> devices;
-    std::map<std::string, std::vector<int>> deviceTemplateMap;
-
-    if (devicesConfiguration.getTemplates().empty())
-    {
-        throw std::logic_error("Input templates can\'t be empty!");
-    }
-
-    if (devicesConfiguration.getDevices().empty())
-    {
-        throw std::logic_error("Input devices can\'t be empty!");
-    }
-
-    // Execute linking logic
 
     // Parse templates to wolkabout::DeviceTemplate
-    for (const auto& deviceTemplate : devicesConfiguration.getTemplates())
+    for (const auto& deviceTemplate : devicesConfiguration->getTemplates())
     {
         wolkabout::DevicesConfigurationTemplate& info = *deviceTemplate.second;
         templates.emplace(deviceTemplate.first,
                           wolkabout::DevicesTemplateFactory::makeTemplateFromDeviceConfigTemplate(info));
     }
 
+    return templates;
+}
+
+void generateDevices(wolkabout::ModuleConfiguration* moduleConfiguration,
+                     wolkabout::DevicesConfiguration* devicesConfiguration,
+                     const std::map<std::string, std::unique_ptr<wolkabout::DeviceTemplate>>& templates,
+                     std::map<int, std::unique_ptr<wolkabout::Device>>& devices,
+                     std::map<std::string, std::vector<int>>& deviceTemplateMap)
+{
     // Parse devices with templates to wolkabout::Device
     // We need to check, in the SERIAL/RTU, that all devices have a slave address
     // and that they're different from one another. In TCP/IP mode, we can have only
@@ -135,10 +64,10 @@ int main(int argc, char** argv)
     std::vector<int> occupiedSlaveAddresses;
     int assigningSlaveAddress = 1;
 
-    for (const auto& deviceInformation : devicesConfiguration.getDevices())
+    for (const auto& deviceInformation : devicesConfiguration->getDevices())
     {
         wolkabout::DeviceInformation& info = *deviceInformation.second;
-        if (moduleConfiguration.getConnectionType() == wolkabout::ModuleConfiguration::ConnectionType::SERIAL_RTU)
+        if (moduleConfiguration->getConnectionType() == wolkabout::ModuleConfiguration::ConnectionType::SERIAL_RTU)
         {
             // If it doesn't at all have a slaveAddress or if the slaveAddress is already occupied
             // device is not valid.
@@ -189,6 +118,92 @@ int main(int argc, char** argv)
                       << "\nIgnoring device...";
         }
     }
+}
+
+int main(int argc, char** argv)
+{
+    // Setup logger
+    auto logger = std::unique_ptr<wolkabout::ConsoleLogger>(new wolkabout::ConsoleLogger());
+    logger->setLogLevel(wolkabout::LogLevel::INFO);
+    wolkabout::Logger::setInstance(std::move(logger));
+
+    if (argc < 3)
+    {
+        LOG(ERROR) << "WolkGatewayModbusModule Application: Usage -  " << argv[0]
+                   << " [moduleConfigurationFilePath] [devicesConfigurationFilePath]";
+        return -1;
+    }
+
+    // Parse file passed in first arg - module configuration JSON file
+    wolkabout::ModuleConfiguration moduleConfiguration(wolkabout::JsonReaderParser::readFile(argv[1]));
+
+    // Parse file passed in second arg - devices configuration JSON file
+    wolkabout::DevicesConfiguration devicesConfiguration(wolkabout::JsonReaderParser::readFile(argv[2]));
+
+    // We need to do some checks to see if the inputted data is valid.
+    // We don't want there to be no templates.
+    if (devicesConfiguration.getTemplates().empty())
+    {
+        LOG(ERROR) << "You have not created any templates.";
+        return -1;
+    }
+
+    // We don't want there to be no devices.
+    if (devicesConfiguration.getDevices().empty())
+    {
+        LOG(ERROR) << "You have not created any devices.";
+        return -1;
+    }
+
+    // Cut the execution right away if the user wants multiple TCP/IP devices.
+    // TODO talk about future upgrade to support multiple TCP/IP connections/devices
+    if (moduleConfiguration.getConnectionType() == wolkabout::ModuleConfiguration::ConnectionType::TCP_IP &&
+        devicesConfiguration.getDevices().size() != 1)
+    {
+        LOG(ERROR) << "Application supports exactly one device in TCP/IP mode.";
+        return -1;
+    }
+
+    // Warn the user if they're using more templates in TCP/IP.
+    // Since TCP/IP supports only one device, you should have only one template.
+    if (moduleConfiguration.getConnectionType() == wolkabout::ModuleConfiguration::ConnectionType::TCP_IP &&
+        devicesConfiguration.getTemplates().size() != 1)
+    {
+        LOG(WARN) << "Using more than 1 template in TCP/IP mode is unnecessary. There can only be 1 TCP/IP device "
+                  << "per module, which can use only one template "
+                  << "We recommend using 1 template to improve performance.";
+    }
+
+    // Create the modbus client based on parsed information
+    // Pass configuration parameters necessary to initialize the connection
+    // according to the type of connection that the user required and setup.
+    auto libModbusClient = [&]() -> std::unique_ptr<wolkabout::ModbusClient> {
+        if (moduleConfiguration.getConnectionType() == wolkabout::ModuleConfiguration::ConnectionType::TCP_IP)
+        {
+            const auto& tcpConfiguration = moduleConfiguration.getTcpIpConfiguration();
+            return std::unique_ptr<wolkabout::LibModbusTcpIpClient>(new wolkabout::LibModbusTcpIpClient(
+              tcpConfiguration->getIp(), tcpConfiguration->getPort(), moduleConfiguration.getResponseTimeout()));
+        }
+        else if (moduleConfiguration.getConnectionType() == wolkabout::ModuleConfiguration::ConnectionType::SERIAL_RTU)
+        {
+            const auto& serialConfiguration = moduleConfiguration.getSerialRtuConfiguration();
+            return std::unique_ptr<wolkabout::LibModbusSerialRtuClient>(new wolkabout::LibModbusSerialRtuClient(
+              serialConfiguration->getSerialPort(), serialConfiguration->getBaudRate(),
+              serialConfiguration->getDataBits(), serialConfiguration->getStopBits(),
+              serialConfiguration->getBitParity(), moduleConfiguration.getResponseTimeout()));
+        }
+
+        throw std::logic_error("Unsupported Modbus implementation specified in module configuration file");
+    }();
+
+    std::map<std::string, std::unique_ptr<wolkabout::DeviceTemplate>> templates =
+      generateTemplates(&devicesConfiguration);
+
+    std::map<int, std::unique_ptr<wolkabout::Device>> devices;
+    std::map<std::string, std::vector<int>> deviceTemplateMap;
+
+    // Execute linking logic
+    generateDevices(&moduleConfiguration, &devicesConfiguration, templates, devices, deviceTemplateMap);
 
     // If no devices are valid, the application has no reason to work
     if (devices.empty())
