@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "ModbusRegisterMapping.h"
+#include "ModuleMapping.h"
 #include "utilities/Deserializers.h"
 #include "utilities/json.hpp"
 
@@ -28,11 +28,13 @@ namespace wolkabout
 {
 using nlohmann::json;
 
-ModbusRegisterMapping::ModbusRegisterMapping(
-  std::string name, std::string reference, std::string description, double minimum, double maximum, int address,
-  RegisterMapping::RegisterType registerType, RegisterMapping::OutputType dataType,
-  wolkabout::ModbusRegisterMapping::MappingType mappingType = MappingType::DEFAULT)
-: m_name(std::move(name))
+ModuleMapping::ModuleMapping(std::string name, std::string reference, std::string description, double minimum,
+                             double maximum, int address, RegisterMapping::RegisterType registerType,
+                             RegisterMapping::OutputType dataType,
+                             wolkabout::ModuleMapping::MappingType mappingType = MappingType::DEFAULT,
+                             bool readRestricted)
+: m_readRestricted(readRestricted)
+, m_name(std::move(name))
 , m_reference(std::move(reference))
 , m_description(std::move(description))
 , m_minimum(minimum)
@@ -44,13 +46,37 @@ ModbusRegisterMapping::ModbusRegisterMapping(
 , m_dataType(dataType)
 , m_mappingType(mappingType)
 {
+    m_mappings.emplace_back(std::make_shared<RegisterMapping>(reference, registerType, address,
+                                                              RegisterMapping::OperationType::NONE, readRestricted));
 }
 
-ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string reference, std::string description,
-                                             double minimum, double maximum, const LabelMap& labelsAndAddresses,
-                                             RegisterMapping::RegisterType registerType,
-                                             RegisterMapping::OutputType dataType)
-: m_name(std::move(name))
+ModuleMapping::ModuleMapping(std::string name, std::string reference, std::string description, double minimum,
+                             double maximum, int address, int bitIndex, RegisterMapping::RegisterType registerType,
+                             ModuleMapping::MappingType mappingType, bool readRestricted)
+: m_readRestricted(readRestricted)
+, m_name(std::move(name))
+, m_reference(std::move(reference))
+, m_description(std::move(description))
+, m_minimum(minimum)
+, m_maximum(maximum)
+, m_address(address)
+, m_labelsAndAddresses()
+, m_addresses()
+, m_bitIndex(bitIndex)
+, m_registerType(registerType)
+, m_dataType(RegisterMapping::OutputType::BOOL)
+, m_mappingType(mappingType)
+{
+    m_mappings.emplace_back(std::make_shared<RegisterMapping>(
+      reference, registerType, address, RegisterMapping::OperationType::TAKE_BIT, bitIndex, readRestricted));
+}
+
+ModuleMapping::ModuleMapping(std::string name, std::string reference, std::string description, double minimum,
+                             double maximum, const LabelMap& labelsAndAddresses,
+                             RegisterMapping::RegisterType registerType, RegisterMapping::OutputType dataType,
+                             bool readRestricted)
+: m_readRestricted(readRestricted)
+, m_name(std::move(name))
 , m_reference(std::move(reference))
 , m_description(std::move(description))
 , m_minimum(minimum)
@@ -62,15 +88,20 @@ ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string refer
 , m_dataType(dataType)
 , m_mappingType(MappingType::CONFIGURATION)
 {
+    for (const auto& pair : labelsAndAddresses)
+    {
+        m_mappings.emplace_back(std::make_shared<RegisterMapping>(
+          pair.first, registerType, pair.second, RegisterMapping::OperationType::NONE, readRestricted));
+    }
 }
 
-ModbusRegisterMapping::ModbusRegisterMapping(const std::string& name, const std::string& reference,
-                                             const std::string& description, double minimum, double maximum,
-                                             const std::vector<int>& addresses,
-                                             RegisterMapping::RegisterType registerType,
-                                             RegisterMapping::OutputType dataType,
-                                             ModbusRegisterMapping::MappingType mappingType)
-: m_name(name)
+ModuleMapping::ModuleMapping(const std::string& name, const std::string& reference, const std::string& description,
+                             double minimum, double maximum, const std::vector<int16_t>& addresses,
+                             RegisterMapping::RegisterType registerType, RegisterMapping::OutputType dataType,
+                             RegisterMapping::OperationType operationType, ModuleMapping::MappingType mappingType,
+                             bool readRestricted)
+: m_readRestricted(readRestricted)
+, m_name(name)
 , m_reference(reference)
 , m_description(description)
 , m_minimum(minimum)
@@ -80,9 +111,11 @@ ModbusRegisterMapping::ModbusRegisterMapping(const std::string& name, const std:
 , m_dataType(dataType)
 , m_mappingType(mappingType)
 {
+    m_mappings.emplace_back(
+      std::make_shared<RegisterMapping>(reference, registerType, addresses, dataType, operationType, readRestricted));
 }
 
-ModbusRegisterMapping::ModbusRegisterMapping(nlohmann::json j)
+ModuleMapping::ModuleMapping(nlohmann::json j)
 {
     m_name = j.at("name").get<std::string>();
     m_reference = j.at("reference").get<std::string>();
@@ -104,7 +137,7 @@ ModbusRegisterMapping::ModbusRegisterMapping(nlohmann::json j)
     }
     catch (std::exception&)
     {
-        m_mappingType = ModbusRegisterMapping::MappingType::DEFAULT;
+        m_mappingType = ModuleMapping::MappingType::DEFAULT;
     }
 
     if (m_registerType == RegisterMapping::RegisterType::COIL ||
@@ -122,7 +155,7 @@ ModbusRegisterMapping::ModbusRegisterMapping(nlohmann::json j)
         m_maximum = j.at("maximum").get<double>();
         if (m_registerType == RegisterMapping::RegisterType::HOLDING_REGISTER)
         {
-            if (m_mappingType == ModbusRegisterMapping::MappingType::CONFIGURATION)
+            if (m_mappingType == ModuleMapping::MappingType::CONFIGURATION)
             {
                 // or LabelMap or address
                 // if both, make an error, or if none, make an error
@@ -192,32 +225,32 @@ ModbusRegisterMapping::ModbusRegisterMapping(nlohmann::json j)
     }
 }
 
-const std::string& ModbusRegisterMapping::getName() const
+const std::string& ModuleMapping::getName() const
 {
     return m_name;
 }
 
-const std::string& ModbusRegisterMapping::getReference() const
+const std::string& ModuleMapping::getReference() const
 {
     return m_reference;
 }
 
-const std::string& ModbusRegisterMapping::getDescription() const
+const std::string& ModuleMapping::getDescription() const
 {
     return m_description;
 }
 
-double ModbusRegisterMapping::getMinimum() const
+double ModuleMapping::getMinimum() const
 {
     return m_minimum;
 }
 
-double ModbusRegisterMapping::getMaximum() const
+double ModuleMapping::getMaximum() const
 {
     return m_maximum;
 }
 
-int ModbusRegisterMapping::getAddress() const
+int ModuleMapping::getAddress() const
 {
     if (m_address == -1)
     {
@@ -234,7 +267,7 @@ int ModbusRegisterMapping::getAddress() const
     return m_address;
 }
 
-int ModbusRegisterMapping::getRegisterCount() const
+int ModuleMapping::getRegisterCount() const
 {
     if (m_address == -1)
     {
@@ -243,47 +276,67 @@ int ModbusRegisterMapping::getRegisterCount() const
     return 1;
 }
 
-RegisterMapping::RegisterType ModbusRegisterMapping::getRegisterType() const
+RegisterMapping::RegisterType ModuleMapping::getRegisterType() const
 {
     return m_registerType;
 }
 
-RegisterMapping::OutputType ModbusRegisterMapping::getDataType() const
+RegisterMapping::OutputType ModuleMapping::getDataType() const
 {
     return m_dataType;
 }
 
-ModbusRegisterMapping::MappingType ModbusRegisterMapping::getMappingType() const
+ModuleMapping::MappingType ModuleMapping::getMappingType() const
 {
     return m_mappingType;
 }
 
-LabelMap ModbusRegisterMapping::getLabelsAndAddresses() const
+LabelMap ModuleMapping::getLabelsAndAddresses() const
 {
     return m_labelsAndAddresses;
 }
 
-ModbusRegisterMapping::MappingType MappingTypeConversion::deserializeMappingType(const std::string& mappingType)
+const std::vector<std::shared_ptr<RegisterMapping>>& ModuleMapping::getMappings() const
+{
+    return m_mappings;
+}
+
+bool ModuleMapping::isReadRestricted() const
+{
+    return m_readRestricted;
+}
+
+const std::vector<uint16_t>& ModuleMapping::getAddresses() const
+{
+    return m_addresses;
+}
+
+RegisterMapping::OperationType ModuleMapping::getOperationType() const
+{
+    return m_operationType;
+}
+
+ModuleMapping::MappingType MappingTypeConversion::deserializeMappingType(const std::string& mappingType)
 {
     if (mappingType == "DEFAULT")
     {
-        return ModbusRegisterMapping::MappingType::DEFAULT;
+        return ModuleMapping::MappingType::DEFAULT;
     }
     else if (mappingType == "SENSOR")
     {
-        return ModbusRegisterMapping::MappingType::SENSOR;
+        return ModuleMapping::MappingType::SENSOR;
     }
     else if (mappingType == "ACTUATOR")
     {
-        return ModbusRegisterMapping::MappingType::ACTUATOR;
+        return ModuleMapping::MappingType::ACTUATOR;
     }
     else if (mappingType == "ALARM")
     {
-        return ModbusRegisterMapping::MappingType::ALARM;
+        return ModuleMapping::MappingType::ALARM;
     }
     else if (mappingType == "CONFIGURATION")
     {
-        return ModbusRegisterMapping::MappingType::CONFIGURATION;
+        return ModuleMapping::MappingType::CONFIGURATION;
     }
     throw std::logic_error("Unknown data type: " + mappingType);
 }

@@ -18,10 +18,10 @@
 
 namespace wolkabout
 {
-DataType WolkaboutTemplateFactory::getDataTypeFromRegisterType(ModbusRegisterMapping::RegisterType registerType)
+DataType WolkaboutTemplateFactory::getDataTypeFromRegisterType(RegisterMapping::RegisterType registerType)
 {
-    if (registerType == ModbusRegisterMapping::RegisterType::COIL ||
-        registerType == ModbusRegisterMapping::RegisterType::INPUT_CONTACT)
+    if (registerType == RegisterMapping::RegisterType::COIL ||
+        registerType == RegisterMapping::RegisterType::INPUT_CONTACT)
     {
         return DataType::BOOLEAN;
     }
@@ -31,22 +31,22 @@ DataType WolkaboutTemplateFactory::getDataTypeFromRegisterType(ModbusRegisterMap
     }
 }
 
-bool WolkaboutTemplateFactory::processDefaultMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
+bool WolkaboutTemplateFactory::processDefaultMapping(const RegisterMapping& mapping, const DataType& dataType,
                                                      std::vector<SensorTemplate>& sensorTemplates,
                                                      std::vector<ActuatorTemplate>& actuatorTemplates)
 {
     switch (mapping.getRegisterType())
     {
-    case ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
-    case ModbusRegisterMapping::RegisterType::COIL:
+    case RegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
+    case RegisterMapping::RegisterType::COIL:
     {
         actuatorTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType, mapping.getDescription(),
                                        mapping.getMinimum(), mapping.getMaximum());
         return true;
     }
-    case ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR:
-    case ModbusRegisterMapping::RegisterType::INPUT_REGISTER:
-    case ModbusRegisterMapping::RegisterType::INPUT_CONTACT:
+    case RegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR:
+    case RegisterMapping::RegisterType::INPUT_REGISTER:
+    case RegisterMapping::RegisterType::INPUT_CONTACT:
     {
         sensorTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType, mapping.getDescription(),
                                      mapping.getMinimum(), mapping.getMaximum());
@@ -60,14 +60,14 @@ bool WolkaboutTemplateFactory::processDefaultMapping(const ModbusRegisterMapping
     }
 }
 
-bool WolkaboutTemplateFactory::processSensorMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
+bool WolkaboutTemplateFactory::processSensorMapping(const RegisterMapping& mapping, const DataType& dataType,
                                                     std::vector<SensorTemplate>& sensorTemplates)
 {
     switch (mapping.getRegisterType())
     {
-    case ModbusRegisterMapping::RegisterType::INPUT_CONTACT:
-    case ModbusRegisterMapping::RegisterType::INPUT_REGISTER:
-    case ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR:
+    case RegisterMapping::RegisterType::INPUT_CONTACT:
+    case RegisterMapping::RegisterType::INPUT_REGISTER:
+    case RegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR:
         sensorTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType, mapping.getDescription(),
                                      mapping.getMinimum(), mapping.getMaximum());
         return true;
@@ -78,13 +78,13 @@ bool WolkaboutTemplateFactory::processSensorMapping(const ModbusRegisterMapping&
     }
 }
 
-bool WolkaboutTemplateFactory::processActuatorMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
+bool WolkaboutTemplateFactory::processActuatorMapping(const RegisterMapping& mapping, const DataType& dataType,
                                                       std::vector<ActuatorTemplate>& actuatorTemplates)
 {
     switch (mapping.getRegisterType())
     {
-    case ModbusRegisterMapping::RegisterType::COIL:
-    case ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
+    case RegisterMapping::RegisterType::COIL:
+    case RegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
         actuatorTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType, mapping.getDescription(),
                                        mapping.getMinimum(), mapping.getMaximum());
         return true;
@@ -95,12 +95,12 @@ bool WolkaboutTemplateFactory::processActuatorMapping(const ModbusRegisterMappin
     }
 }
 
-bool WolkaboutTemplateFactory::processAlarmMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
+bool WolkaboutTemplateFactory::processAlarmMapping(const RegisterMapping& mapping, const DataType& dataType,
                                                    std::vector<AlarmTemplate>& alarmTemplates)
 {
     switch (mapping.getRegisterType())
     {
-    case ModbusRegisterMapping::RegisterType::INPUT_CONTACT:
+    case RegisterMapping::RegisterType::INPUT_CONTACT:
         alarmTemplates.emplace_back(mapping.getName(), mapping.getReference(), mapping.getDescription());
         return true;
     default:
@@ -110,14 +110,13 @@ bool WolkaboutTemplateFactory::processAlarmMapping(const ModbusRegisterMapping& 
     }
 }
 
-bool WolkaboutTemplateFactory::processConfigurationMapping(const ModbusRegisterMapping& mapping,
-                                                           const DataType& dataType,
+bool WolkaboutTemplateFactory::processConfigurationMapping(const RegisterMapping& mapping, const DataType& dataType,
                                                            std::vector<ConfigurationTemplate>& configurationTemplates)
 {
     switch (mapping.getRegisterType())
     {
-    case ModbusRegisterMapping::RegisterType::COIL:
-    case ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
+    case RegisterMapping::RegisterType::COIL:
+    case RegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
         if (mapping.getLabelsAndAddresses().empty())
         {
             configurationTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType,
@@ -151,7 +150,7 @@ std::unique_ptr<DeviceTemplate> WolkaboutTemplateFactory::makeTemplateFromDevice
     std::vector<AlarmTemplate> alarmTemplates;
     std::vector<ConfigurationTemplate> configurationTemplates;
 
-    for (const ModbusRegisterMapping& mapping : configTemplate.getMappings())
+    for (const RegisterMapping& mapping : configTemplate.getMappings())
     {
         auto mappingType = mapping.getMappingType();
         auto registerType = mapping.getRegisterType();
@@ -160,23 +159,23 @@ std::unique_ptr<DeviceTemplate> WolkaboutTemplateFactory::makeTemplateFromDevice
 
         switch (mappingType)
         {
-        case ModbusRegisterMapping::MappingType::DEFAULT:
+        case ModuleMapping::MappingType::DEFAULT:
             processDefaultMapping(mapping, dataType, sensorTemplates, actuatorTemplates);
             break;
 
-        case ModbusRegisterMapping::MappingType::SENSOR:
+        case ModuleMapping::MappingType::SENSOR:
             processSensorMapping(mapping, dataType, sensorTemplates);
             break;
 
-        case ModbusRegisterMapping::MappingType::ACTUATOR:
+        case ModuleMapping::MappingType::ACTUATOR:
             processActuatorMapping(mapping, dataType, actuatorTemplates);
             break;
 
-        case ModbusRegisterMapping::MappingType::ALARM:
+        case ModuleMapping::MappingType::ALARM:
             processAlarmMapping(mapping, dataType, alarmTemplates);
             break;
 
-        case ModbusRegisterMapping::MappingType::CONFIGURATION:
+        case ModuleMapping::MappingType::CONFIGURATION:
             processConfigurationMapping(mapping, dataType, configurationTemplates);
             break;
 

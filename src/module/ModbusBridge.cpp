@@ -124,9 +124,9 @@ void ModbusBridge::setOnDeviceStatusChange(
 
 // handleActuation and helper methods
 // void handleActuatorForHoldingRegister() -
-void ModbusBridge::handleActuationForHoldingRegister(ModbusRegisterMapping& mapping, const std::string& value)
+void ModbusBridge::handleActuationForHoldingRegister(ModuleMapping& mapping, const std::string& value)
 {
-    if (mapping.getDataType() == ModbusRegisterMapping::DataType::INT16)
+    if (mapping.getDataType() == ModuleMapping::DataType::INT16)
     {
         short shortValue;
         try
@@ -150,7 +150,7 @@ void ModbusBridge::handleActuationForHoldingRegister(ModbusRegisterMapping& mapp
             mapping.setValid(false);
         }
     }
-    else if (mapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
+    else if (mapping.getDataType() == ModuleMapping::DataType::UINT16)
     {
         unsigned short unsignedShortValue;
         try
@@ -173,7 +173,7 @@ void ModbusBridge::handleActuationForHoldingRegister(ModbusRegisterMapping& mapp
             mapping.setValid(false);
         }
     }
-    else if (mapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
+    else if (mapping.getDataType() == ModuleMapping::DataType::REAL32)
     {
         float floatValue;
         try
@@ -198,7 +198,7 @@ void ModbusBridge::handleActuationForHoldingRegister(ModbusRegisterMapping& mapp
     }
 }
 // void handleActuatorForCoil() -
-void ModbusBridge::handleActuationForCoil(ModbusRegisterMapping& mapping, const std::string& value)
+void ModbusBridge::handleActuationForCoil(ModuleMapping& mapping, const std::string& value)
 {
     bool boolValue =
       std::any_of(TRUE_VALUES.begin(), TRUE_VALUES.end(), [&](const std::string& ref) { return ref == value; });
@@ -234,8 +234,8 @@ void ModbusBridge::handleActuation(const std::string& deviceKey, const std::stri
     auto mapping = *m_registerMappingByReference[deviceKey + '.' + reference];
 
     // Discard if the mapping is incorrect
-    if (mapping.getRegisterType() != ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR &&
-        mapping.getRegisterType() != ModbusRegisterMapping::RegisterType::COIL)
+    if (mapping.getRegisterType() != ModuleMapping::RegisterType::HOLDING_REGISTER_ACTUATOR &&
+        mapping.getRegisterType() != ModuleMapping::RegisterType::COIL)
     {
         LOG(ERROR)
           << "ModbusBridge: Modbus register mapped to reference '" << reference
@@ -244,11 +244,11 @@ void ModbusBridge::handleActuation(const std::string& deviceKey, const std::stri
     }
 
     // Pass through the appropriate handler
-    if (mapping.getRegisterType() == ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR)
+    if (mapping.getRegisterType() == ModuleMapping::RegisterType::HOLDING_REGISTER_ACTUATOR)
     {
         handleActuationForHoldingRegister(mapping, value);
     }
-    else if (mapping.getRegisterType() == ModbusRegisterMapping::RegisterType::COIL)
+    else if (mapping.getRegisterType() == ModuleMapping::RegisterType::COIL)
     {
         handleActuationForCoil(mapping, value);
     }
@@ -256,9 +256,9 @@ void ModbusBridge::handleActuation(const std::string& deviceKey, const std::stri
 
 // handleConfiguration and helper methods
 // handleConfigurationForHoldingRegister() - handles
-void ModbusBridge::handleConfigurationForHoldingRegister(ModbusRegisterMapping& mapping, const std::string& value)
+void ModbusBridge::handleConfigurationForHoldingRegister(ModuleMapping& mapping, const std::string& value)
 {
-    if (mapping.getDataType() == ModbusRegisterMapping::DataType::INT16)
+    if (mapping.getDataType() == ModuleMapping::DataType::INT16)
     {
         short shortValue;
         try
@@ -281,7 +281,7 @@ void ModbusBridge::handleConfigurationForHoldingRegister(ModbusRegisterMapping& 
             mapping.setValid(false);
         }
     }
-    else if (mapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
+    else if (mapping.getDataType() == ModuleMapping::DataType::UINT16)
     {
         unsigned short unsignedShortValue;
         try
@@ -304,7 +304,7 @@ void ModbusBridge::handleConfigurationForHoldingRegister(ModbusRegisterMapping& 
             mapping.setValid(false);
         }
     }
-    else if (mapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
+    else if (mapping.getDataType() == ModuleMapping::DataType::REAL32)
     {
         float floatValue;
         try
@@ -329,10 +329,9 @@ void ModbusBridge::handleConfigurationForHoldingRegister(ModbusRegisterMapping& 
     }
 }
 // handleConfigurationForHoldingRegisters() - handles
-void ModbusBridge::handleConfigurationForHoldingRegisters(ModbusRegisterMapping& mapping,
-                                                          const std::vector<std::string>& value)
+void ModbusBridge::handleConfigurationForHoldingRegisters(ModuleMapping& mapping, const std::vector<std::string>& value)
 {
-    if (mapping.getDataType() == ModbusRegisterMapping::DataType::INT16)
+    if (mapping.getDataType() == ModuleMapping::DataType::INT16)
     {
         std::vector<short> shorts;
         shorts.reserve(value.size());
@@ -358,7 +357,7 @@ void ModbusBridge::handleConfigurationForHoldingRegisters(ModbusRegisterMapping&
             mapping.setValid(false);
         }
     }
-    else if (mapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
+    else if (mapping.getDataType() == ModuleMapping::DataType::UINT16)
     {
         std::vector<unsigned short> unsignedShorts;
         unsignedShorts.reserve(value.size());
@@ -384,7 +383,7 @@ void ModbusBridge::handleConfigurationForHoldingRegisters(ModbusRegisterMapping&
             mapping.setValid(false);
         }
     }
-    else if (mapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
+    else if (mapping.getDataType() == ModuleMapping::DataType::REAL32)
     {
         std::vector<float> floats;
         floats.reserve(value.size());
@@ -412,7 +411,7 @@ void ModbusBridge::handleConfigurationForHoldingRegisters(ModbusRegisterMapping&
     }
 }
 // handleConfigurationForCoil() - handles
-void ModbusBridge::handleConfigurationForCoil(ModbusRegisterMapping& mapping, const std::string& value)
+void ModbusBridge::handleConfigurationForCoil(ModuleMapping& mapping, const std::string& value)
 {
     bool boolValue = std::find(TRUE_VALUES.begin(), TRUE_VALUES.end(), value) != TRUE_VALUES.end();
     if (!m_modbusClient.writeCoil(mapping.getSlaveAddress(), mapping.getAddress(), boolValue))
@@ -431,7 +430,7 @@ void ModbusBridge::handleConfiguration(const std::string& deviceKey,
         const std::string& reference = config.getReference();
         auto mapping = *m_registerMappingByReference[deviceKey + '.' + reference];
 
-        if (mapping.getRegisterType() == ModbusRegisterMapping::RegisterType::COIL)
+        if (mapping.getRegisterType() == ModuleMapping::RegisterType::COIL)
         {
             handleConfigurationForCoil(mapping, config.getValues()[0]);
         }
@@ -451,9 +450,9 @@ void ModbusBridge::handleConfiguration(const std::string& deviceKey,
 
 // getActuatorStatus and helper methods
 // getActuatorStatusFromHoldingRegister() - handles
-wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromHoldingRegister(ModbusRegisterMapping& mapping)
+wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromHoldingRegister(ModuleMapping& mapping)
 {
-    if (mapping.getDataType() == ModbusRegisterMapping::DataType::INT16)
+    if (mapping.getDataType() == ModuleMapping::DataType::INT16)
     {
         signed short value;
         if (!m_modbusClient.readHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), value))
@@ -468,7 +467,7 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromHoldingRegister(Mod
 
         return ActuatorStatus(std::to_string(value), ActuatorStatus::State::READY);
     }
-    else if (mapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
+    else if (mapping.getDataType() == ModuleMapping::DataType::UINT16)
     {
         unsigned short value;
         if (!m_modbusClient.readHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), value))
@@ -483,7 +482,7 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromHoldingRegister(Mod
 
         return ActuatorStatus(std::to_string(value), ActuatorStatus::State::READY);
     }
-    else if (mapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
+    else if (mapping.getDataType() == ModuleMapping::DataType::REAL32)
     {
         float value;
         if (!m_modbusClient.readHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), value))
@@ -503,7 +502,7 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromHoldingRegister(Mod
     return ActuatorStatus("", ActuatorStatus::State::ERROR);
 }
 // getActuatorStatusFromCoil() - handles
-wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromCoil(ModbusRegisterMapping& mapping)
+wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromCoil(ModuleMapping& mapping)
 {
     bool value = false;
     if (!m_modbusClient.readCoil(mapping.getSlaveAddress(), mapping.getAddress(), value))
@@ -540,8 +539,8 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatus(const std::string& dev
 
     auto mapping = *(m_registerMappingByReference[deviceKey + '.' + reference]);
 
-    if (mapping.getRegisterType() != ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR &&
-        mapping.getRegisterType() != ModbusRegisterMapping::RegisterType::COIL)
+    if (mapping.getRegisterType() != ModuleMapping::RegisterType::HOLDING_REGISTER_ACTUATOR &&
+        mapping.getRegisterType() != ModuleMapping::RegisterType::COIL)
     {
         LOG(ERROR)
           << "ModbusBridge: Modbus register mapped to reference '" << reference
@@ -549,17 +548,17 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatus(const std::string& dev
         return ActuatorStatus("", ActuatorStatus::State::ERROR);
     }
 
-    return mapping.getRegisterType() == ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR ?
+    return mapping.getRegisterType() == ModuleMapping::RegisterType::HOLDING_REGISTER_ACTUATOR ?
              getActuatorStatusFromHoldingRegister(mapping) :
              getActuatorStatusFromCoil(mapping);
 }
 
 // getConfiguration and helper methods
 // getConfigurationStatusFromHoldingRegister() - handles
-ConfigurationItem ModbusBridge::getConfigurationStatusFromHoldingRegister(ModbusRegisterMapping& mapping)
+ConfigurationItem ModbusBridge::getConfigurationStatusFromHoldingRegister(ModuleMapping& mapping)
 {
     std::vector<std::string> configurationValues;
-    if (mapping.getDataType() == ModbusRegisterMapping::DataType::INT16)
+    if (mapping.getDataType() == ModuleMapping::DataType::INT16)
     {
         if (!mapping.getLabelsAndAddresses().empty())
         {
@@ -589,7 +588,7 @@ ConfigurationItem ModbusBridge::getConfigurationStatusFromHoldingRegister(Modbus
             mapping.update(value);
         }
     }
-    else if (mapping.getDataType() == ModbusRegisterMapping::DataType::UINT16)
+    else if (mapping.getDataType() == ModuleMapping::DataType::UINT16)
     {
         if (!mapping.getLabelsAndAddresses().empty())
         {
@@ -619,7 +618,7 @@ ConfigurationItem ModbusBridge::getConfigurationStatusFromHoldingRegister(Modbus
             mapping.update(value);
         }
     }
-    else if (mapping.getDataType() == ModbusRegisterMapping::DataType::REAL32)
+    else if (mapping.getDataType() == ModuleMapping::DataType::REAL32)
     {
         if (!mapping.getLabelsAndAddresses().empty())
         {
@@ -659,7 +658,7 @@ ConfigurationItem ModbusBridge::getConfigurationStatusFromHoldingRegister(Modbus
     return ConfigurationItem(configurationValues, mapping.getReference());
 }
 // getConfigurationStatusFromCoil() - handles
-ConfigurationItem ModbusBridge::getConfigurationStatusFromCoil(ModbusRegisterMapping& mapping)
+ConfigurationItem ModbusBridge::getConfigurationStatusFromCoil(ModuleMapping& mapping)
 {
     bool value;
     if (!m_modbusClient.readCoil(mapping.getSlaveAddress(), mapping.getAddress(), value))
@@ -682,10 +681,10 @@ std::vector<ConfigurationItem> ModbusBridge::getConfiguration(const std::string&
 
         switch (mapping.getRegisterType())
         {
-        case ModbusRegisterMapping::RegisterType::COIL:
+        case ModuleMapping::RegisterType::COIL:
             configurations.emplace_back(getConfigurationStatusFromCoil(mapping));
             break;
-        case ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
+        case ModuleMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
             configurations.emplace_back(getConfigurationStatusFromHoldingRegister(mapping));
             break;
         default:
@@ -792,7 +791,7 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
 
     switch (group.getDataType())
     {
-    case ModbusRegisterMapping::DataType::INT16:
+    case ModuleMapping::DataType::INT16:
     {
         std::vector<short> values;
         LOG(TRACE) << "readHoldingRegisters (INT16) " << group.getSlaveAddress() << ", "
@@ -848,7 +847,7 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
             if (updated)
             {
                 LOG(INFO) << "ModbusBridge: "
-                          << ((mapping->getMappingType() == ModbusRegisterMapping::MappingType::CONFIGURATION) ?
+                          << ((mapping->getMappingType() == ModuleMapping::MappingType::CONFIGURATION) ?
                                 "Configuration" :
                                 "Actuator")
                           << " value changed - Reference: '" << mapping->getReference() << "' Value: '"
@@ -856,15 +855,15 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
 
                 switch (mapping->getMappingType())
                 {
-                case ModbusRegisterMapping::MappingType::DEFAULT:
-                case ModbusRegisterMapping::MappingType::ACTUATOR:
+                case ModuleMapping::MappingType::DEFAULT:
+                case ModuleMapping::MappingType::ACTUATOR:
                     if (m_onActuatorStatusChange)
                     {
                         m_onActuatorStatusChange(m_deviceKeyBySlaveAddress[group.getSlaveAddress()],
                                                  mapping->getReference(), mapping->getValue());
                     }
                     break;
-                case ModbusRegisterMapping::MappingType::CONFIGURATION:
+                case ModuleMapping::MappingType::CONFIGURATION:
                     if (m_onConfigurationChange)
                     {
                         auto vector = std::vector<ConfigurationItem>{
@@ -880,7 +879,7 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
         }
         break;
     }
-    case ModbusRegisterMapping::DataType::UINT16:
+    case ModuleMapping::DataType::UINT16:
     {
         std::vector<unsigned short> values;
         LOG(TRACE) << "readHoldingRegisters (UINT16) " << group.getSlaveAddress() << ", "
@@ -937,14 +936,14 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
 
                 switch (mapping->getMappingType())
                 {
-                case ModbusRegisterMapping::MappingType::DEFAULT:
-                case ModbusRegisterMapping::MappingType::ACTUATOR:
+                case ModuleMapping::MappingType::DEFAULT:
+                case ModuleMapping::MappingType::ACTUATOR:
                     if (m_onActuatorStatusChange)
                     {
                         m_onActuatorStatusChange(deviceKey, mapping->getReference(), mapping->getValue());
                     }
                     break;
-                case ModbusRegisterMapping::MappingType::CONFIGURATION:
+                case ModuleMapping::MappingType::CONFIGURATION:
                     if (m_onConfigurationChange)
                     {
                         auto vector = std::vector<ConfigurationItem>{
@@ -960,7 +959,7 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
         }
         break;
     }
-    case ModbusRegisterMapping::DataType::REAL32:
+    case ModuleMapping::DataType::REAL32:
     {
         std::vector<float> values;
         LOG(TRACE) << "readHoldingRegisters (REAL32) " << group.getSlaveAddress() << ", "
@@ -1017,14 +1016,14 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
 
                 switch (mapping->getMappingType())
                 {
-                case ModbusRegisterMapping::MappingType::DEFAULT:
-                case ModbusRegisterMapping::MappingType::ACTUATOR:
+                case ModuleMapping::MappingType::DEFAULT:
+                case ModuleMapping::MappingType::ACTUATOR:
                     if (m_onActuatorStatusChange)
                     {
                         m_onActuatorStatusChange(deviceKey, mapping->getReference(), mapping->getValue());
                     }
                     break;
-                case ModbusRegisterMapping::MappingType::CONFIGURATION:
+                case ModuleMapping::MappingType::CONFIGURATION:
                     if (m_onConfigurationChange)
                     {
                         auto vector = std::vector<ConfigurationItem>{
@@ -1040,7 +1039,7 @@ void ModbusBridge::readHoldingRegistersActuators(const ModbusRegisterGroup& grou
         }
         break;
     }
-    case ModbusRegisterMapping::DataType::BOOL:
+    case ModuleMapping::DataType::BOOL:
         throw std::logic_error(&"Invalid type for HoldingRegisterActuator at slaveAddress "[group.getSlaveAddress()]);
     }
 }
@@ -1052,7 +1051,7 @@ void ModbusBridge::readHoldingRegistersSensors(const ModbusRegisterGroup& group,
 
     switch (group.getDataType())
     {
-    case ModbusRegisterMapping::DataType::INT16:
+    case ModuleMapping::DataType::INT16:
     {
         std::vector<signed short> values;
         LOG(TRACE) << "readHoldingRegisters (INT16) " << group.getSlaveAddress() << ", "
@@ -1098,7 +1097,7 @@ void ModbusBridge::readHoldingRegistersSensors(const ModbusRegisterGroup& group,
         }
         break;
     }
-    case ModbusRegisterMapping::DataType::UINT16:
+    case ModuleMapping::DataType::UINT16:
     {
         std::vector<unsigned short> values;
         LOG(TRACE) << "readHoldingRegisters (UINT16) " << group.getSlaveAddress() << ", "
@@ -1146,7 +1145,7 @@ void ModbusBridge::readHoldingRegistersSensors(const ModbusRegisterGroup& group,
         }
         break;
     }
-    case ModbusRegisterMapping::DataType::REAL32:
+    case ModuleMapping::DataType::REAL32:
     {
         std::vector<float> values;
         LOG(TRACE) << "readHoldingRegisters (REAL32) " << group.getSlaveAddress() << ", "
@@ -1194,7 +1193,7 @@ void ModbusBridge::readHoldingRegistersSensors(const ModbusRegisterGroup& group,
         }
         break;
     }
-    case ModbusRegisterMapping::DataType::BOOL:
+    case ModuleMapping::DataType::BOOL:
         throw std::logic_error(&"Invalid type for HoldingRegisterSensor at slaveAddress "[group.getSlaveAddress()]);
     }
 }
@@ -1206,7 +1205,7 @@ void ModbusBridge::readInputRegisters(const ModbusRegisterGroup& group, std::map
 
     switch (group.getDataType())
     {
-    case ModbusRegisterMapping::DataType::INT16:
+    case ModuleMapping::DataType::INT16:
     {
         std::vector<signed short> values;
         LOG(TRACE) << "readInputRegisters (INT16) " << group.getSlaveAddress() << ", "
@@ -1253,7 +1252,7 @@ void ModbusBridge::readInputRegisters(const ModbusRegisterGroup& group, std::map
         }
         break;
     }
-    case ModbusRegisterMapping::DataType::UINT16:
+    case ModuleMapping::DataType::UINT16:
     {
         std::vector<unsigned short> values;
         LOG(TRACE) << "readInputRegisters (UINT16) " << group.getSlaveAddress() << ", "
@@ -1300,7 +1299,7 @@ void ModbusBridge::readInputRegisters(const ModbusRegisterGroup& group, std::map
         }
         break;
     }
-    case ModbusRegisterMapping::DataType::REAL32:
+    case ModuleMapping::DataType::REAL32:
     {
         std::vector<float> values;
         LOG(TRACE) << "readInputRegisters (REAL32) " << group.getSlaveAddress() << ", "
@@ -1347,7 +1346,7 @@ void ModbusBridge::readInputRegisters(const ModbusRegisterGroup& group, std::map
         }
         break;
     }
-    case ModbusRegisterMapping::DataType::BOOL:
+    case ModuleMapping::DataType::BOOL:
         throw std::logic_error(&"Invalid type for HoldingRegisterActuator at slaveAddress "[group.getSlaveAddress()]);
     }
 }
@@ -1397,14 +1396,14 @@ void ModbusBridge::readCoils(const ModbusRegisterGroup& group, std::map<int, boo
 
             switch (mapping->getMappingType())
             {
-            case ModbusRegisterMapping::MappingType::DEFAULT:
-            case ModbusRegisterMapping::MappingType::ACTUATOR:
+            case ModuleMapping::MappingType::DEFAULT:
+            case ModuleMapping::MappingType::ACTUATOR:
                 if (m_onActuatorStatusChange)
                 {
                     m_onActuatorStatusChange(deviceKey, mapping->getReference(), mapping->getValue());
                 }
                 break;
-            case ModbusRegisterMapping::MappingType::CONFIGURATION:
+            case ModuleMapping::MappingType::CONFIGURATION:
                 if (m_onConfigurationChange)
                 {
                     auto vector = std::vector<ConfigurationItem>{
@@ -1464,14 +1463,14 @@ void ModbusBridge::readDiscreteInputs(const ModbusRegisterGroup& group, std::map
 
             switch (mapping->getMappingType())
             {
-            case ModbusRegisterMapping::MappingType::DEFAULT:
-            case ModbusRegisterMapping::MappingType::SENSOR:
+            case ModuleMapping::MappingType::DEFAULT:
+            case ModuleMapping::MappingType::SENSOR:
                 if (m_onSensorChange)
                 {
                     m_onSensorChange(deviceKey, mapping->getReference(), mapping->getValue());
                 }
                 break;
-            case ModbusRegisterMapping::MappingType::ALARM:
+            case ModuleMapping::MappingType::ALARM:
                 if (m_onAlarmChange)
                 {
                     m_onAlarmChange(deviceKey, mapping->getReference(), value);
@@ -1499,27 +1498,27 @@ void ModbusBridge::readAndReportModbusRegistersValues()
         {
             switch (group.getRegisterType())
             {
-            case ModbusRegisterMapping::RegisterType::COIL:
+            case ModuleMapping::RegisterType::COIL:
             {
                 readCoils(group, slavesRead);
                 break;
             }
-            case ModbusRegisterMapping::RegisterType::INPUT_CONTACT:
+            case ModuleMapping::RegisterType::INPUT_CONTACT:
             {
                 readDiscreteInputs(group, slavesRead);
                 break;
             }
-            case ModbusRegisterMapping::RegisterType::INPUT_REGISTER:
+            case ModuleMapping::RegisterType::INPUT_REGISTER:
             {
                 readInputRegisters(group, slavesRead);
                 break;
             }
-            case ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR:
+            case ModuleMapping::RegisterType::HOLDING_REGISTER_SENSOR:
             {
                 readHoldingRegistersSensors(group, slavesRead);
                 break;
             }
-            case ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
+            case ModuleMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
             {
                 readHoldingRegistersActuators(group, slavesRead);
                 break;

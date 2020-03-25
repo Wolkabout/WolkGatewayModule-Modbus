@@ -17,7 +17,7 @@
 #ifndef DEVICETEMPLATEMODULE_H
 #define DEVICETEMPLATEMODULE_H
 
-#include "model/ModbusRegisterMapping.h"
+#include "model/ModuleMapping.h"
 
 namespace wolkabout
 {
@@ -26,7 +26,7 @@ using nlohmann::json;
 class DevicesConfigurationTemplate
 {
 public:
-    DevicesConfigurationTemplate(const std::string& name, const std::vector<ModbusRegisterMapping>& mappings);
+    DevicesConfigurationTemplate(const std::string& name, const std::vector<ModuleMapping>& mappings);
 
     DevicesConfigurationTemplate(const DevicesConfigurationTemplate& instance);
 
@@ -34,11 +34,11 @@ public:
 
     const std::string& getName() const;
 
-    const std::vector<ModbusRegisterMapping>& getMappings() const;
+    const std::vector<ModuleMapping>& getMappings() const;
 
 private:
     std::string m_name;
-    std::vector<ModbusRegisterMapping> m_mappings;
+    std::vector<ModuleMapping> m_mappings;
 };
 }    // namespace wolkabout
 
