@@ -27,11 +27,35 @@ using nlohmann::json;
 class JsonReaderParser
 {
 public:
-    template <class T> static T readOrDefault(json::object_t object, const std::string& key, T defaultValue)
+    static std::string readOrDefault(json::object_t object, const std::string& key, std::string defaultValue)
     {
         try
         {
-            return object.at(key).get<T>();
+            return object.at(key).get<std::string>();
+        }
+        catch (std::exception& e)
+        {
+            return defaultValue;
+        }
+    }
+
+    static double readOrDefault(json::object_t object, const std::string& key, double defaultValue)
+    {
+        try
+        {
+            return object.at(key).get<double>();
+        }
+        catch (std::exception& e)
+        {
+            return defaultValue;
+        }
+    }
+
+    static int readOrDefault(json::object_t object, const std::string& key, int defaultValue)
+    {
+        try
+        {
+            return object.at(key).get<int>();
         }
         catch (std::exception& e)
         {

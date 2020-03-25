@@ -26,7 +26,7 @@ namespace wolkabout
 class WolkaboutTemplateFactory
 {
 private:
-    static DataType getDataTypeFromRegisterType(RegisterMapping::RegisterType registerType);
+    static DataType getDataTypeFromMapping(const ModuleMapping& mapping);
 
     static bool processDefaultMapping(const ModuleMapping& mapping, const DataType& dataType,
                                       std::vector<SensorTemplate>& sensorTemplates,

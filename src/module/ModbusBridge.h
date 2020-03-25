@@ -53,7 +53,7 @@ public:
                  const std::map<std::string, std::vector<int>>& deviceAddressesByTemplate,
                  const std::map<int, std::unique_ptr<Device>>& devices, std::chrono::milliseconds registerReadPeriod);
 
-    virtual ~ModbusBridge();
+    ~ModbusBridge() override;
 
     bool isRunning() const;
 
@@ -100,32 +100,31 @@ protected:
 
 private:
     // Helper methods for getActuatorStatus
-    ActuatorStatus getActuatorStatusFromHoldingRegister(ModuleMapping& mapping);
+    ActuatorStatus getActuatorStatusFromHoldingRegister(RegisterMapping& mapping);
 
-    ActuatorStatus getActuatorStatusFromCoil(ModuleMapping& mapping);
+    ActuatorStatus getActuatorStatusFromCoil(RegisterMapping& mapping);
 
     // Helper methods for getConfiguration
-    ConfigurationItem getConfigurationStatusFromCoil(ModuleMapping& mapping);
+    ConfigurationItem getConfigurationStatusFromCoil(RegisterMapping& mapping);
 
-    ConfigurationItem getConfigurationStatusFromHoldingRegister(ModuleMapping& mapping);
+    ConfigurationItem getConfigurationStatusFromHoldingRegister(RegisterMapping& mapping);
 
     // Helper methods for handleActuation
-    void handleActuationForHoldingRegister(ModuleMapping& mapping, const std::string& value);
+    void handleActuationForHoldingRegister(RegisterMapping& mapping, const std::string& value);
 
-    void handleActuationForCoil(ModuleMapping& mapping, const std::string& value);
+    void handleActuationForCoil(RegisterMapping& mapping, const std::string& value);
 
     // Helper methods for handleConfiguration
-    void handleConfigurationForHoldingRegister(ModuleMapping& mapping, const std::string& value);
+    void handleConfigurationForHoldingRegister(RegisterMapping& mapping, const std::string& value);
 
-    void handleConfigurationForHoldingRegisters(ModuleMapping& mapping, const std::vector<std::string>& value);
+    void handleConfigurationForHoldingRegisters(RegisterMapping& mapping, const std::vector<std::string>& value);
 
-    void handleConfigurationForCoil(ModuleMapping& mapping, const std::string& value);
-
-    // Running methods
-    void run();
+    void handleConfigurationForCoil(RegisterMapping& mapping, const std::string& value);
 
     // Methods to help with data query
     int getSlaveAddress(const std::string& deviceKey);
+
+    static const char SEPARATOR;
 
     // The client
     ModbusClient& m_modbusClient;
@@ -139,15 +138,13 @@ private:
 
     // Used to fast decode deviceKey by slaveAddress.
     std::map<int, std::string> m_deviceKeyBySlaveAddress;
-    // Access device by slaveAddress
-    std::map<int, std::shared_ptr<ModbusDevice>> m_deviceBySlaveAddress;
     // Device status
     // Mostly to be used by getDeviceStatus to provide, and readAndReport to write if device is available
     std::map<int, DeviceStatus::Status> m_devicesStatusBySlaveAddress;
     // Watcher for all the mappings. This is the shortcut for handle and get queries to get to the mapping they need.
-    std::map<std::string, std::shared_ptr<ModuleMapping>> m_registerMappingByReference;
+    std::map<std::string, std::shared_ptr<RegisterMapping>> m_registerMappingByReference;
     // Configurations grouped per device. Necessary for getConfiguration.
-    std::map<std::string, std::map<std::string, std::shared_ptr<ModuleMapping>>> m_configurationMappingByDevice;
+    std::map<std::string, std::map<std::string, std::shared_ptr<RegisterMapping>>> m_configurationMappingByDevice;
 
     // All the callbacks from the modbusBridge to explicitly target Wolk instance and notify of data
     std::function<void(const std::string& deviceKey, const std::string& reference, const std::string& value)>

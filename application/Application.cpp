@@ -39,15 +39,12 @@ std::map<std::string, std::unique_ptr<wolkabout::DeviceTemplate>> generateTempla
   wolkabout::DevicesConfiguration* devicesConfiguration)
 {
     std::map<std::string, std::unique_ptr<wolkabout::DeviceTemplate>> templates;
-
-    // Parse templates to wolkabout::DeviceTemplate
     for (const auto& deviceTemplate : devicesConfiguration->getTemplates())
     {
         wolkabout::DevicesConfigurationTemplate& info = *deviceTemplate.second;
         templates.emplace(deviceTemplate.first,
                           wolkabout::WolkaboutTemplateFactory::makeTemplateFromDeviceConfigTemplate(info));
     }
-
     return templates;
 }
 

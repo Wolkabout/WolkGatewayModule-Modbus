@@ -56,7 +56,7 @@ public:
     double getMaximum() const;
 
     int getAddress() const;
-    LabelMap getLabelsAndAddresses() const;
+    LabelMap getLabelMap() const;
     int getRegisterCount() const;
 
     RegisterMapping::RegisterType getRegisterType() const;

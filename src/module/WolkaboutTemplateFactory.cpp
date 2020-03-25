@@ -18,15 +18,20 @@
 
 namespace wolkabout
 {
-DataType WolkaboutTemplateFactory::getDataTypeFromRegisterType(RegisterMapping::RegisterType registerType)
+DataType WolkaboutTemplateFactory::getDataTypeFromMapping(const ModuleMapping& mapping)
 {
-    if (registerType == RegisterMapping::RegisterType::COIL ||
-        registerType == RegisterMapping::RegisterType::INPUT_CONTACT)
+    if (mapping.getRegisterType() == RegisterMapping::RegisterType::COIL ||
+        mapping.getRegisterType() == RegisterMapping::RegisterType::INPUT_CONTACT)
     {
         return DataType::BOOLEAN;
     }
     else
     {
+        if (mapping.getOperationType() == RegisterMapping::OperationType::TAKE_BIT)
+            return DataType::BOOLEAN;
+        else if (mapping.getOperationType() == RegisterMapping::OperationType::STRINGIFY_UNICODE ||
+                 mapping.getOperationType() == RegisterMapping::OperationType::STRINGIFY_ASCII)
+            return DataType::STRING;
         return DataType::NUMERIC;
     }
 }
@@ -66,7 +71,6 @@ bool WolkaboutTemplateFactory::processSensorMapping(const ModuleMapping& mapping
     {
     case RegisterMapping::RegisterType::INPUT_CONTACT:
     case RegisterMapping::RegisterType::INPUT_REGISTER:
-    case RegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR:
         sensorTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType, mapping.getDescription(),
                                      mapping.getMinimum(), mapping.getMaximum());
         return true;
@@ -83,7 +87,7 @@ bool WolkaboutTemplateFactory::processActuatorMapping(const ModuleMapping& mappi
     switch (mapping.getRegisterType())
     {
     case RegisterMapping::RegisterType::COIL:
-    case RegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
+    case RegisterMapping::RegisterType::HOLDING_REGISTER:
         actuatorTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType, mapping.getDescription(),
                                        mapping.getMinimum(), mapping.getMaximum());
         return true;
@@ -115,8 +119,8 @@ bool WolkaboutTemplateFactory::processConfigurationMapping(const ModuleMapping& 
     switch (mapping.getRegisterType())
     {
     case RegisterMapping::RegisterType::COIL:
-    case RegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR:
-        if (mapping.getLabelsAndAddresses().empty())
+    case RegisterMapping::RegisterType::HOLDING_REGISTER:
+        if (mapping.getLabelMap().empty())
         {
             configurationTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType,
                                                 mapping.getDescription(), std::string(""), mapping.getMinimum(),
@@ -125,7 +129,7 @@ bool WolkaboutTemplateFactory::processConfigurationMapping(const ModuleMapping& 
         else
         {
             std::vector<std::string> labels;
-            for (const auto& kvp : mapping.getLabelsAndAddresses())
+            for (const auto& kvp : mapping.getLabelMap())
             {
                 labels.push_back(kvp.first);
             }
@@ -152,9 +156,7 @@ std::unique_ptr<DeviceTemplate> WolkaboutTemplateFactory::makeTemplateFromDevice
     for (const ModuleMapping& mapping : configTemplate.getMappings())
     {
         auto mappingType = mapping.getMappingType();
-        auto registerType = mapping.getRegisterType();
-
-        DataType dataType = getDataTypeFromRegisterType(registerType);
+        DataType dataType = getDataTypeFromMapping(mapping);
 
         switch (mappingType)
         {

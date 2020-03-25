@@ -143,7 +143,7 @@ ModuleMapping::MappingType ModuleMapping::getMappingType() const
     return m_mappingType;
 }
 
-LabelMap ModuleMapping::getLabelsAndAddresses() const
+LabelMap ModuleMapping::getLabelMap() const
 {
     return m_labelMap;
 }
