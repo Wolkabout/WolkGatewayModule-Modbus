@@ -20,7 +20,8 @@
 #include "modbus/LibModbusTcpIpClient.h"
 #include "model/DevicesConfiguration.h"
 #include "model/ModuleConfiguration.h"
-#include "module/DevicesTemplateFactory.h"
+#include "module/ModbusBridge.h"
+#include "module/WolkaboutTemplateFactory.h"
 #include "service/FirmwareInstaller.h"
 #include "utilities/ConsoleLogger.h"
 #include "utilities/JsonReaderParser.h"
@@ -44,7 +45,7 @@ std::map<std::string, std::unique_ptr<wolkabout::DeviceTemplate>> generateTempla
     {
         wolkabout::DevicesConfigurationTemplate& info = *deviceTemplate.second;
         templates.emplace(deviceTemplate.first,
-                          wolkabout::DevicesTemplateFactory::makeTemplateFromDeviceConfigTemplate(info));
+                          wolkabout::WolkaboutTemplateFactory::makeTemplateFromDeviceConfigTemplate(info));
     }
 
     return templates;
@@ -173,8 +174,7 @@ int main(int argc, char** argv)
         devicesConfiguration.getTemplates().size() != 1)
     {
         LOG(WARN) << "Using more than 1 template in TCP/IP mode is unnecessary. There can only be 1 TCP/IP device "
-                  << "per module, which can use only one template "
-                  << "We recommend using 1 template to improve performance.";
+                  << "per module, which can use only one template.";
     }
 
     // Create the modbus client based on parsed information
@@ -225,62 +225,60 @@ int main(int argc, char** argv)
 
     // Pass everything necessary to initialize the bridge
     LOG(DEBUG) << "Initializing the bridge...";
-    //    auto modbusBridge = std::make_shared<wolkabout::ModbusBridge>(*libModbusClient,
-    //    devicesConfiguration.getTemplates(),
-    //                                                                  deviceTemplateMap, devices,
-    //                                                                  moduleConfiguration.getRegisterReadPeriod());
-    //
-    //    // Connect the bridge to Wolk instance
-    //    LOG(DEBUG) << "Connecting with Wolk...";
-    //    std::unique_ptr<wolkabout::Wolk> wolk = wolkabout::Wolk::newBuilder()
-    //                                              .deviceStatusProvider(modbusBridge)
-    //                                              .actuatorStatusProvider(modbusBridge)
-    //                                              .actuationHandler(modbusBridge)
-    //                                              .configurationProvider(modbusBridge)
-    //                                              .configurationHandler(modbusBridge)
-    //                                              .host(moduleConfiguration.getMqttHost())
-    //                                              .build();
-    //
-    //    // Setup all the necessary callbacks for value changes from inside the modbusBridge
-    //    modbusBridge->setOnSensorChange(
-    //      [&](const std::string& deviceKey, const std::string& reference, const std::string& value) {
-    //          wolk->addSensorReading(deviceKey, reference, value);
-    //          wolk->publish();
-    //      });
-    //
-    //    modbusBridge->setOnActuatorStatusChange(
-    //      [&](const std::string& deviceKey, const std::string& reference, const std::string& value) {
-    //          wolk->publishActuatorStatus(deviceKey, reference, value);
-    //      });
-    //
-    //    modbusBridge->setOnAlarmChange([&](const std::string& deviceKey, const std::string& reference, bool active) {
-    //        wolk->addAlarm(deviceKey, reference, active);
-    //        wolk->publish();
-    //    });
-    //
-    //    modbusBridge->setOnConfigurationChange(
-    //      [&](const std::string& deviceKey, std::vector<wolkabout::ConfigurationItem>& values) {
-    //          wolk->publishConfiguration(deviceKey, values);
-    //      });
-    //
-    //    modbusBridge->setOnDeviceStatusChange([&](const std::string& deviceKey, wolkabout::DeviceStatus::Status
-    //    status) {
-    //        wolk->publishDeviceStatus(deviceKey, status);
-    //    });
-    //
-    //    // Register all the devices created
-    //    for (const auto& device : devices)
-    //    {
-    //        wolk->addDevice(*device.second);
-    //    }
-    //
-    //    wolk->connect();
-    //    modbusBridge->start();
-    //
-    //    while (modbusBridge->isRunning())
-    //    {
-    //        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    //    }
+    auto modbusBridge = std::make_shared<wolkabout::ModbusBridge>(*libModbusClient, devicesConfiguration.getTemplates(),
+                                                                  deviceTemplateMap, devices,
+                                                                  moduleConfiguration.getRegisterReadPeriod());
+
+    // Connect the bridge to Wolk instance
+    LOG(DEBUG) << "Connecting with Wolk...";
+    std::unique_ptr<wolkabout::Wolk> wolk = wolkabout::Wolk::newBuilder()
+                                              .deviceStatusProvider(modbusBridge)
+                                              .actuatorStatusProvider(modbusBridge)
+                                              .actuationHandler(modbusBridge)
+                                              .configurationProvider(modbusBridge)
+                                              .configurationHandler(modbusBridge)
+                                              .host(moduleConfiguration.getMqttHost())
+                                              .build();
+
+    // Setup all the necessary callbacks for value changes from inside the modbusBridge
+    modbusBridge->setOnSensorChange(
+      [&](const std::string& deviceKey, const std::string& reference, const std::string& value) {
+          wolk->addSensorReading(deviceKey, reference, value);
+          wolk->publish();
+      });
+
+    modbusBridge->setOnActuatorStatusChange(
+      [&](const std::string& deviceKey, const std::string& reference, const std::string& value) {
+          wolk->publishActuatorStatus(deviceKey, reference, value);
+      });
+
+    modbusBridge->setOnAlarmChange([&](const std::string& deviceKey, const std::string& reference, bool active) {
+        wolk->addAlarm(deviceKey, reference, active);
+        wolk->publish();
+    });
+
+    modbusBridge->setOnConfigurationChange(
+      [&](const std::string& deviceKey, std::vector<wolkabout::ConfigurationItem>& values) {
+          wolk->publishConfiguration(deviceKey, values);
+      });
+
+    modbusBridge->setOnDeviceStatusChange([&](const std::string& deviceKey, wolkabout::DeviceStatus::Status status) {
+        wolk->publishDeviceStatus(deviceKey, status);
+    });
+
+    // Register all the devices created
+    for (const auto& device : devices)
+    {
+        wolk->addDevice(*device.second);
+    }
+
+    wolk->connect();
+    modbusBridge->start();
+
+    while (modbusBridge->isRunning())
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
 
     return 0;
 }

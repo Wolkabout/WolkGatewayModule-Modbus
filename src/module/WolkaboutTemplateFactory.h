@@ -14,33 +14,34 @@
  * limitations under the License.
  */
 
-#ifndef WOLKGATEWAYMODBUSMODULE_DEVICESTEMPLATEFACTORY_H
-#define WOLKGATEWAYMODBUSMODULE_DEVICESTEMPLATEFACTORY_H
+#ifndef WOLKGATEWAYMODBUSMODULE_WOLKABOUTTEMPLATEFACTORY_H
+#define WOLKGATEWAYMODBUSMODULE_WOLKABOUTTEMPLATEFACTORY_H
 
+#include "RegisterMapping.h"
 #include "model/DeviceTemplate.h"
 #include "model/DevicesConfigurationTemplate.h"
 
 namespace wolkabout
 {
-class DevicesTemplateFactory
+class WolkaboutTemplateFactory
 {
 private:
     static DataType getDataTypeFromRegisterType(RegisterMapping::RegisterType registerType);
 
-    static bool processDefaultMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
+    static bool processDefaultMapping(const RegisterMapping& mapping, const DataType& dataType,
                                       std::vector<SensorTemplate>& sensorTemplates,
                                       std::vector<ActuatorTemplate>& actuatorTemplates);
 
-    static bool processSensorMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
+    static bool processSensorMapping(const RegisterMapping& mapping, const DataType& dataType,
                                      std::vector<SensorTemplate>& sensorTemplates);
 
-    static bool processActuatorMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
+    static bool processActuatorMapping(const RegisterMapping& mapping, const DataType& dataType,
                                        std::vector<ActuatorTemplate>& actuatorTemplates);
 
-    static bool processAlarmMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
+    static bool processAlarmMapping(const RegisterMapping& mapping, const DataType& dataType,
                                     std::vector<AlarmTemplate>& alarmTemplates);
 
-    static bool processConfigurationMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
+    static bool processConfigurationMapping(const RegisterMapping& mapping, const DataType& dataType,
                                             std::vector<ConfigurationTemplate>& configurationTemplates);
 
 public:
@@ -49,4 +50,4 @@ public:
 };
 }    // namespace wolkabout
 
-#endif    // WOLKGATEWAYMODBUSMODULE_DEVICESTEMPLATEFACTORY_H
+#endif    // WOLKGATEWAYMODBUSMODULE_WOLKABOUTTEMPLATEFACTORY_H

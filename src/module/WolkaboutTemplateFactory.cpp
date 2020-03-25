@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#include "DevicesTemplateFactory.h"
+#include "WolkaboutTemplateFactory.h"
 
 namespace wolkabout
 {
-DataType DevicesTemplateFactory::getDataTypeFromRegisterType(ModbusRegisterMapping::RegisterType registerType)
+DataType WolkaboutTemplateFactory::getDataTypeFromRegisterType(ModbusRegisterMapping::RegisterType registerType)
 {
     if (registerType == ModbusRegisterMapping::RegisterType::COIL ||
         registerType == ModbusRegisterMapping::RegisterType::INPUT_CONTACT)
@@ -31,9 +31,9 @@ DataType DevicesTemplateFactory::getDataTypeFromRegisterType(ModbusRegisterMappi
     }
 }
 
-bool DevicesTemplateFactory::processDefaultMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
-                                                   std::vector<SensorTemplate>& sensorTemplates,
-                                                   std::vector<ActuatorTemplate>& actuatorTemplates)
+bool WolkaboutTemplateFactory::processDefaultMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
+                                                     std::vector<SensorTemplate>& sensorTemplates,
+                                                     std::vector<ActuatorTemplate>& actuatorTemplates)
 {
     switch (mapping.getRegisterType())
     {
@@ -60,8 +60,8 @@ bool DevicesTemplateFactory::processDefaultMapping(const ModbusRegisterMapping& 
     }
 }
 
-bool DevicesTemplateFactory::processSensorMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
-                                                  std::vector<SensorTemplate>& sensorTemplates)
+bool WolkaboutTemplateFactory::processSensorMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
+                                                    std::vector<SensorTemplate>& sensorTemplates)
 {
     switch (mapping.getRegisterType())
     {
@@ -78,8 +78,8 @@ bool DevicesTemplateFactory::processSensorMapping(const ModbusRegisterMapping& m
     }
 }
 
-bool DevicesTemplateFactory::processActuatorMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
-                                                    std::vector<ActuatorTemplate>& actuatorTemplates)
+bool WolkaboutTemplateFactory::processActuatorMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
+                                                      std::vector<ActuatorTemplate>& actuatorTemplates)
 {
     switch (mapping.getRegisterType())
     {
@@ -95,8 +95,8 @@ bool DevicesTemplateFactory::processActuatorMapping(const ModbusRegisterMapping&
     }
 }
 
-bool DevicesTemplateFactory::processAlarmMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
-                                                 std::vector<AlarmTemplate>& alarmTemplates)
+bool WolkaboutTemplateFactory::processAlarmMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
+                                                   std::vector<AlarmTemplate>& alarmTemplates)
 {
     switch (mapping.getRegisterType())
     {
@@ -110,8 +110,9 @@ bool DevicesTemplateFactory::processAlarmMapping(const ModbusRegisterMapping& ma
     }
 }
 
-bool DevicesTemplateFactory::processConfigurationMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
-                                                         std::vector<ConfigurationTemplate>& configurationTemplates)
+bool WolkaboutTemplateFactory::processConfigurationMapping(const ModbusRegisterMapping& mapping,
+                                                           const DataType& dataType,
+                                                           std::vector<ConfigurationTemplate>& configurationTemplates)
 {
     switch (mapping.getRegisterType())
     {
@@ -142,7 +143,7 @@ bool DevicesTemplateFactory::processConfigurationMapping(const ModbusRegisterMap
     }
 }
 
-std::unique_ptr<DeviceTemplate> DevicesTemplateFactory::makeTemplateFromDeviceConfigTemplate(
+std::unique_ptr<DeviceTemplate> WolkaboutTemplateFactory::makeTemplateFromDeviceConfigTemplate(
   DevicesConfigurationTemplate& configTemplate)
 {
     std::vector<SensorTemplate> sensorTemplates;
