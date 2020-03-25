@@ -14,6 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+originBuildDir=$(pwd)
+
+pushd WolkModbus || exit
+bash configure.sh $originBuildDir
+popd || exit
+
 cp tools/git/pre-commit .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 
