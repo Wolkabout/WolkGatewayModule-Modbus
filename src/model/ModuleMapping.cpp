@@ -16,7 +16,8 @@
 
 #include "ModuleMapping.h"
 #include "utilities/Deserializers.h"
-#include "utilities/json.hpp"
+#include "utilities/JsonReaderParser.h"
+#include "utilities/Logger.h"
 
 #include <set>
 #include <stdexcept>
@@ -28,201 +29,53 @@ namespace wolkabout
 {
 using nlohmann::json;
 
-ModuleMapping::ModuleMapping(std::string name, std::string reference, std::string description, double minimum,
-                             double maximum, int address, RegisterMapping::RegisterType registerType,
-                             RegisterMapping::OutputType dataType,
-                             wolkabout::ModuleMapping::MappingType mappingType = MappingType::DEFAULT,
-                             bool readRestricted)
-: m_readRestricted(readRestricted)
-, m_name(std::move(name))
-, m_reference(std::move(reference))
-, m_description(std::move(description))
-, m_minimum(minimum)
-, m_maximum(maximum)
-, m_address(address)
-, m_labelsAndAddresses()
-, m_addresses()
-, m_registerType(registerType)
-, m_dataType(dataType)
-, m_mappingType(mappingType)
-{
-    m_mappings.emplace_back(std::make_shared<RegisterMapping>(reference, registerType, address,
-                                                              RegisterMapping::OperationType::NONE, readRestricted));
-}
-
-ModuleMapping::ModuleMapping(std::string name, std::string reference, std::string description, double minimum,
-                             double maximum, int address, int bitIndex, RegisterMapping::RegisterType registerType,
-                             ModuleMapping::MappingType mappingType, bool readRestricted)
-: m_readRestricted(readRestricted)
-, m_name(std::move(name))
-, m_reference(std::move(reference))
-, m_description(std::move(description))
-, m_minimum(minimum)
-, m_maximum(maximum)
-, m_address(address)
-, m_labelsAndAddresses()
-, m_addresses()
-, m_bitIndex(bitIndex)
-, m_registerType(registerType)
-, m_dataType(RegisterMapping::OutputType::BOOL)
-, m_mappingType(mappingType)
-{
-    m_mappings.emplace_back(std::make_shared<RegisterMapping>(
-      reference, registerType, address, RegisterMapping::OperationType::TAKE_BIT, bitIndex, readRestricted));
-}
-
-ModuleMapping::ModuleMapping(std::string name, std::string reference, std::string description, double minimum,
-                             double maximum, const LabelMap& labelsAndAddresses,
-                             RegisterMapping::RegisterType registerType, RegisterMapping::OutputType dataType,
-                             bool readRestricted)
-: m_readRestricted(readRestricted)
-, m_name(std::move(name))
-, m_reference(std::move(reference))
-, m_description(std::move(description))
-, m_minimum(minimum)
-, m_maximum(maximum)
-, m_address(-1)
-, m_labelsAndAddresses(labelsAndAddresses)
-, m_addresses()
-, m_registerType(registerType)
-, m_dataType(dataType)
-, m_mappingType(MappingType::CONFIGURATION)
-{
-    for (const auto& pair : labelsAndAddresses)
-    {
-        m_mappings.emplace_back(std::make_shared<RegisterMapping>(
-          pair.first, registerType, pair.second, RegisterMapping::OperationType::NONE, readRestricted));
-    }
-}
-
-ModuleMapping::ModuleMapping(const std::string& name, const std::string& reference, const std::string& description,
-                             double minimum, double maximum, const std::vector<int16_t>& addresses,
-                             RegisterMapping::RegisterType registerType, RegisterMapping::OutputType dataType,
-                             RegisterMapping::OperationType operationType, ModuleMapping::MappingType mappingType,
-                             bool readRestricted)
-: m_readRestricted(readRestricted)
-, m_name(name)
-, m_reference(reference)
-, m_description(description)
-, m_minimum(minimum)
-, m_maximum(maximum)
-, m_addresses(addresses)
-, m_registerType(registerType)
-, m_dataType(dataType)
-, m_mappingType(mappingType)
-{
-    m_mappings.emplace_back(
-      std::make_shared<RegisterMapping>(reference, registerType, addresses, dataType, operationType, readRestricted));
-}
-
 ModuleMapping::ModuleMapping(nlohmann::json j)
 {
+    m_readRestricted = JsonReaderParser::readOrDefault(j, "writeOnly", false);
     m_name = j.at("name").get<std::string>();
     m_reference = j.at("reference").get<std::string>();
+    m_description = JsonReaderParser::readOrDefault(j, "description", "");
+
+    m_minimum = JsonReaderParser::readOrDefault(j, "minimum", 0.0);
+    m_maximum = JsonReaderParser::readOrDefault(j, "maximum", 1.0);
+
+    m_address = JsonReaderParser::readOrDefault(j, "address", -1);
+    try
+    {
+        auto tempLabelMap = std::map<std::string, int>(j.at("labelMap").get<std::map<std::string, int>>());
+        typedef std::function<bool(std::pair<std::string, int>, std::pair<std::string, int>)> Comparator;
+        Comparator compFunctor = [](const std::pair<std::string, int>& elem1,
+                                    const std::pair<std::string, int>& elem2) { return elem1.second < elem2.second; };
+        std::set<std::pair<std::string, int>, Comparator> setOfWords(tempLabelMap.begin(), tempLabelMap.end(),
+                                                                     compFunctor);
+
+        // labelMap was already initialized
+        for (const auto& element : setOfWords)
+        {
+            m_labelMap.emplace_back(element);
+        }
+    }
+    catch (std::exception&)
+    {
+        m_labelMap.clear();
+    }
+    m_bitIndex = JsonReaderParser::readOrDefault(j, "bitIndex", -1);
+    m_addressCount = JsonReaderParser::readOrDefault(j, "addressCount", -1);
+
     m_registerType = Deserializers::deserializeRegisterType(j.at("registerType").get<std::string>());
+    m_dataType = Deserializers::deserializeDataType(j.at("dataType").get<std::string>());
 
-    try
-    {
-        m_description = j.at("description").get<std::string>();
-    }
-    catch (std::exception&)
-    {
-        m_description = std::string("");
-    }
-
-    try
-    {
-        const auto mappingTypeStr = j.at("mappingType").get<std::string>();
-        m_mappingType = MappingTypeConversion::deserializeMappingType(mappingTypeStr);
-    }
-    catch (std::exception&)
-    {
-        m_mappingType = ModuleMapping::MappingType::DEFAULT;
-    }
-
-    if (m_registerType == RegisterMapping::RegisterType::COIL ||
-        m_registerType == RegisterMapping::RegisterType::INPUT_CONTACT)
-    {
-        // this is obligatory here, we don't support multi-value boolean configurations
-        m_address = j.at("address").get<int>();
-        m_dataType = RegisterMapping::OutputType::BOOL;
-        // we ignore dataType and min/max
-    }
+    std::string m_operationTypeString = JsonReaderParser::readOrDefault(j, "operationType", "");
+    if (m_operationTypeString.empty())
+        m_operationType = RegisterMapping::OperationType::NONE;
     else
-    {
-        m_dataType = Deserializers::deserializeDataType(j.at("dataType").get<std::string>());
-        m_minimum = j.at("minimum").get<double>();
-        m_maximum = j.at("maximum").get<double>();
-        if (m_registerType == RegisterMapping::RegisterType::HOLDING_REGISTER)
-        {
-            if (m_mappingType == ModuleMapping::MappingType::CONFIGURATION)
-            {
-                // or LabelMap or address
-                // if both, make an error, or if none, make an error
-                bool gotAddress, gotLabelMap;
+        m_operationType = Deserializers::deserializeOperationType(m_operationTypeString);
 
-                try
-                {
-                    m_address = j.at("address").get<int>();
-                    gotAddress = true;
-                }
-                catch (std::exception&)
-                {
-                    gotAddress = false;
-                }
-
-                try
-                {
-                    auto tempLabelMap = std::map<std::string, int>(j.at("labelMap").get<std::map<std::string, int>>());
-                    typedef std::function<bool(std::pair<std::string, int>, std::pair<std::string, int>)> Comparator;
-                    Comparator compFunctor = [](const std::pair<std::string, int>& elem1,
-                                                const std::pair<std::string, int>& elem2) {
-                        return elem1.second < elem2.second;
-                    };
-                    std::set<std::pair<std::string, int>, Comparator> setOfWords(tempLabelMap.begin(),
-                                                                                 tempLabelMap.end(), compFunctor);
-
-                    // labelMap was already initialized
-                    for (const auto& element : setOfWords)
-                    {
-                        m_labelsAndAddresses.emplace_back(element);
-                    }
-                    gotLabelMap = true;
-                }
-                catch (std::exception&)
-                {
-                    gotLabelMap = false;
-                }
-
-                if (gotAddress == gotLabelMap)
-                {
-                    if (gotAddress)
-                    {
-                        throw std::logic_error("You cannot set both address and a labelMap for " + m_name +
-                                               "!"
-                                               " Choose only address to make configuration single-value, or "
-                                               "labelMap to make configuration multi-value!");
-                    }
-                    else
-                    {
-                        throw std::logic_error("You have to put either address or labelMap for " + m_name +
-                                               "!"
-                                               " Choose either address to make configuration single-value, or"
-                                               "labelMap to make configuration multi-value!");
-                    }
-                }
-            }
-            else
-            {
-                // if it's not a configuration, we need the address no matter what
-                m_address = j.at("address").get<int>();
-            }
-        }
-        else
-        {
-            m_address = j.at("address").get<int>();
-        }
-    }
+    std::string m_mappingTypeString = JsonReaderParser::readOrDefault(j, "mappingType", "");
+    if (m_mappingTypeString.empty())
+        m_mappingType = ModuleMapping::MappingType::DEFAULT;
+    else
+        m_mappingType = MappingTypeConversion::deserializeMappingType(m_mappingTypeString);
 }
 
 const std::string& ModuleMapping::getName() const
@@ -252,28 +105,27 @@ double ModuleMapping::getMaximum() const
 
 int ModuleMapping::getAddress() const
 {
-    if (m_address == -1)
+    if (m_address != -1)
+        return m_address;
+
+    int min = m_labelMap.begin()->second;
+    for (auto& label : m_labelMap)
     {
-        int min = m_labelsAndAddresses.begin()->second;
-        for (auto& label : m_labelsAndAddresses)
+        if (label.second < min)
         {
-            if (label.second < min)
-            {
-                min = label.second;
-            }
+            min = label.second;
         }
-        return min;
     }
-    return m_address;
+    return min;
 }
 
 int ModuleMapping::getRegisterCount() const
 {
-    if (m_address == -1)
-    {
-        return static_cast<int>(m_labelsAndAddresses.size());
-    }
-    return 1;
+    if (m_addressCount != -1)
+        return m_addressCount;
+    else if (m_address != -1)
+        return 1;
+    return static_cast<int>(m_labelMap.size());
 }
 
 RegisterMapping::RegisterType ModuleMapping::getRegisterType() const
@@ -293,22 +145,12 @@ ModuleMapping::MappingType ModuleMapping::getMappingType() const
 
 LabelMap ModuleMapping::getLabelsAndAddresses() const
 {
-    return m_labelsAndAddresses;
-}
-
-const std::vector<std::shared_ptr<RegisterMapping>>& ModuleMapping::getMappings() const
-{
-    return m_mappings;
+    return m_labelMap;
 }
 
 bool ModuleMapping::isReadRestricted() const
 {
     return m_readRestricted;
-}
-
-const std::vector<uint16_t>& ModuleMapping::getAddresses() const
-{
-    return m_addresses;
 }
 
 RegisterMapping::OperationType ModuleMapping::getOperationType() const

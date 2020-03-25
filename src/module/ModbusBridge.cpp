@@ -52,13 +52,6 @@ ModbusBridge::ModbusBridge(
     // Create a modbusDevice from template
     // This includes creating a RegisterMapping from each JSON mapping.
 
-    for (const auto& templateRegistered : deviceAddressesByTemplate)
-    {
-        const auto& configurationTemplate = *(configurationTemplates.at(templateRegistered.first));
-
-        const auto& modbusDevice =
-    }
-
     // Copy modbusDevice n time for each device that is of requested template
     // And assing them their own slaveAddress.
 

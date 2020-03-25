@@ -27,6 +27,18 @@ using nlohmann::json;
 class JsonReaderParser
 {
 public:
+    template <class T> static T readOrDefault(json::object_t object, const std::string& key, T defaultValue)
+    {
+        try
+        {
+            return object.at(key).get<T>();
+        }
+        catch (std::exception& e)
+        {
+            return defaultValue;
+        }
+    }
+
     static json::object_t readFile(const std::string& path)
     {
         if (!FileSystemUtils::isFilePresent(path))
