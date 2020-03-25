@@ -44,7 +44,8 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 link_directories(${CMAKE_BINARY_DIR}/lib)
 
 # WolkAbout c++ SDK
-add_subdirectory(WolkGatewayModule-SDK-Cpp lib)
+add_subdirectory(WolkGatewayModule-SDK-Cpp "lib/WolkGatewayModule")
+add_subdirectory(WolkModbus "lib/WolkModbus")
 
 # WolkAbout Modbus Module
 include_directories("src")
@@ -52,10 +53,10 @@ include_directories("src")
 file(GLOB_RECURSE HEADER_FILES "src/*.h" "application/*.h")
 file(GLOB_RECURSE SOURCE_FILES "src/*.cpp" "application/*.cpp")
 
-link_directories(${PROJECT_SOURCE_DIR}/out/lib)
+link_directories(${CMAKE_BINARY_DIR}/lib)
 
 add_library(${PROJECT_NAME} SHARED ${HEADER_FILES} ${SOURCE_FILES})
-target_link_libraries(${PROJECT_NAME} WolkGatewayModule modbus)
+target_link_libraries(${PROJECT_NAME} WolkGatewayModule WolkModbus)
 set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
 set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN/lib")
 
