@@ -17,8 +17,8 @@
 #ifndef MODULECONFIGURATION_H
 #define MODULECONFIGURATION_H
 
-#include "SerialRtuConfiguration.h"
-#include "TcpIpConfiguration.h"
+#include "module/SerialRtuConfiguration.h"
+#include "module/TcpIpConfiguration.h"
 #include "utilities/json.hpp"
 
 #include <chrono>

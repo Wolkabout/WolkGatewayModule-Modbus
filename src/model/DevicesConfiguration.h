@@ -14,38 +14,28 @@
  * limitations under the License.
  */
 
-#include "modbus/LibModbusSerialRtuClient.h"
-#include "utilities/json.hpp"
+#ifndef WOLKGATEWAYMODBUSMODULE_DEVICESCONFIGURATION_H
+#define WOLKGATEWAYMODBUSMODULE_DEVICESCONFIGURATION_H
 
-#include <string>
+#include "model/DeviceInformation.h"
 
 namespace wolkabout
 {
 using nlohmann::json;
 
-class SerialRtuConfiguration
+class DevicesConfiguration
 {
 public:
-    SerialRtuConfiguration(std::string& serialPort, int baudRate, char dataBits, char stopBits,
-                           LibModbusSerialRtuClient::BitParity bitParity);
+    explicit DevicesConfiguration(nlohmann::json j);
 
-    explicit SerialRtuConfiguration(nlohmann::json j);
+    const std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& getTemplates();
 
-    const std::string& getSerialPort() const;
-
-    int getBaudRate() const;
-
-    char getDataBits() const;
-
-    char getStopBits() const;
-
-    LibModbusSerialRtuClient::BitParity getBitParity() const;
+    const std::map<std::string, std::unique_ptr<DeviceInformation>>& getDevices();
 
 private:
-    std::string m_serialPort;
-    int m_baudRate;
-    char m_dataBits;
-    char m_stopBits;
-    LibModbusSerialRtuClient::BitParity m_bitParity;
+    std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>> m_templates;
+    std::map<std::string, std::unique_ptr<DeviceInformation>> m_devices;
 };
 }    // namespace wolkabout
+
+#endif    // WOLKGATEWAYMODBUSMODULE_DEVICESCONFIGURATION_H

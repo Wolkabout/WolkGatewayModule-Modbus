@@ -14,31 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef LIBMODBUSTCPIPCLIENT_H
-#define LIBMODBUSTCPIPCLIENT_H
-
-#include "modbus/ModbusClient.h"
-
-#include <chrono>
-#include <mutex>
-#include <string>
+#include "ModbusBridge.h"
 
 namespace wolkabout
 {
-class LibModbusTcpIpClient : public ModbusClient
-{
-public:
-    LibModbusTcpIpClient(std::string ipAddress, int port, std::chrono::milliseconds responseTimeout);
-
-    virtual ~LibModbusTcpIpClient();
-
-private:
-    bool createContext() override;
-    bool destroyContext() override;
-
-    std::string m_ipAddress;
-    int m_port;
-};
-}    // namespace wolkabout
-
-#endif
+}

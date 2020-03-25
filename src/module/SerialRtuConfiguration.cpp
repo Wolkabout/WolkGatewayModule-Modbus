@@ -20,7 +20,7 @@
 namespace wolkabout
 {
 SerialRtuConfiguration::SerialRtuConfiguration(std::string& serialPort, int baudRate, char dataBits, char stopBits,
-                                               SerialRtuConfiguration::BitParity bitParity)
+                                               LibModbusSerialRtuClient::BitParity bitParity)
 : m_serialPort(serialPort), m_baudRate(baudRate), m_dataBits(dataBits), m_stopBits(stopBits), m_bitParity(bitParity)
 {
 }
@@ -66,25 +66,25 @@ SerialRtuConfiguration::SerialRtuConfiguration(nlohmann::json j)
     try
     {
         std::string bitParityStr = j.at("bitParity").get<std::string>();
-        m_bitParity = [&]() -> SerialRtuConfiguration::BitParity {
+        m_bitParity = [&]() -> LibModbusSerialRtuClient::BitParity {
             if (bitParityStr == "NONE")
             {
-                return SerialRtuConfiguration::BitParity::NONE;
+                return LibModbusSerialRtuClient::BitParity::NONE;
             }
             else if (bitParityStr == "EVEN")
             {
-                return SerialRtuConfiguration::BitParity::EVEN;
+                return LibModbusSerialRtuClient::BitParity::EVEN;
             }
             else if (bitParityStr == "ODD")
             {
-                return SerialRtuConfiguration::BitParity::ODD;
+                return LibModbusSerialRtuClient::BitParity::ODD;
             }
             throw std::logic_error("Unknown bit parity: " + bitParityStr);
         }();
     }
     catch (std::exception&)
     {
-        m_bitParity = SerialRtuConfiguration::BitParity::NONE;
+        m_bitParity = LibModbusSerialRtuClient::BitParity::NONE;
     }
 }
 
@@ -108,7 +108,7 @@ char SerialRtuConfiguration::getStopBits() const
     return m_stopBits;
 }
 
-SerialRtuConfiguration::BitParity SerialRtuConfiguration::getBitParity() const
+LibModbusSerialRtuClient::BitParity SerialRtuConfiguration::getBitParity() const
 {
     return m_bitParity;
 }

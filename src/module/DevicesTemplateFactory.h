@@ -17,15 +17,15 @@
 #ifndef WOLKGATEWAYMODBUSMODULE_DEVICESTEMPLATEFACTORY_H
 #define WOLKGATEWAYMODBUSMODULE_DEVICESTEMPLATEFACTORY_H
 
-#include "DevicesConfigurationTemplate.h"
 #include "model/DeviceTemplate.h"
+#include "model/DevicesConfigurationTemplate.h"
 
 namespace wolkabout
 {
 class DevicesTemplateFactory
 {
 private:
-    static DataType getDataTypeFromRegisterType(ModbusRegisterMapping::RegisterType registerType);
+    static DataType getDataTypeFromRegisterType(RegisterMapping::RegisterType registerType);
 
     static bool processDefaultMapping(const ModbusRegisterMapping& mapping, const DataType& dataType,
                                       std::vector<SensorTemplate>& sensorTemplates,

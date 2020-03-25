@@ -15,6 +15,7 @@
  */
 
 #include "ModbusRegisterMapping.h"
+#include "utilities/Deserializers.h"
 #include "utilities/json.hpp"
 
 #include <set>
@@ -29,7 +30,7 @@ using nlohmann::json;
 
 ModbusRegisterMapping::ModbusRegisterMapping(
   std::string name, std::string reference, std::string description, double minimum, double maximum, int address,
-  wolkabout::ModbusRegisterMapping::RegisterType registerType, wolkabout::ModbusRegisterMapping::DataType dataType,
+  RegisterMapping::RegisterType registerType, RegisterMapping::OutputType dataType,
   wolkabout::ModbusRegisterMapping::MappingType mappingType = MappingType::DEFAULT)
 : m_name(std::move(name))
 , m_reference(std::move(reference))
@@ -38,20 +39,17 @@ ModbusRegisterMapping::ModbusRegisterMapping(
 , m_maximum(maximum)
 , m_address(address)
 , m_labelsAndAddresses()
+, m_addresses()
 , m_registerType(registerType)
 , m_dataType(dataType)
 , m_mappingType(mappingType)
-, m_slaveAddress(-1)
-, m_isInitialized(false)
-, m_isValid(true)
-, m_value()
 {
 }
 
 ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string reference, std::string description,
                                              double minimum, double maximum, const LabelMap& labelsAndAddresses,
-                                             ModbusRegisterMapping::RegisterType registerType,
-                                             ModbusRegisterMapping::DataType dataType)
+                                             RegisterMapping::RegisterType registerType,
+                                             RegisterMapping::OutputType dataType)
 : m_name(std::move(name))
 , m_reference(std::move(reference))
 , m_description(std::move(description))
@@ -59,40 +57,36 @@ ModbusRegisterMapping::ModbusRegisterMapping(std::string name, std::string refer
 , m_maximum(maximum)
 , m_address(-1)
 , m_labelsAndAddresses(labelsAndAddresses)
+, m_addresses()
 , m_registerType(registerType)
 , m_dataType(dataType)
 , m_mappingType(MappingType::CONFIGURATION)
-, m_slaveAddress(-1)
-, m_isInitialized(false)
-, m_isValid(true)
-, m_value()
 {
 }
 
-ModbusRegisterMapping::ModbusRegisterMapping(const ModbusRegisterMapping& mapping)
-: m_name(mapping.m_name)
-, m_reference(mapping.m_reference)
-, m_description(mapping.m_description)
-, m_minimum(mapping.m_minimum)
-, m_maximum(mapping.m_maximum)
-, m_address(mapping.m_address)
-, m_labelsAndAddresses(mapping.m_labelsAndAddresses)
-, m_registerType(mapping.m_registerType)
-, m_dataType(mapping.m_dataType)
-, m_mappingType(mapping.m_mappingType)
-, m_slaveAddress(mapping.m_slaveAddress)
-, m_isInitialized(false)
-, m_isValid(true)
-, m_value()
+ModbusRegisterMapping::ModbusRegisterMapping(const std::string& name, const std::string& reference,
+                                             const std::string& description, double minimum, double maximum,
+                                             const std::vector<int>& addresses,
+                                             RegisterMapping::RegisterType registerType,
+                                             RegisterMapping::OutputType dataType,
+                                             ModbusRegisterMapping::MappingType mappingType)
+: m_name(name)
+, m_reference(reference)
+, m_description(description)
+, m_minimum(minimum)
+, m_maximum(maximum)
+, m_addresses(addresses)
+, m_registerType(registerType)
+, m_dataType(dataType)
+, m_mappingType(mappingType)
 {
 }
 
 ModbusRegisterMapping::ModbusRegisterMapping(nlohmann::json j)
-: m_slaveAddress(0), m_isInitialized(false), m_isValid(true), m_value()
 {
     m_name = j.at("name").get<std::string>();
     m_reference = j.at("reference").get<std::string>();
-    m_registerType = MappingTypeConversion::deserializeRegisterType(j.at("registerType").get<std::string>());
+    m_registerType = Deserializers::deserializeRegisterType(j.at("registerType").get<std::string>());
 
     try
     {
@@ -113,20 +107,20 @@ ModbusRegisterMapping::ModbusRegisterMapping(nlohmann::json j)
         m_mappingType = ModbusRegisterMapping::MappingType::DEFAULT;
     }
 
-    if (m_registerType == ModbusRegisterMapping::RegisterType::COIL ||
-        m_registerType == ModbusRegisterMapping::RegisterType::INPUT_CONTACT)
+    if (m_registerType == RegisterMapping::RegisterType::COIL ||
+        m_registerType == RegisterMapping::RegisterType::INPUT_CONTACT)
     {
         // this is obligatory here, we don't support multi-value boolean configurations
         m_address = j.at("address").get<int>();
-        m_dataType = ModbusRegisterMapping::DataType::BOOL;
+        m_dataType = RegisterMapping::OutputType::BOOL;
         // we ignore dataType and min/max
     }
     else
     {
-        m_dataType = MappingTypeConversion::deserializeDataType(j.at("dataType").get<std::string>());
+        m_dataType = Deserializers::deserializeDataType(j.at("dataType").get<std::string>());
         m_minimum = j.at("minimum").get<double>();
         m_maximum = j.at("maximum").get<double>();
-        if (m_registerType == ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR)
+        if (m_registerType == RegisterMapping::RegisterType::HOLDING_REGISTER)
         {
             if (m_mappingType == ModbusRegisterMapping::MappingType::CONFIGURATION)
             {
@@ -156,7 +150,7 @@ ModbusRegisterMapping::ModbusRegisterMapping(nlohmann::json j)
                                                                                  tempLabelMap.end(), compFunctor);
 
                     // labelMap was already initialized
-                    for (std::pair<std::string, int> element : setOfWords)
+                    for (const auto& element : setOfWords)
                     {
                         m_labelsAndAddresses.emplace_back(element);
                     }
@@ -172,14 +166,14 @@ ModbusRegisterMapping::ModbusRegisterMapping(nlohmann::json j)
                     if (gotAddress)
                     {
                         throw std::logic_error("You cannot set both address and a labelMap for " + m_name +
-                                               " !"
+                                               "!"
                                                " Choose only address to make configuration single-value, or "
                                                "labelMap to make configuration multi-value!");
                     }
                     else
                     {
                         throw std::logic_error("You have to put either address or labelMap for " + m_name +
-                                               " !"
+                                               "!"
                                                " Choose either address to make configuration single-value, or"
                                                "labelMap to make configuration multi-value!");
                     }
@@ -249,12 +243,12 @@ int ModbusRegisterMapping::getRegisterCount() const
     return 1;
 }
 
-ModbusRegisterMapping::RegisterType ModbusRegisterMapping::getRegisterType() const
+RegisterMapping::RegisterType ModbusRegisterMapping::getRegisterType() const
 {
     return m_registerType;
 }
 
-ModbusRegisterMapping::DataType ModbusRegisterMapping::getDataType() const
+RegisterMapping::OutputType ModbusRegisterMapping::getDataType() const
 {
     return m_dataType;
 }
@@ -267,168 +261,6 @@ ModbusRegisterMapping::MappingType ModbusRegisterMapping::getMappingType() const
 LabelMap ModbusRegisterMapping::getLabelsAndAddresses() const
 {
     return m_labelsAndAddresses;
-}
-
-bool ModbusRegisterMapping::update(const std::string& newValue)
-{
-    bool isValueUpdated = m_value != newValue;
-    m_value = newValue;
-
-    bool isValueInitialized = m_isInitialized;
-    m_isInitialized = true;
-
-    bool isValid = m_isValid;
-    m_isValid = true;
-
-    return !isValueInitialized || isValueUpdated || !isValid;
-}
-
-const std::string& ModbusRegisterMapping::getValue() const
-{
-    return m_value;
-}
-
-void ModbusRegisterMapping::setValid(bool valid)
-{
-    m_isValid = valid;
-}
-
-bool ModbusRegisterMapping::update(signed short newRegisterValue)
-{
-    const auto newRegisterValueStr = std::to_string(newRegisterValue);
-    return update(newRegisterValueStr);
-}
-
-bool ModbusRegisterMapping::update(unsigned short newRegisterValue)
-{
-    const auto newRegisterValueStr = std::to_string(newRegisterValue);
-    return update(newRegisterValueStr);
-}
-
-bool ModbusRegisterMapping::update(float newRegisterValue)
-{
-    const auto newRegisterValueStr = std::to_string(newRegisterValue);
-    return update(newRegisterValueStr);
-}
-
-bool ModbusRegisterMapping::update(bool newRegisterValue)
-{
-    const auto newRegisterValueStr = std::to_string(newRegisterValue);
-    return update(newRegisterValueStr);
-}
-
-bool ModbusRegisterMapping::update(const std::vector<bool>& newRegisterValue)
-{
-    std::string newRegisterValueStr;
-    for (uint i = 0; i < newRegisterValue.size(); i++)
-    {
-        newRegisterValueStr += newRegisterValue[i] ? "true" : "false";
-        if (i < newRegisterValue.size() - 1)
-        {
-            newRegisterValueStr += ',';
-        }
-    }
-    return update(newRegisterValueStr);
-}
-
-bool ModbusRegisterMapping::update(const std::vector<short>& newRegisterValue)
-{
-    std::string newRegisterValueStr;
-    for (uint i = 0; i < newRegisterValue.size(); i++)
-    {
-        newRegisterValueStr += std::to_string(newRegisterValue[i]);
-        if (i < newRegisterValue.size() - 1)
-        {
-            newRegisterValueStr += ',';
-        }
-    }
-    return update(newRegisterValueStr);
-}
-
-bool ModbusRegisterMapping::update(const std::vector<unsigned short>& newRegisterValue)
-{
-    std::string newRegisterValueStr;
-    for (uint i = 0; i < newRegisterValue.size(); i++)
-    {
-        newRegisterValueStr += std::to_string(newRegisterValue[i]);
-        if (i < newRegisterValue.size() - 1)
-        {
-            newRegisterValueStr += ',';
-        }
-    }
-    return update(newRegisterValueStr);
-}
-
-bool ModbusRegisterMapping::update(const std::vector<float>& newRegisterValue)
-{
-    std::string newRegisterValueStr;
-    for (uint i = 0; i < newRegisterValue.size(); i++)
-    {
-        newRegisterValueStr += std::to_string(newRegisterValue[i]);
-        if (i < newRegisterValue.size() - 1)
-        {
-            newRegisterValueStr += ',';
-        }
-    }
-    return update(newRegisterValueStr);
-}
-
-int ModbusRegisterMapping::getSlaveAddress() const
-{
-    return static_cast<int>(m_slaveAddress);
-}
-
-void ModbusRegisterMapping::setSlaveAddress(int slaveAddress)
-{
-    m_slaveAddress = slaveAddress;
-}
-
-ModbusRegisterMapping::RegisterType MappingTypeConversion::deserializeRegisterType(const std::string& registerType)
-{
-    if (registerType == "INPUT_REGISTER")
-    {
-        return ModbusRegisterMapping::RegisterType::INPUT_REGISTER;
-    }
-    else if (registerType == "HOLDING_REGISTER_SENSOR")
-    {
-        return ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_SENSOR;
-    }
-    else if (registerType == "HOLDING_REGISTER_ACTUATOR")
-    {
-        return ModbusRegisterMapping::RegisterType::HOLDING_REGISTER_ACTUATOR;
-    }
-    else if (registerType == "INPUT_CONTACT")
-    {
-        return ModbusRegisterMapping::RegisterType::INPUT_CONTACT;
-    }
-    else if (registerType == "COIL")
-    {
-        return ModbusRegisterMapping::RegisterType::COIL;
-    }
-
-    throw std::logic_error("Unknown modbus register type: " + registerType);
-}
-
-ModbusRegisterMapping::DataType MappingTypeConversion::deserializeDataType(const std::string& dataType)
-{
-    if (dataType == "INT16")
-    {
-        return ModbusRegisterMapping::DataType::INT16;
-    }
-    else if (dataType == "UINT16")
-    {
-        return ModbusRegisterMapping::DataType::UINT16;
-    }
-    else if (dataType == "REAL32")
-    {
-        return ModbusRegisterMapping::DataType::REAL32;
-    }
-    else if (dataType == "BOOL")
-    {
-        return ModbusRegisterMapping::DataType::BOOL;
-    }
-
-    throw std::logic_error("Unknown data type: " + dataType);
 }
 
 ModbusRegisterMapping::MappingType MappingTypeConversion::deserializeMappingType(const std::string& mappingType)

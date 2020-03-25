@@ -17,6 +17,7 @@
 #ifndef MODBUSREGISTERMAPPING_H
 #define MODBUSREGISTERMAPPING_H
 
+#include "RegisterMapping.h"
 #include "utilities/json.hpp"
 
 #include <map>
@@ -32,15 +33,6 @@ typedef std::vector<std::pair<std::string, int>> LabelMap;
 class ModbusRegisterMapping
 {
 public:
-    enum class RegisterType
-    {
-        COIL = 0,
-        INPUT_CONTACT,
-        INPUT_REGISTER,
-        HOLDING_REGISTER_SENSOR,
-        HOLDING_REGISTER_ACTUATOR
-    };
-
     enum class MappingType
     {
         DEFAULT,
@@ -50,23 +42,20 @@ public:
         CONFIGURATION
     };
 
-    enum class DataType
-    {
-        INT16 = 0,
-        UINT16,
-        REAL32,
-        BOOL
-    };
+    ModbusRegisterMapping(std::string name, std::string reference, std::string description, double minimum,
+                          double maximum, int address, RegisterMapping::RegisterType registerType,
+                          RegisterMapping::OutputType dataType, MappingType mappingType);
 
     ModbusRegisterMapping(std::string name, std::string reference, std::string description, double minimum,
-                          double maximum, int address, RegisterType registerType, DataType dataType,
+                          double maximum, const LabelMap& labelsAndAddresses,
+                          RegisterMapping::RegisterType registerType, RegisterMapping::OutputType dataType);
+
+    ModbusRegisterMapping(const std::string& name, const std::string& reference, const std::string& description,
+                          double minimum, double maximum, const std::vector<int>& addresses,
+                          RegisterMapping::RegisterType registerType, RegisterMapping::OutputType dataType,
                           MappingType mappingType);
 
-    ModbusRegisterMapping(std::string name, std::string reference, std::string description, double minimum,
-                          double maximum, const LabelMap& labelsAndAddresses, RegisterType registerType,
-                          DataType dataType);
-
-    ModbusRegisterMapping(const ModbusRegisterMapping& mapping);
+    ModbusRegisterMapping(const ModbusRegisterMapping& mapping) = default;
 
     explicit ModbusRegisterMapping(nlohmann::json j);
 
@@ -81,25 +70,9 @@ public:
     int getAddress() const;
     int getRegisterCount() const;
 
-    RegisterType getRegisterType() const;
-    DataType getDataType() const;
+    RegisterMapping::RegisterType getRegisterType() const;
+    RegisterMapping::OutputType getDataType() const;
     MappingType getMappingType() const;
-
-    bool update(const std::string& newRegisterValue);
-    bool update(signed short newRegisterValue);
-    bool update(unsigned short newRegisterValue);
-    bool update(float newRegisterValue);
-    bool update(bool newRegisterValue);
-    bool update(const std::vector<bool>& newRegisterValue);
-    bool update(const std::vector<short>& newRegisterValue);
-    bool update(const std::vector<unsigned short>& newRegisterValue);
-    bool update(const std::vector<float>& newRegisterValue);
-
-    int getSlaveAddress() const;
-    void setSlaveAddress(int slaveAddress);
-
-    const std::string& getValue() const;
-    void setValid(bool valid);
 
 private:
     std::string m_name;
@@ -111,25 +84,16 @@ private:
 
     int m_address = -1;
     LabelMap m_labelsAndAddresses{};
+    std::vector<int> m_addresses;
 
-    RegisterType m_registerType;
-    DataType m_dataType;
+    RegisterMapping::RegisterType m_registerType;
+    RegisterMapping::OutputType m_dataType;
     MappingType m_mappingType;
-
-    int m_slaveAddress;
-
-    // Watcher logic
-    bool m_isInitialized;
-    bool m_isValid;
-
-    std::string m_value;
 };
 
 class MappingTypeConversion
 {
 public:
-    static ModbusRegisterMapping::RegisterType deserializeRegisterType(const std::string& registerType);
-    static ModbusRegisterMapping::DataType deserializeDataType(const std::string& dataType);
     static ModbusRegisterMapping::MappingType deserializeMappingType(const std::string& mappingType);
 };
 }    // namespace wolkabout

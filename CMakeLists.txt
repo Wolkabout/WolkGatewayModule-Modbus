@@ -57,7 +57,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
 
 # Example
 include_directories("application")
-file(GLOB_RECURSE EXAMPLE_HEADER_FILES "application/*.h")
 file(GLOB_RECURSE EXAMPLE_SOURCE_FILES "application/*.cpp")
 
 add_executable(modbusModule ${EXAMPLE_SOURCE_FILES})
