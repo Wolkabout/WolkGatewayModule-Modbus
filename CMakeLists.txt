@@ -16,9 +16,10 @@ cmake_minimum_required(VERSION 3.5)
 project(WolkGatewayModbusModule C CXX)
 
 set_property(GLOBAL PROPERTY ALLOW_DUPLICATE_CUSTOM_TARGETS 1)
-
 set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+
 set(CMAKE_CXX_STANDARD 11)
+
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}    -Wall -Wextra -pedantic                                                    \
                                             -pedantic-errors -Wcast-align                                              \
                                             -Wcast-qual -Wconversion                                                   \
@@ -41,10 +42,8 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 
 # WolkAbout c++ SDK
-add_subdirectory(WolkGatewayModule-SDK-Cpp "lib/WolkGatewayModule")
-
-# WolkModbus
-add_subdirectory(WolkModbus "lib/WolkModbus")
+add_subdirectory(WolkGatewayModule-SDK-Cpp lib/WolkGatewayModule)
+add_subdirectory(WolkModbus lib/WolkModbus)
 
 # WolkAbout Modbus Module
 include_directories("src")
@@ -54,8 +53,7 @@ file(GLOB_RECURSE SOURCE_FILES "src/*.c" "src/*.cpp")
 
 add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES})
 target_link_libraries(${PROJECT_NAME} WolkGatewayModule WolkModbus)
-set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
-set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN/lib")
+set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
 
 # Example
 include_directories("application")
