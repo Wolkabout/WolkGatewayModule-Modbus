@@ -119,6 +119,11 @@ int ModuleMapping::getAddress() const
     return min;
 }
 
+int ModuleMapping::getBitIndex() const
+{
+    return m_bitIndex;
+}
+
 int ModuleMapping::getRegisterCount() const
 {
     if (m_addressCount != -1)

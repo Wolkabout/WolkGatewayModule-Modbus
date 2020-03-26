@@ -15,11 +15,60 @@
  */
 
 #include "RegisterMappingFactory.h"
+#include "mappings/BoolMapping.h"
+#include "mappings/FloatMapping.h"
+#include "mappings/Int16Mapping.h"
+#include "mappings/Int32Mapping.h"
+#include "mappings/StringMapping.h"
+#include "mappings/UInt16Mapping.h"
+#include "mappings/UInt32Mapping.h"
 
 namespace wolkabout
 {
 std::shared_ptr<RegisterMapping> RegisterMappingFactory::fromJSONMapping(const ModuleMapping& jsonMapping)
 {
-    return std::shared_ptr<RegisterMapping>();
+    switch (jsonMapping.getDataType())
+    {
+    case RegisterMapping::OutputType::BOOL:
+        if (jsonMapping.getOperationType() == RegisterMapping::OperationType::TAKE_BIT)
+        {
+            return std::make_shared<BoolMapping>(jsonMapping.getReference(), jsonMapping.getRegisterType(),
+                                                 jsonMapping.getAddress(), jsonMapping.getOperationType(),
+                                                 jsonMapping.getBitIndex(), jsonMapping.isReadRestricted());
+        }
+        return std::make_shared<BoolMapping>(jsonMapping.getReference(), jsonMapping.getRegisterType(),
+                                             jsonMapping.getAddress(), jsonMapping.isReadRestricted());
+    case RegisterMapping::OutputType::UINT16:
+        return std::make_shared<UInt16Mapping>(jsonMapping.getReference(), jsonMapping.getRegisterType(),
+                                               jsonMapping.getAddress(), jsonMapping.isReadRestricted());
+    case RegisterMapping::OutputType::INT16:
+        return std::make_shared<Int16Mapping>(jsonMapping.getReference(), jsonMapping.getRegisterType(),
+                                              jsonMapping.getAddress(), jsonMapping.isReadRestricted());
+    case RegisterMapping::OutputType::UINT32:
+        return std::make_shared<UInt32Mapping>(jsonMapping.getReference(), jsonMapping.getRegisterType(),
+                                               std::vector<int16_t>{static_cast<short>(jsonMapping.getAddress()),
+                                                                    static_cast<short>(jsonMapping.getAddress() + 1)},
+                                               jsonMapping.getOperationType(), jsonMapping.isReadRestricted());
+    case RegisterMapping::OutputType::INT32:
+        return std::make_shared<Int32Mapping>(jsonMapping.getReference(), jsonMapping.getRegisterType(),
+                                              std::vector<int16_t>{static_cast<short>(jsonMapping.getAddress()),
+                                                                   static_cast<short>(jsonMapping.getAddress() + 1)},
+                                              jsonMapping.getOperationType(), jsonMapping.isReadRestricted());
+    case RegisterMapping::OutputType::FLOAT:
+        return std::make_shared<FloatMapping>(jsonMapping.getReference(), jsonMapping.getRegisterType(),
+                                              std::vector<int16_t>{static_cast<short>(jsonMapping.getAddress()),
+                                                                   static_cast<short>(jsonMapping.getAddress() + 1)},
+                                              jsonMapping.isReadRestricted());
+    case RegisterMapping::OutputType::STRING:
+        std::vector<int16_t> addresses;
+        const auto startAddress = static_cast<int16_t>(jsonMapping.getAddress());
+        for (int i = 0; i < jsonMapping.getRegisterCount(); i++)
+        {
+            addresses.emplace_back(startAddress + i);
+        }
+        return std::make_shared<StringMapping>(jsonMapping.getReference(), jsonMapping.getRegisterType(), addresses,
+                                               jsonMapping.getOperationType(), jsonMapping.isReadRestricted());
+    }
+    return nullptr;
 }
 }    // namespace wolkabout

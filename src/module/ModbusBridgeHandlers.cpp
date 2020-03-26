@@ -15,97 +15,104 @@
  */
 
 #include "ModbusBridge.h"
+#include "mappings/BoolMapping.h"
+#include "mappings/FloatMapping.h"
+#include "mappings/Int16Mapping.h"
+#include "mappings/Int32Mapping.h"
+#include "mappings/StringMapping.h"
+#include "mappings/UInt16Mapping.h"
+#include "mappings/UInt32Mapping.h"
 #include "utilities/Logger.h"
 
 namespace wolkabout
 {
+void ModbusBridge::writeToBoolMapping(RegisterMapping& mapping, const std::string& value)
+{
+    auto& boolMapping = dynamic_cast<BoolMapping&>(mapping);
+    bool boolValue = std::find(TRUE_VALUES.begin(), TRUE_VALUES.end(), value) != TRUE_VALUES.end();
+    boolMapping.writeValue(boolValue);
+}
+
+void ModbusBridge::writeToUInt16Mapping(RegisterMapping& mapping, const std::string& value)
+{
+    auto& uint16Mapping = dynamic_cast<UInt16Mapping&>(mapping);
+    const auto uint16Value = static_cast<uint16_t>(std::stoul(value));
+    uint16Mapping.writeValue(uint16Value);
+}
+
+void ModbusBridge::writeToInt16Mapping(RegisterMapping& mapping, const std::string& value)
+{
+    auto& int16Mapping = dynamic_cast<Int16Mapping&>(mapping);
+    const auto int16Value = static_cast<int16_t>(std::stoi(value));
+    int16Mapping.writeValue(int16Value);
+}
+
+void ModbusBridge::writeToUInt32Mapping(RegisterMapping& mapping, const std::string& value)
+{
+    auto& uint32Mapping = dynamic_cast<UInt32Mapping&>(mapping);
+    const auto uint32Value = static_cast<uint32_t>(std::stoul(value));
+    uint32Mapping.writeValue(uint32Value);
+}
+
+void ModbusBridge::writeToInt32Mapping(RegisterMapping& mapping, const std::string& value)
+{
+    auto& int32Mapping = dynamic_cast<Int32Mapping&>(mapping);
+    const auto int32Value = static_cast<int32_t>(std::stoi(value));
+    int32Mapping.writeValue(int32Value);
+}
+
+void ModbusBridge::writeToFloatMapping(RegisterMapping& mapping, const std::string& value)
+{
+    auto& floatMapping = dynamic_cast<FloatMapping&>(mapping);
+    const auto floatValue = static_cast<float>(std::stof(value));
+    floatMapping.writeValue(floatValue);
+}
+
+void ModbusBridge::writeToStringMapping(RegisterMapping& mapping, const std::string& value)
+{
+    auto& stringMapping = dynamic_cast<StringMapping&>(mapping);
+    if (value.size() > (stringMapping.getRegisterCount() * 2))
+    {
+        LOG(WARN) << "ModbusBridge: Unsuccessful string write as string contains more than "
+                  << stringMapping.getRegisterCount() * 2 << " characters on mapping " << mapping.getReference() << ".";
+        return;
+    }
+    stringMapping.writeValue(value);
+}
+
 // handleActuation and helper methods
 // void handleActuatorForHoldingRegister() -
 void ModbusBridge::handleActuationForHoldingRegister(RegisterMapping& mapping, const std::string& value)
 {
-    if (mapping.getDataType() == ModuleMapping::DataType::INT16)
+    switch (mapping.getOutputType())
     {
-        short shortValue;
-        try
-        {
-            shortValue = static_cast<short>(std::stoi(value));
-        }
-        catch (std::exception&)
-        {
-            LOG(ERROR)
-              << "ModbusBridge: Unable to convert value from platform for holding register - Register address: "
-              << mapping.getAddress() << " Value: " << value;
-            mapping.setValid(false);
-            return;
-        }
-
-        if (!m_modbusClient.writeHoldingRegister(static_cast<int>(mapping.getSlaveAddress()), mapping.getAddress(),
-                                                 shortValue))
-        {
-            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
-                       << mapping.getAddress() << " Value: " << value;
-            mapping.setValid(false);
-        }
-    }
-    else if (mapping.getDataType() == ModuleMapping::DataType::UINT16)
-    {
-        unsigned short unsignedShortValue;
-        try
-        {
-            unsignedShortValue = static_cast<unsigned short>(std::stoi(value));
-        }
-        catch (std::exception&)
-        {
-            LOG(ERROR)
-              << "ModbusBridge: Unable to convert value from platform for holding register - Register address: "
-              << mapping.getAddress() << " Value: " << value;
-            mapping.setValid(false);
-            return;
-        }
-
-        if (!m_modbusClient.writeHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), unsignedShortValue))
-        {
-            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
-                       << mapping.getAddress() << " Value: " << value;
-            mapping.setValid(false);
-        }
-    }
-    else if (mapping.getDataType() == ModuleMapping::DataType::REAL32)
-    {
-        float floatValue;
-        try
-        {
-            floatValue = std::stof(value);
-        }
-        catch (std::exception&)
-        {
-            LOG(ERROR)
-              << "ModbusBridge: Unable to convert value from platform for holding register - Register address: "
-              << mapping.getAddress() << " Value: " << value;
-            mapping.setValid(false);
-            return;
-        }
-
-        if (!m_modbusClient.writeHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), floatValue))
-        {
-            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
-                       << mapping.getAddress() << " Value: " << value;
-            mapping.setValid(false);
-        }
+    case RegisterMapping::OutputType::BOOL:
+        writeToBoolMapping(mapping, value);
+        break;
+    case RegisterMapping::OutputType::UINT16:
+        writeToUInt16Mapping(mapping, value);
+        break;
+    case RegisterMapping::OutputType::INT16:
+        writeToInt16Mapping(mapping, value);
+        break;
+    case RegisterMapping::OutputType::UINT32:
+        writeToUInt32Mapping(mapping, value);
+        break;
+    case RegisterMapping::OutputType::INT32:
+        writeToInt32Mapping(mapping, value);
+        break;
+    case RegisterMapping::OutputType::FLOAT:
+        writeToFloatMapping(mapping, value);
+        break;
+    case RegisterMapping::OutputType::STRING:
+        writeToStringMapping(mapping, value);
+        break;
     }
 }
 // void handleActuatorForCoil() -
 void ModbusBridge::handleActuationForCoil(RegisterMapping& mapping, const std::string& value)
 {
-    bool boolValue =
-      std::any_of(TRUE_VALUES.begin(), TRUE_VALUES.end(), [&](const std::string& ref) { return ref == value; });
-
-    if (!m_modbusClient.writeCoil(mapping.getSlaveAddress(), mapping.getAddress(), boolValue))
-    {
-        LOG(ERROR) << "ModbusBridge: Unable to write coil value - Register address: " << mapping.getAddress()
-                   << " Value: " << value;
-        mapping.setValid(false);
-    }
+    writeToBoolMapping(mapping, value);
 }
 // void handleActuator() - decides on the handler for incoming actuation
 void ModbusBridge::handleActuation(const std::string& deviceKey, const std::string& reference, const std::string& value)
@@ -131,21 +138,20 @@ void ModbusBridge::handleActuation(const std::string& deviceKey, const std::stri
     auto mapping = *m_registerMappingByReference[deviceKey + '.' + reference];
 
     // Discard if the mapping is incorrect
-    if (mapping.getRegisterType() != ModuleMapping::RegisterType::HOLDING_REGISTER_ACTUATOR &&
-        mapping.getRegisterType() != ModuleMapping::RegisterType::COIL)
+    if (mapping.getRegisterType() != RegisterMapping::RegisterType::HOLDING_REGISTER &&
+        mapping.getRegisterType() != RegisterMapping::RegisterType::COIL)
     {
-        LOG(ERROR)
-          << "ModbusBridge: Modbus register mapped to reference '" << reference
-          << "' can not be treated as actuator - Modbus register must be of type 'HOLDING_REGISTER_ACTUATOR' or 'COIL'";
+        LOG(ERROR) << "ModbusBridge: Modbus register mapped to reference '" << reference
+                   << "' can not be treated as actuator - Modbus register must be of type 'HOLDING_REGISTER' or 'COIL'";
         return;
     }
 
     // Pass through the appropriate handler
-    if (mapping.getRegisterType() == ModuleMapping::RegisterType::HOLDING_REGISTER_ACTUATOR)
+    if (mapping.getRegisterType() == RegisterMapping::RegisterType::HOLDING_REGISTER)
     {
         handleActuationForHoldingRegister(mapping, value);
     }
-    else if (mapping.getRegisterType() == ModuleMapping::RegisterType::COIL)
+    else if (mapping.getRegisterType() == RegisterMapping::RegisterType::COIL)
     {
         handleActuationForCoil(mapping, value);
     }
@@ -155,192 +161,75 @@ void ModbusBridge::handleActuation(const std::string& deviceKey, const std::stri
 // handleConfigurationForHoldingRegister() - handles
 void ModbusBridge::handleConfigurationForHoldingRegister(RegisterMapping& mapping, const std::string& value)
 {
-    if (mapping.getDataType() == ModuleMapping::DataType::INT16)
+    switch (mapping.getOutputType())
     {
-        short shortValue;
-        try
-        {
-            shortValue = static_cast<short>(std::stoi(value));
-        }
-        catch (std::exception&)
-        {
-            LOG(ERROR)
-              << "ModbusBridge: Unable to convert value from platform for holding register - Register address: "
-              << mapping.getAddress() << " Value: " << value;
-            mapping.setValid(false);
-            return;
-        }
-
-        if (!m_modbusClient.writeHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), shortValue))
-        {
-            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
-                       << mapping.getAddress() << " Value: " << shortValue;
-            mapping.setValid(false);
-        }
-    }
-    else if (mapping.getDataType() == ModuleMapping::DataType::UINT16)
-    {
-        unsigned short unsignedShortValue;
-        try
-        {
-            unsignedShortValue = static_cast<unsigned short>(std::stoi(value));
-        }
-        catch (std::exception&)
-        {
-            LOG(ERROR)
-              << "ModbusBridge: Unable to convert value from platform for holding register - Register address: "
-              << mapping.getAddress() << " Value: " << value;
-            mapping.setValid(false);
-            return;
-        }
-
-        if (!m_modbusClient.writeHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), unsignedShortValue))
-        {
-            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
-                       << mapping.getAddress() << " Value: " << unsignedShortValue;
-            mapping.setValid(false);
-        }
-    }
-    else if (mapping.getDataType() == ModuleMapping::DataType::REAL32)
-    {
-        float floatValue;
-        try
-        {
-            floatValue = std::stof(value);
-        }
-        catch (std::exception&)
-        {
-            LOG(ERROR)
-              << "ModbusBridge: Unable to convert value from platform for holding register - Register address: "
-              << mapping.getAddress() << " Value: " << value;
-            mapping.setValid(false);
-            return;
-        }
-
-        if (!m_modbusClient.writeHoldingRegister(mapping.getSlaveAddress(), mapping.getAddress(), floatValue))
-        {
-            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
-                       << mapping.getAddress() << " Value: " << floatValue;
-            mapping.setValid(false);
-        }
+    case RegisterMapping::OutputType::BOOL:
+        writeToBoolMapping(mapping, value);
+        break;
+    case RegisterMapping::OutputType::UINT16:
+        writeToUInt16Mapping(mapping, value);
+        break;
+    case RegisterMapping::OutputType::INT16:
+        writeToInt16Mapping(mapping, value);
+        break;
+    case RegisterMapping::OutputType::UINT32:
+        writeToUInt32Mapping(mapping, value);
+        break;
+    case RegisterMapping::OutputType::INT32:
+        writeToInt32Mapping(mapping, value);
+        break;
+    case RegisterMapping::OutputType::FLOAT:
+        writeToFloatMapping(mapping, value);
+        break;
+    default:
+        LOG(ERROR) << "ModbusBridge: Illegal outputType set for CONFIGURATION mapping " << mapping.getReference()
+                   << ".";
+        break;
     }
 }
-// handleConfigurationForHoldingRegisters() - handles
-void ModbusBridge::handleConfigurationForHoldingRegisters(RegisterMapping& mapping,
-                                                          const std::vector<std::string>& value)
-{
-    if (mapping.getDataType() == ModuleMapping::DataType::INT16)
-    {
-        std::vector<short> shorts;
-        shorts.reserve(value.size());
-        for (const std::string& shortString : value)
-        {
-            try
-            {
-                shorts.push_back(static_cast<short>(std::stoi(shortString)));
-            }
-            catch (std::exception&)
-            {
-                LOG(ERROR)
-                  << "ModbusBridge: Unable to convert value from platform for holding registers - Register address: "
-                  << mapping.getAddress() << " Value: " << shortString;
-                mapping.setValid(false);
-                return;
-            }
-        }
-        if (!m_modbusClient.writeHoldingRegisters(mapping.getSlaveAddress(), mapping.getAddress(), shorts))
-        {
-            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
-                       << mapping.getAddress();
-            mapping.setValid(false);
-        }
-    }
-    else if (mapping.getDataType() == ModuleMapping::DataType::UINT16)
-    {
-        std::vector<unsigned short> unsignedShorts;
-        unsignedShorts.reserve(value.size());
-        for (const std::string& shortString : value)
-        {
-            try
-            {
-                unsignedShorts.push_back(static_cast<unsigned short>(std::stoi(shortString)));
-            }
-            catch (std::exception&)
-            {
-                LOG(ERROR)
-                  << "ModbusBridge: Unable to convert value from platform for holding registers - Register address: "
-                  << mapping.getAddress() << " Value: " << shortString;
-                mapping.setValid(false);
-                return;
-            }
-        }
-        if (!m_modbusClient.writeHoldingRegisters(mapping.getSlaveAddress(), mapping.getAddress(), unsignedShorts))
-        {
-            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
-                       << mapping.getAddress();
-            mapping.setValid(false);
-        }
-    }
-    else if (mapping.getDataType() == ModuleMapping::DataType::REAL32)
-    {
-        std::vector<float> floats;
-        floats.reserve(value.size());
-        for (const std::string& shortString : value)
-        {
-            try
-            {
-                floats.push_back(static_cast<float>(std::stof(shortString)));
-            }
-            catch (std::exception&)
-            {
-                LOG(ERROR)
-                  << "ModbusBridge: Unable to convert value from platform for holding registers - Register address: "
-                  << mapping.getAddress() << " Value: " << shortString;
-                mapping.setValid(false);
-                return;
-            }
-        }
-        if (!m_modbusClient.writeHoldingRegisters(mapping.getSlaveAddress(), mapping.getAddress(), floats))
-        {
-            LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
-                       << mapping.getAddress();
-            mapping.setValid(false);
-        }
-    }
-}
+
 // handleConfigurationForCoil() - handles
 void ModbusBridge::handleConfigurationForCoil(RegisterMapping& mapping, const std::string& value)
 {
-    bool boolValue = std::find(TRUE_VALUES.begin(), TRUE_VALUES.end(), value) != TRUE_VALUES.end();
-    if (!m_modbusClient.writeCoil(mapping.getSlaveAddress(), mapping.getAddress(), boolValue))
-    {
-        LOG(ERROR) << "ModbusBridge: Unable to write holding register value - Register address: "
-                   << mapping.getAddress() << " Value: " << boolValue;
-        mapping.setValid(false);
-    }
+    writeToBoolMapping(mapping, value);
 }
+
 // handleConfiguration() - decides on the handler to handle incoming data
 void ModbusBridge::handleConfiguration(const std::string& deviceKey,
                                        const std::vector<ConfigurationItem>& configuration)
 {
+    int slaveAddress = getSlaveAddress(deviceKey);
+    if (slaveAddress == -1 || m_deviceKeyBySlaveAddress.find(slaveAddress) == m_deviceKeyBySlaveAddress.end())
+    {
+        LOG(ERROR) << "ModbusBridge: No device with key '" << deviceKey << "'";
+        return;
+    }
+
     for (auto& config : configuration)
     {
         const std::string& reference = config.getReference();
-        auto mapping = *m_registerMappingByReference[deviceKey + '.' + reference];
+        auto mappings = m_configurationMappingByDeviceKeyAndRef[deviceKey + '.' + reference];
 
-        if (mapping.getRegisterType() == ModuleMapping::RegisterType::COIL)
+        if (mappings.size() != config.getValues().size())
         {
-            handleConfigurationForCoil(mapping, config.getValues()[0]);
+            throw std::logic_error("ModbusBridge: Number of values received for Configuration " + reference +
+                                   " doesn\'t match the mapping count.");
         }
-        else
+
+        uint i = 0;
+        for (const auto& mapping : mappings)
         {
-            if (!mapping.getLabelMap().empty())
+            switch (mapping.second->getRegisterType())
             {
-                handleConfigurationForHoldingRegisters(mapping, config.getValues());
-            }
-            else
-            {
-                handleConfigurationForHoldingRegister(mapping, config.getValues()[0]);
+            case RegisterMapping::RegisterType::COIL:
+                handleConfigurationForCoil(*mapping.second, config.getValues()[i++]);
+                break;
+            case RegisterMapping::RegisterType::HOLDING_REGISTER:
+                handleConfigurationForHoldingRegister(*mapping.second, config.getValues()[i++]);
+                break;
+            default:
+                throw std::logic_error("ModbusBridge: Illegal RegisterType for CONFIGURATION on Mapping : " +
+                                       mapping.second->getReference());
             }
         }
     }

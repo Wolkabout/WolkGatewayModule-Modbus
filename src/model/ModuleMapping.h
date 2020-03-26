@@ -57,6 +57,7 @@ public:
 
     int getAddress() const;
     LabelMap getLabelMap() const;
+    int getBitIndex() const;
     int getRegisterCount() const;
 
     RegisterMapping::RegisterType getRegisterType() const;

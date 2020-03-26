@@ -34,6 +34,7 @@
 namespace wolkabout
 {
 const char ModbusBridge::SEPARATOR = '.';
+const std::vector<std::string> ModbusBridge::TRUE_VALUES = {"true", "1", "1.0", "ON"};
 
 ModbusBridge::ModbusBridge(
   ModbusClient& modbusClient,
@@ -44,12 +45,9 @@ ModbusBridge::ModbusBridge(
 , m_registerReadPeriod(registerReadPeriod)
 , m_deviceKeyBySlaveAddress()
 , m_registerMappingByReference()
-, m_configurationMappingByDevice()
+, m_configurationMappingByDeviceKeyAndRef()
 {
     std::vector<std::shared_ptr<ModbusDevice>> modbusDevices;
-
-    // Create a modbusDevice from template
-    // This includes creating a RegisterMapping from each JSON mapping.
 
     for (const auto& templateRegistered : deviceAddressesByTemplate)
     {
@@ -81,6 +79,7 @@ ModbusBridge::ModbusBridge(
         {
             const std::string& key = devices.at(slaveAddress)->getKey();
             const auto& device = std::make_shared<ModbusDevice>(key, slaveAddress, mappings);
+            modbusDevices.emplace_back(device);
 
             m_deviceKeyBySlaveAddress.emplace(slaveAddress, key);
             m_devicesStatusBySlaveAddress.emplace(slaveAddress, DeviceStatus::Status::OFFLINE);
@@ -97,13 +96,21 @@ ModbusBridge::ModbusBridge(
                         const std::string& configurationReference = it->second;
                         const std::string& mapKey = key + SEPARATOR + configurationReference;
 
-                        if (m_configurationMappingByDevice.find(mapKey) == m_configurationMappingByDevice.end())
+                        if (m_configurationMappingByDeviceKey.find(key) == m_configurationMappingByDeviceKey.end())
                         {
-                            m_configurationMappingByDevice.emplace(
+                            m_configurationMappingByDeviceKey.emplace(key, std::vector<std::string>());
+                        }
+
+                        m_configurationMappingByDeviceKey[key].emplace_back(mapKey);
+
+                        if (m_configurationMappingByDeviceKeyAndRef.find(mapKey) ==
+                            m_configurationMappingByDeviceKeyAndRef.end())
+                        {
+                            m_configurationMappingByDeviceKeyAndRef.emplace(
                               mapKey, std::map<std::string, std::shared_ptr<RegisterMapping>>());
                         }
 
-                        m_configurationMappingByDevice[mapKey].emplace(mapping->getReference(), mapping);
+                        m_configurationMappingByDeviceKeyAndRef[mapKey].emplace(mapping->getReference(), mapping);
                     }
                 }
             }
@@ -113,7 +120,7 @@ ModbusBridge::ModbusBridge(
     m_modbusReader =
       std::unique_ptr<ModbusReader>(new ModbusReader(m_modbusClient, modbusDevices, m_registerReadPeriod));
 
-    m_modbusReader->setOnIterationStatuses([&](std::map<int8_t, bool> statuses) {
+    m_modbusReader->setOnIterationStatuses([&](const std::map<int8_t, bool>& statuses) {
         for (const auto& pair : statuses)
         {
             m_devicesStatusBySlaveAddress[pair.first] =
