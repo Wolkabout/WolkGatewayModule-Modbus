@@ -20,6 +20,7 @@
 #include "DeviceStatusProvider.h"
 #include "RegisterMappingFactory.h"
 #include "modbus/ModbusClient.h"
+#include "utilities/Logger.h"
 
 #include <algorithm>
 #include <chrono>
@@ -79,6 +80,7 @@ ModbusBridge::ModbusBridge(
         {
             const std::string& key = devices.at(slaveAddress)->getKey();
             const auto& device = std::make_shared<ModbusDevice>(key, slaveAddress, mappings);
+
             modbusDevices.emplace_back(device);
 
             m_deviceKeyBySlaveAddress.emplace(slaveAddress, key);
@@ -127,6 +129,12 @@ ModbusBridge::ModbusBridge(
               pair.second ? DeviceStatus::Status::CONNECTED : DeviceStatus::Status::OFFLINE;
         }
     });
+
+    for (const auto& device : modbusDevices)
+    {
+        device->setOnMappingValueChange(
+          [=](const RegisterMapping& mapping) { LOG(DEBUG) << device->getName() << " | " << mapping.getReference(); });
+    }
 }
 
 ModbusBridge::~ModbusBridge()

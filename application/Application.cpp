@@ -121,7 +121,7 @@ int main(int argc, char** argv)
 {
     // Setup logger
     auto logger = std::unique_ptr<wolkabout::ConsoleLogger>(new wolkabout::ConsoleLogger());
-    logger->setLogLevel(wolkabout::LogLevel::INFO);
+    logger->setLogLevel(wolkabout::LogLevel::DEBUG);
     wolkabout::Logger::setInstance(std::move(logger));
 
     const auto& stringMapping = std::make_shared<wolkabout::StringMapping>(

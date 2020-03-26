@@ -99,41 +99,43 @@ protected:
     DeviceStatus::Status getDeviceStatus(const std::string& deviceKey) override;
 
 private:
-    static void writeToBoolMapping(RegisterMapping& mapping, const std::string& value);
-    static void writeToUInt16Mapping(RegisterMapping& mapping, const std::string& value);
-    static void writeToInt16Mapping(RegisterMapping& mapping, const std::string& value);
-    static void writeToUInt32Mapping(RegisterMapping& mapping, const std::string& value);
-    static void writeToInt32Mapping(RegisterMapping& mapping, const std::string& value);
-    static void writeToFloatMapping(RegisterMapping& mapping, const std::string& value);
-    static void writeToStringMapping(RegisterMapping& mapping, const std::string& value);
+    static void writeToBoolMapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value);
+    static void writeToUInt16Mapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value);
+    static void writeToInt16Mapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value);
+    static void writeToUInt32Mapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value);
+    static void writeToInt32Mapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value);
+    static void writeToFloatMapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value);
+    static void writeToStringMapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value);
 
-    static std::string readFromBoolMapping(RegisterMapping& mapping);
-    static std::string readFromUInt16Mapping(RegisterMapping& mapping);
-    static std::string readFromInt16Mapping(RegisterMapping& mapping);
-    static std::string readFromUInt32Mapping(RegisterMapping& mapping);
-    static std::string readFromInt32Mapping(RegisterMapping& mapping);
-    static std::string readFromFloatMapping(RegisterMapping& mapping);
-    static std::string readFromStringMapping(RegisterMapping& mapping);
+    static std::string readFromBoolMapping(const std::shared_ptr<RegisterMapping>& mapping);
+    static std::string readFromUInt16Mapping(const std::shared_ptr<RegisterMapping>& mapping);
+    static std::string readFromInt16Mapping(const std::shared_ptr<RegisterMapping>& mapping);
+    static std::string readFromUInt32Mapping(const std::shared_ptr<RegisterMapping>& mapping);
+    static std::string readFromInt32Mapping(const std::shared_ptr<RegisterMapping>& mapping);
+    static std::string readFromFloatMapping(const std::shared_ptr<RegisterMapping>& mapping);
+    static std::string readFromStringMapping(const std::shared_ptr<RegisterMapping>& mapping);
 
     // Helper methods for getActuatorStatus
-    static ActuatorStatus getActuatorStatusFromHoldingRegister(RegisterMapping& mapping);
+    static ActuatorStatus getActuatorStatusFromHoldingRegister(const std::shared_ptr<RegisterMapping>& mapping);
 
-    static ActuatorStatus getActuatorStatusFromCoil(RegisterMapping& mapping);
+    static ActuatorStatus getActuatorStatusFromCoil(const std::shared_ptr<RegisterMapping>& mapping);
 
     // Helper methods for getConfiguration
-    static std::string getConfigurationStatusFromCoil(RegisterMapping& mapping);
+    static std::string getConfigurationStatusFromCoil(const std::shared_ptr<RegisterMapping>& mapping);
 
-    static std::string getConfigurationStatusFromHoldingRegister(RegisterMapping& mapping);
+    static std::string getConfigurationStatusFromHoldingRegister(const std::shared_ptr<RegisterMapping>& mapping);
 
     // Helper methods for handleActuation
-    static void handleActuationForHoldingRegister(RegisterMapping& mapping, const std::string& value);
+    static void handleActuationForHoldingRegister(const std::shared_ptr<RegisterMapping>& mapping,
+                                                  const std::string& value);
 
-    static void handleActuationForCoil(RegisterMapping& mapping, const std::string& value);
+    static void handleActuationForCoil(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value);
 
     // Helper methods for handleConfiguration
-    static void handleConfigurationForHoldingRegister(RegisterMapping& mapping, const std::string& value);
+    static void handleConfigurationForHoldingRegister(const std::shared_ptr<RegisterMapping>& mapping,
+                                                      const std::string& value);
 
-    static void handleConfigurationForCoil(RegisterMapping& mapping, const std::string& value);
+    static void handleConfigurationForCoil(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value);
 
     // Methods to help with data query
     int getSlaveAddress(const std::string& deviceKey);

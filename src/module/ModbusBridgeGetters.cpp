@@ -26,59 +26,60 @@
 
 namespace wolkabout
 {
-std::string ModbusBridge::readFromBoolMapping(RegisterMapping& mapping)
+std::string ModbusBridge::readFromBoolMapping(const std::shared_ptr<RegisterMapping>& mapping)
 {
-    const auto& boolMapping = dynamic_cast<BoolMapping&>(mapping);
-    return std::to_string(boolMapping.getBoolValue());
+    const auto& boolMapping = (const std::shared_ptr<BoolMapping>&)mapping;
+    return std::to_string(boolMapping->getBoolValue());
 }
 
-std::string ModbusBridge::readFromUInt16Mapping(RegisterMapping& mapping)
+std::string ModbusBridge::readFromUInt16Mapping(const std::shared_ptr<RegisterMapping>& mapping)
 {
-    const auto& uint16Mapping = dynamic_cast<UInt16Mapping&>(mapping);
-    return std::to_string(uint16Mapping.getUint16Value());
+    const auto& uint16Mapping = (const std::shared_ptr<UInt16Mapping>&)mapping;
+    return std::to_string(uint16Mapping->getUint16Value());
 }
 
-std::string ModbusBridge::readFromInt16Mapping(RegisterMapping& mapping)
+std::string ModbusBridge::readFromInt16Mapping(const std::shared_ptr<RegisterMapping>& mapping)
 {
-    const auto& int16Mapping = dynamic_cast<Int16Mapping&>(mapping);
-    return std::to_string(int16Mapping.getInt16Value());
+    const auto& int16Mapping = (const std::shared_ptr<Int16Mapping>&)mapping;
+    return std::to_string(int16Mapping->getInt16Value());
 }
 
-std::string ModbusBridge::readFromUInt32Mapping(RegisterMapping& mapping)
+std::string ModbusBridge::readFromUInt32Mapping(const std::shared_ptr<RegisterMapping>& mapping)
 {
-    const auto& uint32Mapping = dynamic_cast<UInt32Mapping&>(mapping);
-    return std::to_string(uint32Mapping.getUint32Value());
+    const auto& uint32Mapping = (const std::shared_ptr<UInt32Mapping>&)mapping;
+    return std::to_string(uint32Mapping->getUint32Value());
 }
 
-std::string ModbusBridge::readFromInt32Mapping(RegisterMapping& mapping)
+std::string ModbusBridge::readFromInt32Mapping(const std::shared_ptr<RegisterMapping>& mapping)
 {
-    const auto& int32Mapping = dynamic_cast<Int32Mapping&>(mapping);
-    return std::to_string(int32Mapping.getInt32Value());
+    const auto& int32Mapping = (const std::shared_ptr<Int32Mapping>&)mapping;
+    return std::to_string(int32Mapping->getInt32Value());
 }
 
-std::string ModbusBridge::readFromFloatMapping(RegisterMapping& mapping)
+std::string ModbusBridge::readFromFloatMapping(const std::shared_ptr<RegisterMapping>& mapping)
 {
-    const auto& floatMapping = dynamic_cast<FloatMapping&>(mapping);
-    return std::to_string(floatMapping.getFloatValue());
+    const auto& floatMapping = (const std::shared_ptr<FloatMapping>&)mapping;
+    return std::to_string(floatMapping->getFloatValue());
 }
 
-std::string ModbusBridge::readFromStringMapping(RegisterMapping& mapping)
+std::string ModbusBridge::readFromStringMapping(const std::shared_ptr<RegisterMapping>& mapping)
 {
-    const auto& stringMapping = dynamic_cast<StringMapping&>(mapping);
-    return stringMapping.getStringValue();
+    const auto& stringMapping = (const std::shared_ptr<StringMapping>&)mapping;
+    return stringMapping->getStringValue();
 }
 
 // getActuatorStatus and helper methods
 // getActuatorStatusFromHoldingRegister() - handles
-wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromHoldingRegister(RegisterMapping& mapping)
+wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromHoldingRegister(
+  const std::shared_ptr<RegisterMapping>& mapping)
 {
-    if (!mapping.isValid() || !mapping.isInitialized())
+    if (!mapping->isValid() || !mapping->isInitialized())
     {
         return ActuatorStatus("", ActuatorStatus::State::ERROR);
     }
 
     std::string value;
-    switch (mapping.getOutputType())
+    switch (mapping->getOutputType())
     {
     case RegisterMapping::OutputType::BOOL:
         value = readFromBoolMapping(mapping);
@@ -106,9 +107,9 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromHoldingRegister(Reg
 }
 
 // getActuatorStatusFromCoil() - handles
-wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromCoil(RegisterMapping& mapping)
+wolkabout::ActuatorStatus ModbusBridge::getActuatorStatusFromCoil(const std::shared_ptr<RegisterMapping>& mapping)
 {
-    if (!mapping.isValid() || !mapping.isInitialized())
+    if (!mapping->isValid() || !mapping->isInitialized())
     {
         return ActuatorStatus("", ActuatorStatus::State::ERROR);
     }
@@ -135,26 +136,26 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatus(const std::string& dev
         return ActuatorStatus("", ActuatorStatus::State::ERROR);
     }
 
-    auto mapping = *(m_registerMappingByReference[deviceKey + '.' + reference]);
+    auto mapping = m_registerMappingByReference[deviceKey + '.' + reference];
 
-    if (mapping.getRegisterType() != RegisterMapping::RegisterType::HOLDING_REGISTER &&
-        mapping.getRegisterType() != RegisterMapping::RegisterType::COIL)
+    if (mapping->getRegisterType() != RegisterMapping::RegisterType::HOLDING_REGISTER &&
+        mapping->getRegisterType() != RegisterMapping::RegisterType::COIL)
     {
         LOG(ERROR) << "ModbusBridge: Modbus register mapped to reference '" << reference
                    << "' can not be treated as actuator - Modbus register must be of type 'HOLDING_REGISTER' or 'COIL'";
         return ActuatorStatus("", ActuatorStatus::State::ERROR);
     }
 
-    return mapping.getRegisterType() == RegisterMapping::RegisterType::HOLDING_REGISTER ?
+    return mapping->getRegisterType() == RegisterMapping::RegisterType::HOLDING_REGISTER ?
              getActuatorStatusFromHoldingRegister(mapping) :
              getActuatorStatusFromCoil(mapping);
 }
 
 // getConfiguration and helper methods
 // getConfigurationStatusFromHoldingRegister() - handles
-std::string ModbusBridge::getConfigurationStatusFromHoldingRegister(RegisterMapping& mapping)
+std::string ModbusBridge::getConfigurationStatusFromHoldingRegister(const std::shared_ptr<RegisterMapping>& mapping)
 {
-    switch (mapping.getOutputType())
+    switch (mapping->getOutputType())
     {
     case RegisterMapping::OutputType::BOOL:
         return (readFromBoolMapping(mapping));
@@ -169,13 +170,13 @@ std::string ModbusBridge::getConfigurationStatusFromHoldingRegister(RegisterMapp
     case RegisterMapping::OutputType::FLOAT:
         return (readFromFloatMapping(mapping));
     default:
-        throw std::logic_error("ModbusBridge: Configuration mapping " + mapping.getReference() +
+        throw std::logic_error("ModbusBridge: Configuration mapping " + mapping->getReference() +
                                " cannot be of output type STRING.");
     }
 }
 
 // getConfigurationStatusFromCoil() - handles
-std::string ModbusBridge::getConfigurationStatusFromCoil(RegisterMapping& mapping)
+std::string ModbusBridge::getConfigurationStatusFromCoil(const std::shared_ptr<RegisterMapping>& mapping)
 {
     return readFromBoolMapping(mapping);
 }
@@ -188,7 +189,7 @@ std::vector<ConfigurationItem> ModbusBridge::getConfiguration(const std::string&
     {
         for (const auto& mappingRef : deviceConfigurations.second)
         {
-            const auto& ref = mappingRef.substr(SEPARATOR + 1);
+            const auto& ref = mappingRef.substr(mappingRef.find(SEPARATOR) + 1);
             auto& mappings = m_configurationMappingByDeviceKeyAndRef[mappingRef];
 
             std::vector<std::string> values;
@@ -197,10 +198,10 @@ std::vector<ConfigurationItem> ModbusBridge::getConfiguration(const std::string&
                 switch (mapping.second->getRegisterType())
                 {
                 case RegisterMapping::RegisterType::COIL:
-                    values.emplace_back(getConfigurationStatusFromCoil(*mapping.second));
+                    values.emplace_back(getConfigurationStatusFromCoil(mapping.second));
                     break;
                 case RegisterMapping::RegisterType::HOLDING_REGISTER:
-                    values.emplace_back(getConfigurationStatusFromHoldingRegister(*mapping.second));
+                    values.emplace_back(getConfigurationStatusFromHoldingRegister(mapping.second));
                     break;
                 default:
                     throw std::logic_error("ModbusReader: Configuration mapping " + ref +

@@ -26,65 +26,67 @@
 
 namespace wolkabout
 {
-void ModbusBridge::writeToBoolMapping(RegisterMapping& mapping, const std::string& value)
+void ModbusBridge::writeToBoolMapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value)
 {
-    auto& boolMapping = dynamic_cast<BoolMapping&>(mapping);
+    auto& boolMapping = (const std::shared_ptr<BoolMapping>&)mapping;
     bool boolValue = std::find(TRUE_VALUES.begin(), TRUE_VALUES.end(), value) != TRUE_VALUES.end();
-    boolMapping.writeValue(boolValue);
+    boolMapping->writeValue(boolValue);
 }
 
-void ModbusBridge::writeToUInt16Mapping(RegisterMapping& mapping, const std::string& value)
+void ModbusBridge::writeToUInt16Mapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value)
 {
-    auto& uint16Mapping = dynamic_cast<UInt16Mapping&>(mapping);
+    auto& uint16Mapping = (const std::shared_ptr<UInt16Mapping>&)mapping;
     const auto uint16Value = static_cast<uint16_t>(std::stoul(value));
-    uint16Mapping.writeValue(uint16Value);
+    uint16Mapping->writeValue(uint16Value);
 }
 
-void ModbusBridge::writeToInt16Mapping(RegisterMapping& mapping, const std::string& value)
+void ModbusBridge::writeToInt16Mapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value)
 {
-    auto& int16Mapping = dynamic_cast<Int16Mapping&>(mapping);
+    auto& int16Mapping = (const std::shared_ptr<Int16Mapping>&)mapping;
     const auto int16Value = static_cast<int16_t>(std::stoi(value));
-    int16Mapping.writeValue(int16Value);
+    int16Mapping->writeValue(int16Value);
 }
 
-void ModbusBridge::writeToUInt32Mapping(RegisterMapping& mapping, const std::string& value)
+void ModbusBridge::writeToUInt32Mapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value)
 {
-    auto& uint32Mapping = dynamic_cast<UInt32Mapping&>(mapping);
+    auto& uint32Mapping = (const std::shared_ptr<UInt32Mapping>&)mapping;
     const auto uint32Value = static_cast<uint32_t>(std::stoul(value));
-    uint32Mapping.writeValue(uint32Value);
+    uint32Mapping->writeValue(uint32Value);
 }
 
-void ModbusBridge::writeToInt32Mapping(RegisterMapping& mapping, const std::string& value)
+void ModbusBridge::writeToInt32Mapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value)
 {
-    auto& int32Mapping = dynamic_cast<Int32Mapping&>(mapping);
+    auto& int32Mapping = (const std::shared_ptr<Int32Mapping>&)mapping;
     const auto int32Value = static_cast<int32_t>(std::stoi(value));
-    int32Mapping.writeValue(int32Value);
+    int32Mapping->writeValue(int32Value);
 }
 
-void ModbusBridge::writeToFloatMapping(RegisterMapping& mapping, const std::string& value)
+void ModbusBridge::writeToFloatMapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value)
 {
-    auto& floatMapping = dynamic_cast<FloatMapping&>(mapping);
+    auto& floatMapping = (const std::shared_ptr<FloatMapping>&)mapping;
     const auto floatValue = static_cast<float>(std::stof(value));
-    floatMapping.writeValue(floatValue);
+    floatMapping->writeValue(floatValue);
 }
 
-void ModbusBridge::writeToStringMapping(RegisterMapping& mapping, const std::string& value)
+void ModbusBridge::writeToStringMapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value)
 {
-    auto& stringMapping = dynamic_cast<StringMapping&>(mapping);
-    if (value.size() > (stringMapping.getRegisterCount() * 2))
+    auto& stringMapping = (const std::shared_ptr<StringMapping>&)mapping;
+    if (value.size() > (stringMapping->getRegisterCount() * 2))
     {
         LOG(WARN) << "ModbusBridge: Unsuccessful string write as string contains more than "
-                  << stringMapping.getRegisterCount() * 2 << " characters on mapping " << mapping.getReference() << ".";
+                  << stringMapping->getRegisterCount() * 2 << " characters on mapping " << stringMapping->getReference()
+                  << ".";
         return;
     }
-    stringMapping.writeValue(value);
+    stringMapping->writeValue(value);
 }
 
 // handleActuation and helper methods
 // void handleActuatorForHoldingRegister() -
-void ModbusBridge::handleActuationForHoldingRegister(RegisterMapping& mapping, const std::string& value)
+void ModbusBridge::handleActuationForHoldingRegister(const std::shared_ptr<RegisterMapping>& mapping,
+                                                     const std::string& value)
 {
-    switch (mapping.getOutputType())
+    switch (mapping->getOutputType())
     {
     case RegisterMapping::OutputType::BOOL:
         writeToBoolMapping(mapping, value);
@@ -110,7 +112,7 @@ void ModbusBridge::handleActuationForHoldingRegister(RegisterMapping& mapping, c
     }
 }
 // void handleActuatorForCoil() -
-void ModbusBridge::handleActuationForCoil(RegisterMapping& mapping, const std::string& value)
+void ModbusBridge::handleActuationForCoil(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value)
 {
     writeToBoolMapping(mapping, value);
 }
@@ -135,11 +137,11 @@ void ModbusBridge::handleActuation(const std::string& deviceKey, const std::stri
         return;
     }
 
-    auto mapping = *m_registerMappingByReference[deviceKey + '.' + reference];
+    auto mapping = m_registerMappingByReference[deviceKey + '.' + reference];
 
     // Discard if the mapping is incorrect
-    if (mapping.getRegisterType() != RegisterMapping::RegisterType::HOLDING_REGISTER &&
-        mapping.getRegisterType() != RegisterMapping::RegisterType::COIL)
+    if (mapping->getRegisterType() != RegisterMapping::RegisterType::HOLDING_REGISTER &&
+        mapping->getRegisterType() != RegisterMapping::RegisterType::COIL)
     {
         LOG(ERROR) << "ModbusBridge: Modbus register mapped to reference '" << reference
                    << "' can not be treated as actuator - Modbus register must be of type 'HOLDING_REGISTER' or 'COIL'";
@@ -147,11 +149,11 @@ void ModbusBridge::handleActuation(const std::string& deviceKey, const std::stri
     }
 
     // Pass through the appropriate handler
-    if (mapping.getRegisterType() == RegisterMapping::RegisterType::HOLDING_REGISTER)
+    if (mapping->getRegisterType() == RegisterMapping::RegisterType::HOLDING_REGISTER)
     {
         handleActuationForHoldingRegister(mapping, value);
     }
-    else if (mapping.getRegisterType() == RegisterMapping::RegisterType::COIL)
+    else if (mapping->getRegisterType() == RegisterMapping::RegisterType::COIL)
     {
         handleActuationForCoil(mapping, value);
     }
@@ -159,9 +161,10 @@ void ModbusBridge::handleActuation(const std::string& deviceKey, const std::stri
 
 // handleConfiguration and helper methods
 // handleConfigurationForHoldingRegister() - handles
-void ModbusBridge::handleConfigurationForHoldingRegister(RegisterMapping& mapping, const std::string& value)
+void ModbusBridge::handleConfigurationForHoldingRegister(const std::shared_ptr<RegisterMapping>& mapping,
+                                                         const std::string& value)
 {
-    switch (mapping.getOutputType())
+    switch (mapping->getOutputType())
     {
     case RegisterMapping::OutputType::BOOL:
         writeToBoolMapping(mapping, value);
@@ -182,14 +185,14 @@ void ModbusBridge::handleConfigurationForHoldingRegister(RegisterMapping& mappin
         writeToFloatMapping(mapping, value);
         break;
     default:
-        LOG(ERROR) << "ModbusBridge: Illegal outputType set for CONFIGURATION mapping " << mapping.getReference()
+        LOG(ERROR) << "ModbusBridge: Illegal outputType set for CONFIGURATION mapping " << mapping->getReference()
                    << ".";
         break;
     }
 }
 
 // handleConfigurationForCoil() - handles
-void ModbusBridge::handleConfigurationForCoil(RegisterMapping& mapping, const std::string& value)
+void ModbusBridge::handleConfigurationForCoil(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value)
 {
     writeToBoolMapping(mapping, value);
 }
@@ -222,10 +225,10 @@ void ModbusBridge::handleConfiguration(const std::string& deviceKey,
             switch (mapping.second->getRegisterType())
             {
             case RegisterMapping::RegisterType::COIL:
-                handleConfigurationForCoil(*mapping.second, config.getValues()[i++]);
+                handleConfigurationForCoil(mapping.second, config.getValues()[i++]);
                 break;
             case RegisterMapping::RegisterType::HOLDING_REGISTER:
-                handleConfigurationForHoldingRegister(*mapping.second, config.getValues()[i++]);
+                handleConfigurationForHoldingRegister(mapping.second, config.getValues()[i++]);
                 break;
             default:
                 throw std::logic_error("ModbusBridge: Illegal RegisterType for CONFIGURATION on Mapping : " +
