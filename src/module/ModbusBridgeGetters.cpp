@@ -26,6 +26,28 @@
 
 namespace wolkabout
 {
+std::string ModbusBridge::readFromMapping(const std::shared_ptr<RegisterMapping>& mapping)
+{
+    switch (mapping->getOutputType())
+    {
+    case RegisterMapping::OutputType::BOOL:
+        return readFromBoolMapping(mapping);
+    case RegisterMapping::OutputType::UINT16:
+        return readFromUInt16Mapping(mapping);
+    case RegisterMapping::OutputType::INT16:
+        return readFromInt16Mapping(mapping);
+    case RegisterMapping::OutputType::UINT32:
+        return readFromUInt32Mapping(mapping);
+    case RegisterMapping::OutputType::INT32:
+        return readFromInt32Mapping(mapping);
+    case RegisterMapping::OutputType::FLOAT:
+        return readFromFloatMapping(mapping);
+    case RegisterMapping::OutputType::STRING:
+        return readFromStringMapping(mapping);
+    }
+    return "";
+}
+
 std::string ModbusBridge::readFromBoolMapping(const std::shared_ptr<RegisterMapping>& mapping)
 {
     const auto& boolMapping = (const std::shared_ptr<BoolMapping>&)mapping;

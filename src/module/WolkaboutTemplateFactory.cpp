@@ -104,6 +104,7 @@ bool WolkaboutTemplateFactory::processAlarmMapping(const ModuleMapping& mapping,
     switch (mapping.getRegisterType())
     {
     case RegisterMapping::RegisterType::INPUT_CONTACT:
+    case RegisterMapping::RegisterType::INPUT_REGISTER:
         alarmTemplates.emplace_back(mapping.getName(), mapping.getReference(), mapping.getDescription());
         return true;
     default:

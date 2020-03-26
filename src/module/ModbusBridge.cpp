@@ -19,6 +19,7 @@
 #include "ActuatorStatusProviderPerDevice.h"
 #include "DeviceStatusProvider.h"
 #include "RegisterMappingFactory.h"
+#include "mappings/BoolMapping.h"
 #include "modbus/ModbusClient.h"
 #include "utilities/Logger.h"
 
@@ -54,6 +55,7 @@ ModbusBridge::ModbusBridge(
     {
         const auto& configurationTemplate = *(configurationTemplates).at(templateRegistered.first);
         std::vector<std::shared_ptr<RegisterMapping>> mappings;
+        std::map<std::string, ModuleMapping::MappingType> mappingTypeByReference;
         std::map<std::string, std::string> configurationKeysAndLabels;
 
         for (const auto& mapping : configurationTemplate.getMappings())
@@ -74,6 +76,7 @@ ModbusBridge::ModbusBridge(
             }
 
             mappings.emplace_back(RegisterMappingFactory::fromJSONMapping(mapping));
+            mappingTypeByReference.emplace(mapping.getReference(), mapping.getMappingType());
         }
 
         for (const auto& slaveAddress : templateRegistered.second)
@@ -91,6 +94,8 @@ ModbusBridge::ModbusBridge(
                 for (const auto& mapping : group->getMappings())
                 {
                     m_registerMappingByReference.emplace(key + SEPARATOR + mapping->getReference(), mapping);
+                    m_registerMappingTypeByReference.emplace(key + SEPARATOR + mapping->getReference(),
+                                                             mappingTypeByReference[mapping->getReference()]);
 
                     const auto& it = configurationKeysAndLabels.find(mapping->getReference());
                     if (it != configurationKeysAndLabels.end())
@@ -132,8 +137,36 @@ ModbusBridge::ModbusBridge(
 
     for (const auto& device : modbusDevices)
     {
-        device->setOnMappingValueChange(
-          [=](const RegisterMapping& mapping) { LOG(DEBUG) << device->getName() << " | " << mapping.getReference(); });
+        device->setOnMappingValueChange([=](const std::shared_ptr<RegisterMapping>& mapping) {
+            LOG(DEBUG) << device->getName() << " | " << mapping->getReference();
+            switch (m_registerMappingTypeByReference.at(device->getName() + SEPARATOR + mapping->getReference()))
+            {
+            case ModuleMapping::MappingType::DEFAULT:
+                if (mapping->getRegisterType() == RegisterMapping::RegisterType::COIL ||
+                    mapping->getRegisterType() == RegisterMapping::RegisterType::HOLDING_REGISTER)
+                {
+                    m_onActuatorStatusChange(device->getName(), mapping->getReference(), readFromMapping(mapping));
+                }
+                else
+                {
+                    m_onSensorChange(device->getName(), mapping->getReference(), readFromMapping(mapping));
+                }
+                break;
+            case ModuleMapping::MappingType::SENSOR:
+                m_onSensorChange(device->getName(), mapping->getReference(), readFromMapping(mapping));
+                break;
+            case ModuleMapping::MappingType::ACTUATOR:
+                m_onActuatorStatusChange(device->getName(), mapping->getReference(), readFromMapping(mapping));
+                break;
+            case ModuleMapping::MappingType::ALARM:
+                m_onAlarmChange(device->getName(), mapping->getReference(),
+                                ((const std::shared_ptr<BoolMapping>&)mapping)->getBoolValue());
+                break;
+            case ModuleMapping::MappingType::CONFIGURATION:
+
+                break;
+            }
+        });
     }
 }
 

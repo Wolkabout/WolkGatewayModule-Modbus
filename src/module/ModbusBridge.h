@@ -107,6 +107,7 @@ private:
     static void writeToFloatMapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value);
     static void writeToStringMapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value);
 
+    static std::string readFromMapping(const std::shared_ptr<RegisterMapping>& mapping);
     static std::string readFromBoolMapping(const std::shared_ptr<RegisterMapping>& mapping);
     static std::string readFromUInt16Mapping(const std::shared_ptr<RegisterMapping>& mapping);
     static std::string readFromInt16Mapping(const std::shared_ptr<RegisterMapping>& mapping);
@@ -159,6 +160,7 @@ private:
     std::map<int, DeviceStatus::Status> m_devicesStatusBySlaveAddress;
     // Watcher for all the mappings. This is the shortcut for handle and get queries to get to the mapping they need.
     std::map<std::string, std::shared_ptr<RegisterMapping>> m_registerMappingByReference;
+    std::map<std::string, ModuleMapping::MappingType> m_registerMappingTypeByReference;
     // Configurations grouped per device. Necessary for getConfiguration.
     std::map<std::string, std::vector<std::string>> m_configurationMappingByDeviceKey;
     std::map<std::string, std::map<std::string, std::shared_ptr<RegisterMapping>>>
