@@ -124,7 +124,7 @@ bool WolkaboutTemplateFactory::processConfigurationMapping(const ModuleMapping& 
         if (mapping.getLabelMap().empty())
         {
             configurationTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType,
-                                                mapping.getDescription(), std::string(""), mapping.getMinimum(),
+                                                mapping.getDescription(), std::string("0"), mapping.getMinimum(),
                                                 mapping.getMaximum());
         }
         else
@@ -135,8 +135,8 @@ bool WolkaboutTemplateFactory::processConfigurationMapping(const ModuleMapping& 
                 labels.push_back(kvp.first);
             }
             configurationTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType,
-                                                mapping.getDescription(), std::string(""), labels, mapping.getMinimum(),
-                                                mapping.getMaximum());
+                                                mapping.getDescription(), std::string("0"), labels,
+                                                mapping.getMinimum(), mapping.getMaximum());
         }
         return true;
     default:

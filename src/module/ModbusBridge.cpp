@@ -163,7 +163,7 @@ ModbusBridge::ModbusBridge(
                                 ((const std::shared_ptr<BoolMapping>&)mapping)->getBoolValue());
                 break;
             case ModuleMapping::MappingType::CONFIGURATION:
-
+                m_onConfigurationChange(device->getName());
                 break;
             }
         });
@@ -214,8 +214,7 @@ void ModbusBridge::setOnAlarmChange(
     m_onAlarmChange = onAlarmChange;
 }
 
-void ModbusBridge::setOnConfigurationChange(
-  const std::function<void(const std::string&, std::vector<ConfigurationItem>&)>& onConfigurationChange)
+void ModbusBridge::setOnConfigurationChange(const std::function<void(const std::string&)>& onConfigurationChange)
 {
     m_onConfigurationChange = onConfigurationChange;
 }

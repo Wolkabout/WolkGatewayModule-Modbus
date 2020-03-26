@@ -66,9 +66,7 @@ public:
     void setOnAlarmChange(const std::function<void(const std::string& deviceKey, const std::string& reference,
                                                    bool active)>& onAlarmChange);
 
-    void setOnConfigurationChange(
-      const std::function<void(const std::string& deviceKey, std::vector<ConfigurationItem>& data)>&
-        onConfigurationChange);
+    void setOnConfigurationChange(const std::function<void(const std::string& deviceKey)>& onConfigurationChange);
 
     void setOnDeviceStatusChange(
       const std::function<void(const std::string& deviceKey, wolkabout::DeviceStatus::Status status)>&
@@ -172,7 +170,7 @@ private:
     std::function<void(const std::string& deviceKey, const std::string& reference, const std::string& value)>
       m_onActuatorStatusChange;
     std::function<void(const std::string& deviceKey, const std::string& reference, bool active)> m_onAlarmChange;
-    std::function<void(const std::string& deviceKey, std::vector<ConfigurationItem>& data)> m_onConfigurationChange;
+    std::function<void(const std::string& deviceKey)> m_onConfigurationChange;
     std::function<void(const std::string& deviceKey, wolkabout::DeviceStatus::Status status)> m_onDeviceStatusChange;
 };
 }    // namespace wolkabout

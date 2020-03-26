@@ -255,9 +255,7 @@ int main(int argc, char** argv)
     });
 
     modbusBridge->setOnConfigurationChange(
-      [&](const std::string& deviceKey, std::vector<wolkabout::ConfigurationItem>& values) {
-          wolk->publishConfiguration(deviceKey, values);
-      });
+      [&](const std::string& deviceKey) { wolk->publishConfiguration(deviceKey); });
 
     modbusBridge->setOnDeviceStatusChange([&](const std::string& deviceKey, wolkabout::DeviceStatus::Status status) {
         wolk->publishDeviceStatus(deviceKey, status);
