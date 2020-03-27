@@ -67,18 +67,9 @@ bool WolkaboutTemplateFactory::processDefaultMapping(const ModuleMapping& mappin
 bool WolkaboutTemplateFactory::processSensorMapping(const ModuleMapping& mapping, const DataType& dataType,
                                                     std::vector<SensorTemplate>& sensorTemplates)
 {
-    switch (mapping.getRegisterType())
-    {
-    case RegisterMapping::RegisterType::INPUT_CONTACT:
-    case RegisterMapping::RegisterType::INPUT_REGISTER:
-        sensorTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType, mapping.getDescription(),
-                                     mapping.getMinimum(), mapping.getMaximum());
-        return true;
-    default:
-        throw std::logic_error("WolkGatewayModbusModule Application: Mapping with reference '" +
-                               mapping.getReference() +
-                               "' not added to device manifest - Incompatible Mapping and Register type combination");
-    }
+    sensorTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType, mapping.getDescription(),
+                                 mapping.getMinimum(), mapping.getMaximum());
+    return true;
 }
 
 bool WolkaboutTemplateFactory::processActuatorMapping(const ModuleMapping& mapping, const DataType& dataType,
@@ -101,17 +92,8 @@ bool WolkaboutTemplateFactory::processActuatorMapping(const ModuleMapping& mappi
 bool WolkaboutTemplateFactory::processAlarmMapping(const ModuleMapping& mapping, const DataType& dataType,
                                                    std::vector<AlarmTemplate>& alarmTemplates)
 {
-    switch (mapping.getRegisterType())
-    {
-    case RegisterMapping::RegisterType::INPUT_CONTACT:
-    case RegisterMapping::RegisterType::INPUT_REGISTER:
-        alarmTemplates.emplace_back(mapping.getName(), mapping.getReference(), mapping.getDescription());
-        return true;
-    default:
-        throw std::logic_error("WolkGatewayModbusModule Application: Mapping with reference '" +
-                               mapping.getReference() +
-                               "' not added to device manifest - Incompatible Mapping and Register type combination");
-    }
+    alarmTemplates.emplace_back(mapping.getName(), mapping.getReference(), mapping.getDescription());
+    return true;
 }
 
 bool WolkaboutTemplateFactory::processConfigurationMapping(const ModuleMapping& mapping, const DataType& dataType,

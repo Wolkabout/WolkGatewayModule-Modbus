@@ -26,6 +26,34 @@
 
 namespace wolkabout
 {
+void ModbusBridge::writeToMapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value)
+{
+    switch (mapping->getOutputType())
+    {
+    case RegisterMapping::OutputType::BOOL:
+        writeToBoolMapping(mapping, value);
+        break;
+    case RegisterMapping::OutputType::UINT16:
+        writeToUInt16Mapping(mapping, value);
+        break;
+    case RegisterMapping::OutputType::INT16:
+        writeToInt16Mapping(mapping, value);
+        break;
+    case RegisterMapping::OutputType::UINT32:
+        writeToUInt32Mapping(mapping, value);
+        break;
+    case RegisterMapping::OutputType::INT32:
+        writeToInt32Mapping(mapping, value);
+        break;
+    case RegisterMapping::OutputType::FLOAT:
+        writeToFloatMapping(mapping, value);
+        break;
+    case RegisterMapping::OutputType::STRING:
+        writeToStringMapping(mapping, value);
+        break;
+    }
+}
+
 void ModbusBridge::writeToBoolMapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value)
 {
     auto& boolMapping = (const std::shared_ptr<BoolMapping>&)mapping;
@@ -78,7 +106,14 @@ void ModbusBridge::writeToStringMapping(const std::shared_ptr<RegisterMapping>& 
                   << ".";
         return;
     }
-    stringMapping->writeValue(value);
+
+    std::string stringValue = value;
+    for (uint i = static_cast<uint>(value.size()); i < static_cast<uint>(stringMapping->getRegisterCount() * 2); i++)
+    {
+        stringValue += ' ';
+    }
+
+    stringMapping->writeValue(stringValue);
 }
 
 // handleActuation and helper methods
@@ -86,30 +121,7 @@ void ModbusBridge::writeToStringMapping(const std::shared_ptr<RegisterMapping>& 
 void ModbusBridge::handleActuationForHoldingRegister(const std::shared_ptr<RegisterMapping>& mapping,
                                                      const std::string& value)
 {
-    switch (mapping->getOutputType())
-    {
-    case RegisterMapping::OutputType::BOOL:
-        writeToBoolMapping(mapping, value);
-        break;
-    case RegisterMapping::OutputType::UINT16:
-        writeToUInt16Mapping(mapping, value);
-        break;
-    case RegisterMapping::OutputType::INT16:
-        writeToInt16Mapping(mapping, value);
-        break;
-    case RegisterMapping::OutputType::UINT32:
-        writeToUInt32Mapping(mapping, value);
-        break;
-    case RegisterMapping::OutputType::INT32:
-        writeToInt32Mapping(mapping, value);
-        break;
-    case RegisterMapping::OutputType::FLOAT:
-        writeToFloatMapping(mapping, value);
-        break;
-    case RegisterMapping::OutputType::STRING:
-        writeToStringMapping(mapping, value);
-        break;
-    }
+    writeToMapping(mapping, value);
 }
 // void handleActuatorForCoil() -
 void ModbusBridge::handleActuationForCoil(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value)
@@ -164,31 +176,14 @@ void ModbusBridge::handleActuation(const std::string& deviceKey, const std::stri
 void ModbusBridge::handleConfigurationForHoldingRegister(const std::shared_ptr<RegisterMapping>& mapping,
                                                          const std::string& value)
 {
-    switch (mapping->getOutputType())
+    if (mapping->getOutputType() == RegisterMapping::OutputType::STRING)
     {
-    case RegisterMapping::OutputType::BOOL:
-        writeToBoolMapping(mapping, value);
-        break;
-    case RegisterMapping::OutputType::UINT16:
-        writeToUInt16Mapping(mapping, value);
-        break;
-    case RegisterMapping::OutputType::INT16:
-        writeToInt16Mapping(mapping, value);
-        break;
-    case RegisterMapping::OutputType::UINT32:
-        writeToUInt32Mapping(mapping, value);
-        break;
-    case RegisterMapping::OutputType::INT32:
-        writeToInt32Mapping(mapping, value);
-        break;
-    case RegisterMapping::OutputType::FLOAT:
-        writeToFloatMapping(mapping, value);
-        break;
-    default:
         LOG(ERROR) << "ModbusBridge: Illegal outputType set for CONFIGURATION mapping " << mapping->getReference()
                    << ".";
-        break;
+        return;
     }
+
+    writeToMapping(mapping, value);
 }
 
 // handleConfigurationForCoil() - handles

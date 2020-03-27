@@ -93,11 +93,12 @@ ModbusBridge::ModbusBridge(
             {
                 for (const auto& mapping : group->getMappings())
                 {
-                    m_registerMappingByReference.emplace(key + SEPARATOR + mapping->getReference(), mapping);
-                    m_registerMappingTypeByReference.emplace(key + SEPARATOR + mapping->getReference(),
-                                                             mappingTypeByReference[mapping->getReference()]);
+                    m_registerMappingByReference.emplace(key + SEPARATOR + mapping.second->getReference(),
+                                                         mapping.second);
+                    m_registerMappingTypeByReference.emplace(key + SEPARATOR + mapping.second->getReference(),
+                                                             mappingTypeByReference[mapping.second->getReference()]);
 
-                    const auto& it = configurationKeysAndLabels.find(mapping->getReference());
+                    const auto& it = configurationKeysAndLabels.find(mapping.second->getReference());
                     if (it != configurationKeysAndLabels.end())
                     {
                         const std::string& configurationReference = it->second;
@@ -117,7 +118,8 @@ ModbusBridge::ModbusBridge(
                               mapKey, std::map<std::string, std::shared_ptr<RegisterMapping>>());
                         }
 
-                        m_configurationMappingByDeviceKeyAndRef[mapKey].emplace(mapping->getReference(), mapping);
+                        m_configurationMappingByDeviceKeyAndRef[mapKey].emplace(mapping.second->getReference(),
+                                                                                mapping.second);
                     }
                 }
             }
@@ -130,15 +132,20 @@ ModbusBridge::ModbusBridge(
     m_modbusReader->setOnIterationStatuses([&](const std::map<int8_t, bool>& statuses) {
         for (const auto& pair : statuses)
         {
-            m_devicesStatusBySlaveAddress[pair.first] =
-              pair.second ? DeviceStatus::Status::CONNECTED : DeviceStatus::Status::OFFLINE;
+            const auto newStatus = pair.second ? DeviceStatus::Status::CONNECTED : DeviceStatus::Status::OFFLINE;
+
+            if (m_devicesStatusBySlaveAddress[pair.first] != newStatus)
+            {
+                m_onDeviceStatusChange(m_deviceKeyBySlaveAddress[pair.first], newStatus);
+            }
+
+            m_devicesStatusBySlaveAddress[pair.first] = newStatus;
         }
     });
 
     for (const auto& device : modbusDevices)
     {
         device->setOnMappingValueChange([=](const std::shared_ptr<RegisterMapping>& mapping) {
-            LOG(DEBUG) << device->getName() << " | " << mapping->getReference();
             switch (m_registerMappingTypeByReference.at(device->getName() + SEPARATOR + mapping->getReference()))
             {
             case ModuleMapping::MappingType::DEFAULT:

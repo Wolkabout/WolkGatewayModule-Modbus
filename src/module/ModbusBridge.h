@@ -97,6 +97,7 @@ protected:
     DeviceStatus::Status getDeviceStatus(const std::string& deviceKey) override;
 
 private:
+    static void writeToMapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value);
     static void writeToBoolMapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value);
     static void writeToUInt16Mapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value);
     static void writeToInt16Mapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value);
