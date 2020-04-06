@@ -24,9 +24,19 @@ namespace wolkabout
 {
 using nlohmann::json;
 
+/**
+ * @brief Collection of methods used for parsing data from JSON files.
+ */
 class JsonReaderParser
 {
 public:
+    /**
+     * @brief Read field of object as string, if it doesn't exist, return the default value.
+     * @param object json with values
+     * @param key being used for query
+     * @param defaultValue value that will be returned if json misses key, of type string
+     * @return value from json as string, or default value if key couldn't be found in json
+     */
     static std::string readOrDefault(json::object_t object, const std::string& key, std::string defaultValue)
     {
         try
@@ -39,6 +49,13 @@ public:
         }
     }
 
+    /**
+     * @brief Read field of object as double, if it doesn't exist, return the default value.
+     * @param object json with values
+     * @param key being used for query
+     * @param defaultValue value that will be returned if json misses key, of type double
+     * @return value from json as double, or default value if key couldn't be found in json
+     */
     static double readOrDefault(json::object_t object, const std::string& key, double defaultValue)
     {
         try
@@ -51,6 +68,13 @@ public:
         }
     }
 
+    /**
+     * @brief Read field of object as int, if it doesn't exist, return the default value.
+     * @param object json with values
+     * @param key being used for query
+     * @param defaultValue value that will be returned if json misses key, of type int
+     * @return value from json as int, or default value if key couldn't be found in json
+     */
     static int readOrDefault(json::object_t object, const std::string& key, int defaultValue)
     {
         try
@@ -63,6 +87,12 @@ public:
         }
     }
 
+    /**
+     * @brief Read file and return it as a json object.
+     * @details Check for the files existence, if we're able to read it, and then parse it.
+     * @param path string to file location
+     * @return object parsed as json
+     */
     static json::object_t readFile(const std::string& path)
     {
         if (!FileSystemUtils::isFilePresent(path))

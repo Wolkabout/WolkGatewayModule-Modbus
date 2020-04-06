@@ -21,9 +21,18 @@
 
 namespace wolkabout
 {
+/**
+ * @brief Collection of method that create RegisterMappings for the MoreModbus library
+ *        from the JSON mapping.
+ */
 class RegisterMappingFactory
 {
 public:
+    /**
+     * @brief Create a RegisterMapping from a JSON mapping.
+     * @param jsonMapping parsed json from the config file.
+     * @return created instance of RegisterMapping.
+     */
     static std::shared_ptr<RegisterMapping> fromJSONMapping(const ModuleMapping& jsonMapping);
 };
 }    // namespace wolkabout

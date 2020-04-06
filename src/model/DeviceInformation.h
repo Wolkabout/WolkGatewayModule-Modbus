@@ -23,6 +23,10 @@ namespace wolkabout
 {
 using nlohmann::json;
 
+/**
+ * @brief Model class containing information necessary to create a single device for the module.
+ *        Contained in the deviceConfiguration.json file.
+ */
 class DeviceInformation
 {
 public:

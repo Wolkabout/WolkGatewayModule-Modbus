@@ -29,6 +29,11 @@ namespace wolkabout
 {
 using nlohmann::json;
 
+/**
+ * @brief Model class containing information for assembling the moduleConfiguration.json file,
+ *        one that sets up the module with the modbus connection, and connection to the MQTT
+ *        broker, and some other miscellaneous things.
+ */
 class ModuleConfiguration
 {
 public:

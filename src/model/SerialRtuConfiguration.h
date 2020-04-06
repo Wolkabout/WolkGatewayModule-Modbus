@@ -23,6 +23,9 @@ namespace wolkabout
 {
 using nlohmann::json;
 
+/**
+ * @brief Model class representing information necessary to create a SERIAL/RTU connection.
+ */
 class SerialRtuConfiguration
 {
 public:

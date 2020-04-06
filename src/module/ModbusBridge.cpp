@@ -53,6 +53,8 @@ ModbusBridge::ModbusBridge(
 
     for (const auto& templateRegistered : deviceAddressesByTemplate)
     {
+        // Create an initial list of mappings for the template. Mark all the mappings that will
+        // be configuration mappings,
         const auto& configurationTemplate = *(configurationTemplates).at(templateRegistered.first);
         std::vector<std::shared_ptr<RegisterMapping>> mappings;
         std::map<std::string, ModuleMapping::MappingType> mappingTypeByReference;
@@ -60,6 +62,7 @@ ModbusBridge::ModbusBridge(
 
         for (const auto& mapping : configurationTemplate.getMappings())
         {
+            // Remember all the configurations for this template.
             if (mapping.getMappingType() == ModuleMapping::MappingType::CONFIGURATION)
             {
                 if (!mapping.getLabelMap().empty())
@@ -79,6 +82,7 @@ ModbusBridge::ModbusBridge(
             mappingTypeByReference.emplace(mapping.getReference(), mapping.getMappingType());
         }
 
+        // Foreach device slaveAddress, copy over the mappings to create the device.
         for (const auto& slaveAddress : templateRegistered.second)
         {
             const std::string& key = devices.at(slaveAddress)->getKey();
@@ -89,6 +93,7 @@ ModbusBridge::ModbusBridge(
             m_deviceKeyBySlaveAddress.emplace(slaveAddress, key);
             m_devicesStatusBySlaveAddress.emplace(slaveAddress, DeviceStatus::Status::OFFLINE);
 
+            // Register all the mappings into a map, keep configuration mappings special too.
             for (const auto& group : device->getGroups())
             {
                 for (const auto& mapping : group->getMappings())
@@ -126,9 +131,11 @@ ModbusBridge::ModbusBridge(
         }
     }
 
+    // Create the reader
     m_modbusReader =
       std::unique_ptr<ModbusReader>(new ModbusReader(m_modbusClient, modbusDevices, m_registerReadPeriod));
 
+    // Setup the logic for device status change.
     m_modbusReader->setOnIterationStatuses([&](const std::map<int8_t, bool>& statuses) {
         for (const auto& pair : statuses)
         {
@@ -143,6 +150,7 @@ ModbusBridge::ModbusBridge(
         }
     });
 
+    // Setup the device mapping value change logic.
     for (const auto& device : modbusDevices)
     {
         device->setOnMappingValueChange([=](const std::shared_ptr<RegisterMapping>& mapping) {
@@ -167,7 +175,7 @@ ModbusBridge::ModbusBridge(
                 break;
             case ModuleMapping::MappingType::ALARM:
                 m_onAlarmChange(device->getName(), mapping->getReference(),
-                                ((const std::shared_ptr<BoolMapping>&)mapping)->getBoolValue());
+                                std::dynamic_pointer_cast<BoolMapping>(mapping)->getBoolValue());
                 break;
             case ModuleMapping::MappingType::CONFIGURATION:
                 m_onConfigurationChange(device->getName());

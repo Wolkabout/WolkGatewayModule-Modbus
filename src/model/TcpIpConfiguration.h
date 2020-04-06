@@ -22,6 +22,9 @@ namespace wolkabout
 {
 using nlohmann::json;
 
+/**
+ * @brief Model class representing information necessary to create a TCP/IP connection.
+ */
 class TcpIpConfiguration
 {
 public:

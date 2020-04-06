@@ -23,6 +23,10 @@ namespace wolkabout
 {
 using nlohmann::json;
 
+/**
+ * @brief Model class containing information for a single template created in a
+ *        deviceConfiguration.json file.
+ */
 class DevicesConfigurationTemplate
 {
 public:

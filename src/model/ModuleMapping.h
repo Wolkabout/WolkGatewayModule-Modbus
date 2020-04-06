@@ -30,9 +30,16 @@ namespace wolkabout
 using nlohmann::json;
 typedef std::vector<std::pair<std::string, int>> LabelMap;
 
+/**
+ * @brief Model class representing information necessary to create a mapping.
+ */
 class ModuleMapping
 {
 public:
+    /**
+     * @brief Enumeration that provides the ability to override the mapping type that will
+     *        be created for the platform.
+     */
     enum class MappingType
     {
         DEFAULT,
@@ -85,9 +92,17 @@ private:
     MappingType m_mappingType;
 };
 
+/**
+ * @brief Utility methods for parsing enumerations in ModuleMapping.
+ */
 class MappingTypeConversion
 {
 public:
+    /**
+     * @brief Parse the mapping type parameter from string into an enumeration value.
+     * @param mappingType represented as a string file.
+     * @return mappingType parsed to enumeration.
+     */
     static ModuleMapping::MappingType deserializeMappingType(const std::string& mappingType);
 };
 }    // namespace wolkabout

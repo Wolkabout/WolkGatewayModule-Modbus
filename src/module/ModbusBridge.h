@@ -41,6 +41,12 @@ namespace wolkabout
 class ModuleMapping;
 class ModbusClient;
 
+/**
+ * @brief Class connecting two external interfaces, Modbus and the platform.
+ * @details This class contains the connection between two external sides.
+ *          Both to the MoreModbus library, with the Modbus devices,
+ *          and to the platform with callbacks that trigger the Wolk object.
+ */
 class ModbusBridge : public ActuationHandlerPerDevice,
                      public ActuatorStatusProviderPerDevice,
                      public ConfigurationHandlerPerDevice,
@@ -48,6 +54,19 @@ class ModbusBridge : public ActuationHandlerPerDevice,
                      public DeviceStatusProvider
 {
 public:
+    /**
+     * @brief Default constructor for the class, initializes all the necessary data for workings.
+     * @details Initializes the ModbusDevices according to the passed user configuration,
+     *          first by creating the templates for such devices, where a whole device with slaveAddress
+     *          -1 is created, and then copied over foreach device of such template.
+     *          Value/status change listeners are also setup in here, next to all the maps of data/pointers
+     *          that are necessary, such as mapping maps, status maps.
+     * @param modbusClient setup client that will be used for the modbus reader.
+     * @param configurationTemplates all configuration templates,
+     * @param deviceAddressesByTemplate
+     * @param devices
+     * @param registerReadPeriod
+     */
     ModbusBridge(ModbusClient& modbusClient,
                  const std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& configurationTemplates,
                  const std::map<std::string, std::vector<int>>& deviceAddressesByTemplate,
@@ -55,6 +74,10 @@ public:
 
     ~ModbusBridge() override;
 
+    /**
+     * @brief Get the running status of the Modbus reader.
+     * @return
+     */
     bool isRunning() const;
 
     void setOnSensorChange(const std::function<void(const std::string& deviceKey, const std::string& reference,
@@ -72,28 +95,57 @@ public:
       const std::function<void(const std::string& deviceKey, wolkabout::DeviceStatus::Status status)>&
         onDeviceStatusChange);
 
+    /**
+     * @brief Start the modbus reader logic.
+     */
     void start();
+
+    /**
+     * @brief Stop the modbus reader logic.
+     */
     void stop();
 
 protected:
-    // Interface method for ActuatorStatusProviderPerDevice
-    // Used to handle request from platform to provide data about an actuator on device
+    /**
+     * @brief Overridden method from ActuatorStatusProviderDevice. Return the Actuator status
+     *        for specific device key and reference.
+     * @param deviceKey called device by reference from the platform.
+     * @param reference called actuator by reference from the platform.
+     * @return
+     */
     ActuatorStatus getActuatorStatus(const std::string& deviceKey, const std::string& reference) override;
 
-    // Interface method for ActuationHandlerPerDevice
-    // Used to receive data change about an actuator from platform on specific device
+    /**
+     * @brief Overridden method for ActuationHandlerPerDevice. Handles actuation for specific device
+     *        and reference.
+     * @param deviceKey called device by reference from the platform.
+     * @param reference called actuator by reference from the platform.
+     * @param value new value for the actuator, received by the platform.
+     */
     void handleActuation(const std::string& deviceKey, const std::string& reference, const std::string& value) override;
 
-    // Interface method for ConfigurationProviderPerDevice
-    // Used to handle request from platform to provide data about a configuration on device
+    /**
+     * @brief Overridden method for ConfigurationProviderPerDevice. Return the Configuration status
+     *        for specific device, referenced by key.
+     * @param deviceKey called device by reference from the platform.
+     * @return data from all the configuration mappings of device.
+     */
     std::vector<ConfigurationItem> getConfiguration(const std::string& deviceKey) override;
 
-    // Interface method for ConfigurationHandlerPerDevice
-    // Used to receive data change about a configuration from platform on specific device
+    /**
+     * @brief Overridden method for ConfigurationHandlerPerDevice. Handles configuration change for specific
+     *         device and references.
+     * @param deviceKey called device by reference from the platform.
+     * @param configuration is a list of ConfigurationItems that target one or more Configuration references of device.
+     */
     void handleConfiguration(const std::string& deviceKey,
                              const std::vector<ConfigurationItem>& configuration) override;
 
-    // Interface method for DeviceStatusProvider
+    /**
+     * @brief Overridden method for DeviceStatusProvider. Returns device status for specific device.
+     * @param deviceKey called device by reference from the platform.
+     * @return device status for specific device.
+     */
     DeviceStatus::Status getDeviceStatus(const std::string& deviceKey) override;
 
 private:
@@ -115,26 +167,54 @@ private:
     static std::string readFromFloatMapping(const std::shared_ptr<RegisterMapping>& mapping);
     static std::string readFromStringMapping(const std::shared_ptr<RegisterMapping>& mapping);
 
-    // Helper methods for getActuatorStatus
+    /**
+     * @brief Helper method for getActuatorStatus, for returning status for mappings
+     *        where register type is HOLDING_REGISTER.
+     */
     static ActuatorStatus getActuatorStatusFromHoldingRegister(const std::shared_ptr<RegisterMapping>& mapping);
 
+    /**
+     * @brief Helper method for getActuatorStatus, for returning status for mappings
+     *        where register type is COIL.
+     */
     static ActuatorStatus getActuatorStatusFromCoil(const std::shared_ptr<RegisterMapping>& mapping);
 
-    // Helper methods for getConfiguration
-    static std::string getConfigurationStatusFromCoil(const std::shared_ptr<RegisterMapping>& mapping);
-
+    /**
+     * @brief Helper method for getConfiguration, for returning status for mappings
+     *        where register type is HOLDING_REGISTER.
+     */
     static std::string getConfigurationStatusFromHoldingRegister(const std::shared_ptr<RegisterMapping>& mapping);
 
-    // Helper methods for handleActuation
+    /**
+     * @brief Helper method for getConfiguration, for returning status for mappings
+     *        where register type is COIL.
+     */
+    static std::string getConfigurationStatusFromCoil(const std::shared_ptr<RegisterMapping>& mapping);
+
+    /**
+     * @brief Helper method for handleActuation, handling value for mappings
+     *        where register type is HOLDING_REGISTER.
+     */
     static void handleActuationForHoldingRegister(const std::shared_ptr<RegisterMapping>& mapping,
                                                   const std::string& value);
 
+    /**
+     * @brief Helper method for handleActuation, handling value for mappings
+     *        where register type is COIL.
+     */
     static void handleActuationForCoil(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value);
 
-    // Helper methods for handleConfiguration
+    /**
+     * @brief Helper method for handleConfiguration, handling value for mappings
+     *        where register type is HOLDING_REGISTER.
+     */
     static void handleConfigurationForHoldingRegister(const std::shared_ptr<RegisterMapping>& mapping,
                                                       const std::string& value);
 
+    /**
+     * @brief Helper method for handleConfiguration, handling value for mappings
+     *        where register type is COIL.
+     */
     static void handleConfigurationForCoil(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value);
 
     // Methods to help with data query

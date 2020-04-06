@@ -23,6 +23,9 @@ namespace wolkabout
 {
 using nlohmann::json;
 
+/**
+ * @brief Model class containing all information necessary to parse the deviceConfiguration.json file.
+ */
 class DevicesConfiguration
 {
 public:
