@@ -43,7 +43,7 @@ link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 
 # WolkAbout c++ SDK
 add_subdirectory(WolkGatewayModule-SDK-Cpp lib/WolkGatewayModule)
-add_subdirectory(WolkModbus lib/WolkModbus)
+add_subdirectory(MoreModbus lib/MoreModbus)
 
 # WolkAbout Modbus Module
 include_directories("src")
@@ -52,7 +52,7 @@ file(GLOB_RECURSE HEADER_FILES "src/*.h" "src/*.hpp")
 file(GLOB_RECURSE SOURCE_FILES "src/*.c" "src/*.cpp")
 
 add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES})
-target_link_libraries(${PROJECT_NAME} WolkGatewayModule WolkModbus)
+target_link_libraries(${PROJECT_NAME} WolkGatewayModule MoreModbus)
 set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
 
 # Example

@@ -1,3 +1,6 @@
 [submodule "WolkGatewayModule-SDK-Cpp"]
 	path = WolkGatewayModule-SDK-Cpp
 	url = https://github.com/Wolkabout/WolkGatewayModule-SDK-Cpp.git
+[submodule "MoreModbus"]
+	path = MoreModbus
+	url = git@github.com:nvuletic/MoreModbus
