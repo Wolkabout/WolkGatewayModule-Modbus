@@ -226,7 +226,7 @@ private:
     ModbusClient& m_modbusClient;
 
     // The reader
-    std::unique_ptr<ModbusReader> m_modbusReader;
+    std::shared_ptr<ModbusReader> m_modbusReader;
     std::chrono::milliseconds m_registerReadPeriod;
 
     // True values

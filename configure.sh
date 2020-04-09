@@ -14,10 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-pushd MoreModbus || exit
-bash configure.sh $(pwd)
-popd || exit
-
 cp tools/git/pre-commit .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 

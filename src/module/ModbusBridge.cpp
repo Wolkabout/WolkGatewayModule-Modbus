@@ -86,7 +86,8 @@ ModbusBridge::ModbusBridge(
         for (const auto& slaveAddress : templateRegistered.second)
         {
             const std::string& key = devices.at(slaveAddress)->getKey();
-            const auto& device = std::make_shared<ModbusDevice>(key, slaveAddress, mappings);
+            const auto& device = std::make_shared<ModbusDevice>(key, slaveAddress);
+            device->createGroups(mappings);
 
             modbusDevices.emplace_back(device);
 
@@ -132,27 +133,23 @@ ModbusBridge::ModbusBridge(
     }
 
     // Create the reader
-    m_modbusReader =
-      std::unique_ptr<ModbusReader>(new ModbusReader(m_modbusClient, modbusDevices, m_registerReadPeriod));
+    m_modbusReader = std::make_shared<ModbusReader>(m_modbusClient, m_registerReadPeriod);
 
-    // Setup the logic for device status change.
-    m_modbusReader->setOnIterationStatuses([&](const std::map<int8_t, bool>& statuses) {
-        for (const auto& pair : statuses)
-        {
-            const auto newStatus = pair.second ? DeviceStatus::Status::CONNECTED : DeviceStatus::Status::OFFLINE;
-
-            if (m_devicesStatusBySlaveAddress[pair.first] != newStatus)
-            {
-                m_onDeviceStatusChange(m_deviceKeyBySlaveAddress[pair.first], newStatus);
-            }
-
-            m_devicesStatusBySlaveAddress[pair.first] = newStatus;
-        }
-    });
+    m_modbusReader->addDevices(modbusDevices);
 
     // Setup the device mapping value change logic.
     for (const auto& device : modbusDevices)
     {
+        device->setOnStatusChange([=](bool status) {
+            const auto newStatus = status ? DeviceStatus::Status::CONNECTED : DeviceStatus::Status::OFFLINE;
+
+            if (m_devicesStatusBySlaveAddress[device->getSlaveAddress()] != newStatus)
+            {
+                m_devicesStatusBySlaveAddress[device->getSlaveAddress()] = newStatus;
+                m_onDeviceStatusChange(device->getName(), newStatus);
+            }
+        });
+
         device->setOnMappingValueChange([=](const std::shared_ptr<RegisterMapping>& mapping) {
             switch (m_registerMappingTypeByReference.at(device->getName() + SEPARATOR + mapping->getReference()))
             {
