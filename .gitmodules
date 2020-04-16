@@ -3,4 +3,4 @@
 	url = https://github.com/Wolkabout/WolkGatewayModule-SDK-Cpp.git
 [submodule "MoreModbus"]
 	path = MoreModbus
-	url = git@github.com:nvuletic/MoreModbus
+	url = https://github.com/Wolkabout/MoreModbus
