@@ -32,8 +32,8 @@
                     "minimum": -4000,
                     "maximum": 4000,
                     "address": 1,
-                    "registerType": "HOLDING_REGISTER_ACTUATOR",
-                    "dataType": "REAL32"
+                    "registerType": "HOLDING_REGISTER",
+                    "dataType": "FLOAT"
                 },
                 {
                     "name": "mappingName3",
@@ -61,7 +61,7 @@
                         "secondConfig": 1,
                         "thirdConfig": 2
                     },
-                    "registerType": "HOLDING_REGISTER_ACTUATOR",
+                    "registerType": "HOLDING_REGISTER",
                     "dataType": "INT16",
                     "mappingType": "CONFIGURATION"
                 },
