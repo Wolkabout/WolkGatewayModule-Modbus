@@ -3,6 +3,7 @@
         {
             "name": "DEVICE_NAME",
             "key": "DEVICE_KEY",
+	    "slaveAddress": 1,
             "template": "TEMPLATE_NAME"
         }
     ],
