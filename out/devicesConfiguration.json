@@ -3,13 +3,6 @@
         {
             "name": "DEVICE_NAME",
             "key": "DEVICE_KEY",
-            "slaveAddress": 1,
-            "template": "TEMPLATE_NAME"
-        },
-        {
-            "name": "DEVICE_NAME2",
-            "key": "DEVICE_KEY2",
-            "slaveAddress": 2,
             "template": "TEMPLATE_NAME"
         }
     ],
@@ -18,8 +11,8 @@
             "name": "TEMPLATE_NAME",
             "mappings": [
                 {
-                    "name":"mappingName",
-                    "reference": "mappingReference",
+                    "name":"mappingReference1",
+                    "reference": "mappingReference1",
                     "minimum": -32768,
                     "maximum": 32767,
                     "address": 0,
@@ -47,8 +40,9 @@
                     "name":"mappingName4",
                     "reference": "mappingReference4",
                     "address": 2,
-                    "registerType": "COIL",
-                    "dataType": "BOOL",
+                    "registerType": "HOLDING_REGISTER",
+                    "operationType": "MERGE_BIG_ENDIAN",
+                    "dataType": "UINT32",
                     "mappingType": "CONFIGURATION"
                 },
                 {
@@ -66,10 +60,29 @@
                     "mappingType": "CONFIGURATION"
                 },
                 {
-                    "name":"mappingName6",
+                    "name":"mappingReference6",
                     "reference": "mappingReference6",
                     "address": 3,
                     "registerType": "COIL",
+                    "dataType": "BOOL",
+                    "writeOnly": true
+                },
+                {
+                    "name": "mappingReference7",
+                    "reference": "mappingReference7",
+                    "address": 10,
+                    "addressCount": 10,
+                    "registerType": "HOLDING_REGISTER",
+                    "dataType": "STRING",
+                    "operationType": "STRINGIFY_ASCII"
+                },
+                {
+                    "name": "mappingReference8",
+                    "reference": "mappingReference8",
+                    "address": 8,
+                    "bitIndex": 0,
+                    "registerType": "INPUT_REGISTER",
+                    "operationType": "TAKE_BIT",
                     "dataType": "BOOL"
                 }
             ]
