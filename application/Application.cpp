@@ -15,16 +15,16 @@
  */
 
 #include "Wolk.h"
+#include "mappings/StringMapping.h"
 #include "modbus/LibModbusSerialRtuClient.h"
 #include "modbus/LibModbusTcpIpClient.h"
-#include "modbus/ModbusBridge.h"
-#include "modbus/ModbusClient.h"
-#include "module/DevicesConfiguration.h"
-#include "module/DevicesTemplateFactory.h"
-#include "module/ModuleConfiguration.h"
+#include "model/DevicesConfiguration.h"
+#include "model/ModuleConfiguration.h"
+#include "module/ModbusBridge.h"
+#include "module/WolkaboutTemplateFactory.h"
 #include "service/FirmwareInstaller.h"
 #include "utilities/ConsoleLogger.h"
-#include "utility/JsonReaderParser.h"
+#include "utilities/JsonReaderParser.h"
 
 #include <algorithm>
 #include <chrono>
@@ -39,15 +39,12 @@ std::map<std::string, std::unique_ptr<wolkabout::DeviceTemplate>> generateTempla
   wolkabout::DevicesConfiguration* devicesConfiguration)
 {
     std::map<std::string, std::unique_ptr<wolkabout::DeviceTemplate>> templates;
-
-    // Parse templates to wolkabout::DeviceTemplate
     for (const auto& deviceTemplate : devicesConfiguration->getTemplates())
     {
         wolkabout::DevicesConfigurationTemplate& info = *deviceTemplate.second;
         templates.emplace(deviceTemplate.first,
-                          wolkabout::DevicesTemplateFactory::makeTemplateFromDeviceConfigTemplate(info));
+                          wolkabout::WolkaboutTemplateFactory::makeTemplateFromDeviceConfigTemplate(info));
     }
-
     return templates;
 }
 
@@ -124,14 +121,18 @@ int main(int argc, char** argv)
 {
     // Setup logger
     auto logger = std::unique_ptr<wolkabout::ConsoleLogger>(new wolkabout::ConsoleLogger());
-    logger->setLogLevel(wolkabout::LogLevel::INFO);
+    logger->setLogLevel(wolkabout::LogLevel::DEBUG);
     wolkabout::Logger::setInstance(std::move(logger));
+
+    const auto& stringMapping = std::make_shared<wolkabout::StringMapping>(
+      "STR1", wolkabout::RegisterMapping::RegisterType::HOLDING_REGISTER, std::vector<int16_t>{0, 1, 2},
+      wolkabout::RegisterMapping::OperationType::STRINGIFY_ASCII);
 
     if (argc < 3)
     {
         LOG(ERROR) << "WolkGatewayModbusModule Application: Usage -  " << argv[0]
                    << " [moduleConfigurationFilePath] [devicesConfigurationFilePath]";
-        return -1;
+        return 1;
     }
 
     // Parse file passed in first arg - module configuration JSON file
@@ -170,8 +171,7 @@ int main(int argc, char** argv)
         devicesConfiguration.getTemplates().size() != 1)
     {
         LOG(WARN) << "Using more than 1 template in TCP/IP mode is unnecessary. There can only be 1 TCP/IP device "
-                  << "per module, which can use only one template "
-                  << "We recommend using 1 template to improve performance.";
+                  << "per module, which can use only one template.";
     }
 
     // Create the modbus client based on parsed information
@@ -255,9 +255,7 @@ int main(int argc, char** argv)
     });
 
     modbusBridge->setOnConfigurationChange(
-      [&](const std::string& deviceKey, std::vector<wolkabout::ConfigurationItem>& values) {
-          wolk->publishConfiguration(deviceKey, values);
-      });
+      [&](const std::string& deviceKey) { wolk->publishConfiguration(deviceKey); });
 
     modbusBridge->setOnDeviceStatusChange([&](const std::string& deviceKey, wolkabout::DeviceStatus::Status status) {
         wolk->publishDeviceStatus(deviceKey, status);

@@ -14,16 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Obtain, and build dependencies
-pushd dependencies
-./download.sh
-./make.sh
-popd
-
-
 cp tools/git/pre-commit .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 
-pushd out
+pushd out || exit
 cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
-popd
+popd || exit

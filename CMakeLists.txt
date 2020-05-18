@@ -16,9 +16,10 @@ cmake_minimum_required(VERSION 3.5)
 project(WolkGatewayModbusModule C CXX)
 
 set_property(GLOBAL PROPERTY ALLOW_DUPLICATE_CUSTOM_TARGETS 1)
-
 set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+
 set(CMAKE_CXX_STANDARD 11)
+
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}    -Wall -Wextra -pedantic                                                    \
                                             -pedantic-errors -Wcast-align                                              \
                                             -Wcast-qual -Wconversion                                                   \
@@ -35,33 +36,27 @@ set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}    -Wall -Wextra -pedantic             
                                             -Wvariadic-macros                                                          \
                                             -Wwrite-strings -Werror=non-virtual-dtor")
 
-set(CMAKE_LIBRARY_INCLUDE_DIRECTORY ${CMAKE_BINARY_DIR}/include)
-link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
-find_package(Threads REQUIRED)
-
 # library output
+set(CMAKE_LIBRARY_INCLUDE_DIRECTORY ${CMAKE_BINARY_DIR}/include)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-link_directories(${CMAKE_BINARY_DIR}/lib)
+link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 
 # WolkAbout c++ SDK
-add_subdirectory(WolkGatewayModule-SDK-Cpp lib)
+add_subdirectory(WolkGatewayModule-SDK-Cpp lib/WolkGatewayModule)
+add_subdirectory(MoreModbus lib/MoreModbus)
 
 # WolkAbout Modbus Module
 include_directories("src")
 
-file(GLOB_RECURSE HEADER_FILES "src/*.h" "application/*.h")
-file(GLOB_RECURSE SOURCE_FILES "src/*.cpp" "application/*.cpp")
+file(GLOB_RECURSE HEADER_FILES "src/*.h" "src/*.hpp")
+file(GLOB_RECURSE SOURCE_FILES "src/*.c" "src/*.cpp")
 
-link_directories(${PROJECT_SOURCE_DIR}/out/lib)
-
-add_library(${PROJECT_NAME} SHARED ${HEADER_FILES} ${SOURCE_FILES})
-target_link_libraries(${PROJECT_NAME} WolkGatewayModule modbus)
-set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
-set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN/lib")
+add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES})
+target_link_libraries(${PROJECT_NAME} WolkGatewayModule MoreModbus)
+set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
 
 # Example
 include_directories("application")
-file(GLOB_RECURSE EXAMPLE_HEADER_FILES "application/*.h")
 file(GLOB_RECURSE EXAMPLE_SOURCE_FILES "application/*.cpp")
 
 add_executable(modbusModule ${EXAMPLE_SOURCE_FILES})

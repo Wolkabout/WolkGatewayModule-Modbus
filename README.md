@@ -39,9 +39,6 @@ Generated build system is located inside `out` directory
 WolkGateway Module Modbus library, is built from `out` directory by 
 invoking `make` in terminal
 
-Note: If you're working in CLion, setup the project by importing the project as existing CMake project,
-installing the conan plugin, and setting the CMake generation path in Settings/Build, Execution, Deployment to 'out'
-
 Configuring Module
 --------------------
 Module configuration consists of 2 configurations files
@@ -101,35 +98,45 @@ You define templates, that are described by their name, and mappings.
 }
 ```
 
-After doing so, you define all the mappings inside a template. If you happen to be familiar with how 
-this worked in earlier versions, this will look familiar. The only change happens with the slaveAddress,
-which isn't listed here anymore. We will get back to that later.
+After doing so, you define all the mappings inside a template.
 
 Single mapping includes one or more Modbus registers that produce a single sensor/actuator/alarm/configuration on
 a device, on the platform. They're characterized by a name and a reference key, used to identify them, by their register
-type, data type, and mapping type.
+type (necessary), data type (necessary), operation type (necessary for some output types), and mapping type.
 
 Register types:
 
 * Read & Write:
-    - `COIL` (implies a single bit, or boolean on platform)
-    - `HOLDING_REGISTER_ACTUATOR` (implies either a 16bit or 32bit register, data type must be specified)
+    - `COIL`
+    - `HOLDING_REGISTER`
 * Read Only:
-    - `HOLDING_REGISTER_SENSOR` (same as `HOLDING_REGISTER_ACTUATOR`)
-    - `INPUT_REGISTER` (same as `HOLDING_REGISTER_ACTUATOR`)
-    - `INPUT_CONTACT` (same as `COIL`)
+    - `INPUT_REGISTER`
+    - `INPUT_CONTACT`
+
+* Data types:
+    - UINT16/INT16
+    - BOOL
+    - UINT32/INT32 (with merge operations)
+    - FLOAT (with merge operation)
+    - STRING (with stringify operations)
+    
+* Operation types:
+    - `MERGE_BIG_ENDIAN`, `MERGE_LITTLE_ENDIAN` (in combination with `"dataType": "UINT32/INT32"`)
+    - `MERGE_FLOAT` (in combination with `"dataType": "FLOAT"`)
+    - `TAKE_BIT` (in combination with `"dataType": "BOOL"`)
+    - `STRINGIFY_ASCII`, `STRINGIFY_UNICODE` (in combination with `"dataType": "STRING"`)
     
 Mappings are by default registered as:
 - Sensors for read only types
 - Actuator for read & write types
 
-You can override this behaviour by adding a field to the mapping, stating one of the next types:
+You can override this behaviour by adding a field to the mapping, stating one of the next types (`"mappingType"`):
 - `SENSOR`
 - `ACTUATOR`
 - `ALARM` - only for `INPUT_CONTACT`
 - `CONFIGURATION` - only for `COIL` and `HOLDING_REGISTER_ACTUATOR` (where `HOLDING_REGISTER_ACTUATOR` can also be multi value)
 
-A mapping that has the register type `HOLDING_REGISTER_ACTUATOR` and is a `CONFIGURATION` can be multi-value.
+A mapping that has the register type `HOLDING_REGISTER` and is a `CONFIGURATION` can be multi-value.
 What that means, is that it can combine multiple registers into a single configuration. That configuration has label
 for each of its values, which you assign in the `labelMap`.
 *Note that you can have a total maximum of <b>3</b> values inside a multi-value configuration!*
@@ -149,13 +156,13 @@ for each of its values, which you assign in the `labelMap`.
          "dataType": "INT16"                // Data type stored in register - "INT16" or "UINT16" or "REAL32" for "INPUT_REGISTER"/"HOLDING_REGISTER_ACTUATOR"/"HOLDING_REGISTER_SENSOR" register type, and "BOOL" for "COIL"/"INPUT_CONTACT"
       },
       {
-         "name":"mappingName2",
-         "reference": "mappingReference2",
-         "minimum": -4000,
-         "maximum": 4000,
-         "address": 1,
-         "registerType": "HOLDING_REGISTER_ACTUATOR",
-         "dataType": "REAL32"
+          "name":"mappingName2",
+          "reference": "mappingReference2",
+          "minimum": -4000,
+          "maximum": 4000,
+          "address": 1,
+          "registerType": "HOLDING_REGISTER",
+          "dataType": "FLOAT"
       },
       {
          "name": "mappingName3",
@@ -166,12 +173,13 @@ for each of its values, which you assign in the `labelMap`.
          "mappingType": "ALARM"              // This is where for the first time, we override the default Mapping type
       },
       {
-         "name":"mappingName4",
-         "reference": "mappingReference4",
-         "address": 2,
-         "registerType": "COIL",
-         "dataType": "BOOL",
-         "mappingType": "CONFIGURATION"
+          "name":"mappingName4",
+          "reference": "mappingReference4",
+          "address": 2,
+          "registerType": "HOLDING_REGISTER",
+          "operationType": "MERGE_BIG_ENDIAN",
+          "dataType": "UINT32",
+          "mappingType": "CONFIGURATION"
       },
       {
          "name": "mappingName5",
@@ -183,16 +191,35 @@ for each of its values, which you assign in the `labelMap`.
             "secondConfig": 1,               // And assign a register address to each of them
             "thirdConfig": 2                 // Multi-value is only available for HOLDING_REGISTER_ACTUATOR 
          },
-         "registerType": "HOLDING_REGISTER_ACTUATOR",
+         "registerType": "HOLDING_REGISTER",
          "dataType": "INT16",
          "mappingType": "CONFIGURATION"
       },
       {
-         "name":"mappingName6",
-         "reference": "mappingReference6",
-         "address": 3,
-         "registerType": "COIL",
-         "dataType": "BOOL"
+          "name":"mappingReference6",
+          "reference": "mappingReference6",
+          "address": 3,
+          "registerType": "COIL",
+          "dataType": "BOOL",
+          "writeOnly": true                   // If the mapping needs to be Write-Only, you put this attribute.
+      },
+      {
+          "name": "mappingReference7",
+          "reference": "mappingReference7",
+          "address": 10,
+          "addressCount": 10,
+          "registerType": "HOLDING_REGISTER",
+          "dataType": "STRING",
+          "operationType": "STRINGIFY_ASCII"
+      },
+      {
+          "name": "mappingReference8",
+          "reference": "mappingReference8",
+          "address": 8,
+          "bitIndex": 0,
+          "registerType": "INPUT_REGISTER",
+          "operationType": "TAKE_BIT",
+          "dataType": "BOOL"
       }
    ]
 }
