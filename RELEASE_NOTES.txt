@@ -5,6 +5,9 @@
 
 WolkGateway module for connecting Modbus devices to WolkAbout IoT Platform by communicating with WolkGateway.
 
+**Version 0.6.1**
+- [BUGFIX] - Applied bugfixes by updating the MoreModbus library.
+
 **Version 0.6.0**
 - [IMPROVEMENT] ModbusModule now uses MoreModbus as a dependency. MoreModbus is a library that contains logic for reading
                 Modbus devices using mappings and groups, that allows values to be read in more types, such as 32-bit
