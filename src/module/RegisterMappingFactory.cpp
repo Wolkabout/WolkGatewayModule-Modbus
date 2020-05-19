@@ -45,23 +45,26 @@ std::shared_ptr<RegisterMapping> RegisterMappingFactory::fromJSONMapping(const M
         return std::make_shared<Int16Mapping>(jsonMapping.getReference(), jsonMapping.getRegisterType(),
                                               jsonMapping.getAddress(), jsonMapping.isReadRestricted());
     case RegisterMapping::OutputType::UINT32:
-        return std::make_shared<UInt32Mapping>(jsonMapping.getReference(), jsonMapping.getRegisterType(),
-                                               std::vector<int16_t>{static_cast<short>(jsonMapping.getAddress()),
-                                                                    static_cast<short>(jsonMapping.getAddress() + 1)},
-                                               jsonMapping.getOperationType(), jsonMapping.isReadRestricted());
+        return std::make_shared<UInt32Mapping>(
+          jsonMapping.getReference(), jsonMapping.getRegisterType(),
+          std::vector<std::int32_t>{static_cast<short>(jsonMapping.getAddress()),
+                                    static_cast<short>(jsonMapping.getAddress() + 1)},
+          jsonMapping.getOperationType(), jsonMapping.isReadRestricted());
     case RegisterMapping::OutputType::INT32:
-        return std::make_shared<Int32Mapping>(jsonMapping.getReference(), jsonMapping.getRegisterType(),
-                                              std::vector<int16_t>{static_cast<short>(jsonMapping.getAddress()),
-                                                                   static_cast<short>(jsonMapping.getAddress() + 1)},
-                                              jsonMapping.getOperationType(), jsonMapping.isReadRestricted());
+        return std::make_shared<Int32Mapping>(
+          jsonMapping.getReference(), jsonMapping.getRegisterType(),
+          std::vector<std::int32_t>{static_cast<short>(jsonMapping.getAddress()),
+                                    static_cast<short>(jsonMapping.getAddress() + 1)},
+          jsonMapping.getOperationType(), jsonMapping.isReadRestricted());
     case RegisterMapping::OutputType::FLOAT:
-        return std::make_shared<FloatMapping>(jsonMapping.getReference(), jsonMapping.getRegisterType(),
-                                              std::vector<int16_t>{static_cast<short>(jsonMapping.getAddress()),
-                                                                   static_cast<short>(jsonMapping.getAddress() + 1)},
-                                              jsonMapping.isReadRestricted());
+        return std::make_shared<FloatMapping>(
+          jsonMapping.getReference(), jsonMapping.getRegisterType(),
+          std::vector<std::int32_t>{static_cast<short>(jsonMapping.getAddress()),
+                                    static_cast<short>(jsonMapping.getAddress() + 1)},
+          jsonMapping.isReadRestricted());
     case RegisterMapping::OutputType::STRING:
-        std::vector<int16_t> addresses;
-        const auto startAddress = static_cast<int16_t>(jsonMapping.getAddress());
+        std::vector<std::int32_t> addresses;
+        const auto startAddress = static_cast<std::int32_t>(jsonMapping.getAddress());
         for (int i = 0; i < jsonMapping.getRegisterCount(); i++)
         {
             addresses.emplace_back(startAddress + i);
