@@ -64,5 +64,8 @@ add_executable(modbusModule ${EXAMPLE_SOURCE_FILES})
 target_link_libraries(modbusModule ${PROJECT_NAME})
 set_target_properties(modbusModule PROPERTIES INSTALL_RPATH "$ORIGIN/lib")
 
+install(DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} DESTINATION bin)
+install(TARGETS modbusModule DESTINATION bin)
+
 add_subdirectory(cmake)
 
