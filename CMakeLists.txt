@@ -83,7 +83,8 @@ install(CODE "EXECUTE_PROCESS(COMMAND bash -c \"sudo systemctl daemon-reload\")"
 install(CODE "MESSAGE(\"Installed modbusModule.
                         Systemctl .service file has been placed, and you can
                         start the service by invoking 'sudo systemctl modbus_module start',
-                        or 'sudo systemctl modbus_module enable' to allow it to run on boot.\")")
+                        or 'sudo systemctl modbus_module enable' to allow it to run on boot.\"
+                        Configuration files for the module are placed in /etc/modbusModule.)")
 
 add_subdirectory(cmake)
 
