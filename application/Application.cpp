@@ -125,7 +125,7 @@ int main(int argc, char** argv)
     wolkabout::Logger::setInstance(std::move(logger));
 
     const auto& stringMapping = std::make_shared<wolkabout::StringMapping>(
-      "STR1", wolkabout::RegisterMapping::RegisterType::HOLDING_REGISTER, std::vector<int16_t>{0, 1, 2},
+      "STR1", wolkabout::RegisterMapping::RegisterType::HOLDING_REGISTER, std::vector<std::int32_t>{0, 1, 2},
       wolkabout::RegisterMapping::OperationType::STRINGIFY_ASCII);
 
     if (argc < 3)

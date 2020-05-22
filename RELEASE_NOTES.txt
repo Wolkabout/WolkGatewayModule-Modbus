@@ -5,6 +5,11 @@
 
 WolkGateway module for connecting Modbus devices to WolkAbout IoT Platform by communicating with WolkGateway.
 
+**Version 0.6.1**
+- [BUGFIX] - Applied bugfixes by updating the MoreModbus library.
+- [BUGFIX] - Now exists a cmake target 'tests' that will create tests if that's what the user wants. This is done by updating
+	     both of the repositories submodules.
+
 **Version 0.6.0**
 - [IMPROVEMENT] ModbusModule now uses MoreModbus as a dependency. MoreModbus is a library that contains logic for reading
                 Modbus devices using mappings and groups, that allows values to be read in more types, such as 32-bit
