@@ -1,4 +1,4 @@
-# Copyright 2018 WolkAbout Technology s.r.o.
+# Copyright 2020 WolkAbout Technology s.r.o.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -83,8 +83,8 @@ install(CODE "EXECUTE_PROCESS(COMMAND bash -c \"sudo systemctl daemon-reload\")"
 install(CODE "MESSAGE(\"Installed modbusModule.
                         Systemctl .service file has been placed, and you can
                         start the service by invoking 'sudo systemctl modbus_module start',
-                        or 'sudo systemctl modbus_module enable' to allow it to run on boot.\"
-                        Configuration files for the module are placed in /etc/modbusModule.)")
+                        or 'sudo systemctl modbus_module enable' to allow it to run on boot.
+                        Configuration files for the module are placed in /etc/modbusModule.\")")
 
 add_subdirectory(cmake)
 
