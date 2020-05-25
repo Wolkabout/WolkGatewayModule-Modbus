@@ -96,8 +96,8 @@ void generateDevices(wolkabout::ModuleConfiguration* moduleConfiguration,
             // Create the device with found template, push the slaveAddress as occupied
             wolkabout::DeviceTemplate& deviceTemplate = *pair->second;
             occupiedSlaveAddresses.push_back(info.getSlaveAddress());
-            devices.emplace(info.getSlaveAddress(),
-                            new wolkabout::Device(info.getName(), info.getKey(), deviceTemplate));
+            devices.emplace(info.getSlaveAddress(), std::unique_ptr<wolkabout::Device>(new wolkabout::Device(
+                                                      info.getName(), info.getKey(), deviceTemplate)));
 
             // Emplace the template name in usedTemplates array for modbusBridge, and the slaveAddress
             if (deviceTemplateMap.find(templateName) != deviceTemplateMap.end())
