@@ -5,6 +5,7 @@ cmake-build-debug/
 .vscode/
 
 *.log
+*.deb
 
 *.config
 *.creator
