@@ -2,7 +2,8 @@
 DH_VERBOSE = 1
 
 %:
-	dh $@ --builddirectory=out
+	dh $@
 
+override_dh_auto_test:
 override_dh_shlibdeps:
 	dh_shlibdeps -l$(shell pwd)/out/lib
