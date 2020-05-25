@@ -4,6 +4,8 @@ dependencies/
 cmake-build-debug/
 .vscode/
 
+*.log
+
 *.config
 *.creator
 *.files

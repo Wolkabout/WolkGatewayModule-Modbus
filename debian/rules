@@ -1,4 +1,5 @@
 #!/usr/bin/make -f
+DH_VERBOSE = 1
 
 %:
 	dh $@ --builddirectory=out

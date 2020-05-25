@@ -1,4 +1,4 @@
-modbusModule (0.6.1) stable; urgency=medium
+module-modbus (0.6.1) stable; urgency=medium
 
   * Inital DEB release, implementing `make tests` and `make install`
  
