@@ -1,14 +1,6 @@
 #!/bin/bash
 
-if [ $( dpkg -l debhelper | wc -l ) -le 6 ]
-then
-  apt install debhelper -y || exit
-fi
-
-if [ $( dpkg -l devscripts | wc -l ) -le 6 ]
-then
-  apt install devscripts -y || exit
-fi
+apt install -y debhelper devscripts
 
 mkdir -p ./tmp-wgmm-deb
 cd ./tmp-wgmm-deb || exit
