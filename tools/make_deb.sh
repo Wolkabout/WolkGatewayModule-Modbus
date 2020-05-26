@@ -10,7 +10,7 @@ cd ./WolkGatewayModule-Modbus || exit
 # TODO Remove when merge to master
 git checkout debian_package
 
-debuild -us -uc -b
+debuild -us -uc -b -j$(nproc)
 cd ../
 mv *.deb ..
 cd ../

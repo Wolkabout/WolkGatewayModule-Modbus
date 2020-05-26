@@ -20,4 +20,6 @@ docker container rm debuilder
 mv ./build/*.deb .
 rm -rf ./build/
 
+rm *dbgsym*
+
 chown "$USER:$USER" *.deb
