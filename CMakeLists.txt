@@ -66,10 +66,10 @@ set_target_properties(modbusModule PROPERTIES INSTALL_RPATH "$ORIGIN/lib")
 
 # Place the library files in /usr/lib
 FILE(GLOB LIB_FILES ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/*.so*)
-install(FILES ${LIB_FILES} DESTINATION lib)
+install(FILES ${LIB_FILES} DESTINATION /usr/lib)
 
 # Place the executable file in /usr/bin
-install(TARGETS modbusModule DESTINATION bin)
+install(TARGETS modbusModule DESTINATION /usr/bin)
 
 # Place the config files and service unit file.
 install(FILES out/moduleConfiguration.json out/devicesConfiguration.json DESTINATION /etc/modbusModule

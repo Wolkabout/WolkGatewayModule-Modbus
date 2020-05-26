@@ -20,8 +20,8 @@
 
 [Service]
  Type=idle
- WorkingDirectory=/usr/local/bin/
- ExecStart=modbusModule /etc/modbusModule/moduleConfiguration.json /etc/modbusModule/devicesConfiguration.json
+ WorkingDirectory=/usr/bin/
+ ExecStart=/usr/bin/modbusModule /etc/modbusModule/moduleConfiguration.json /etc/modbusModule/devicesConfiguration.json
  Restart=always
 
 [Install]
