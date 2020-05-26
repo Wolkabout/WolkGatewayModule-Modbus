@@ -6,8 +6,10 @@ mkdir -p ./tmp-wgmm-deb
 cd ./tmp-wgmm-deb || exit
 git clone https://github.com/Wolkabout/WolkGatewayModule-Modbus --recurse-submodules
 cd ./WolkGatewayModule-Modbus || exit
+
 # TODO Remove when merge to master
 git checkout debian_package
+
 debuild -us -uc -b
 cd ../
 mv *.deb ..
