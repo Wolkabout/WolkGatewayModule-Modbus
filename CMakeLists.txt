@@ -64,12 +64,11 @@ add_executable(modbusModule ${EXAMPLE_SOURCE_FILES})
 target_link_libraries(modbusModule ${PROJECT_NAME})
 set_target_properties(modbusModule PROPERTIES INSTALL_RPATH "$ORIGIN/lib")
 
-# Place the library files in /usr/local/bin/lib
-install(DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} DESTINATION bin
-        FILES_MATCHING
-        PATTERN "*.so*")
+# Place the library files in /usr/lib
+FILE(GLOB LIB_FILES ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/*.so*)
+install(FILES ${LIB_FILES} DESTINATION lib)
 
-# Place the executable file
+# Place the executable file in /usr/bin
 install(TARGETS modbusModule DESTINATION bin)
 
 # Place the config files and service unit file.
