@@ -29,7 +29,11 @@ systemctl daemon-reload
 echo "Systemctl reloaded"
 rm -rf /etc/modbusModule/
 echo "Removed configuration files"
-rm -rf /usr/local/bin/lib/
-rm /usr/local/bin/modbusModule
+
+for lib in $( ls -1 ./lib | grep *so* )
+do
+	rm "/usr/lib/$lib"
+done
+rm /usr/bin/modbusModule
 echo "Removed application files"
 echo "Done."
