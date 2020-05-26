@@ -65,8 +65,9 @@ target_link_libraries(modbusModule ${PROJECT_NAME})
 set_target_properties(modbusModule PROPERTIES INSTALL_RPATH "$ORIGIN/lib")
 
 # Place the library files in /usr/lib
-FILE(GLOB LIB_FILES ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/*.so*)
-install(FILES ${LIB_FILES} DESTINATION /usr/lib)
+install(DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} DESTINATION /usr
+        FILES_MATCHING
+        PATTERN "*so*")
 
 # Place the executable file in /usr/bin
 install(TARGETS modbusModule DESTINATION /usr/bin)
