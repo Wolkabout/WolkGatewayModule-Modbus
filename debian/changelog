@@ -1,4 +1,4 @@
-wolkgatewaymodule-modbus (0.6.2-PR1) stable; urgency=medium
+wolkgatewaymodule-modbus (0.6.2) stable; urgency=medium
 
   * Polished DEB release, automated DEB creation for both amd64/armv7l
 
