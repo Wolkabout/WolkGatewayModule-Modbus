@@ -2,6 +2,6 @@
 
 if [ "$1" = "purge" ] ; then
 	rm -rf /etc/modbusModule
-	rm -rf /etc/systemd/system/modbus_module.service
-	systemctl daemon-reload
 fi
+
+#DEBHELPER#
