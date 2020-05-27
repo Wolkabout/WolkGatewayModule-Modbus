@@ -3,7 +3,7 @@ sudo: false
 jobs:
   include:
     - stage: compile
-      dist: bionic
+      dist: xenial
       language: cpp
       addons:
         apt:
