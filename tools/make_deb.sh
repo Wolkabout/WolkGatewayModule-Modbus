@@ -47,6 +47,7 @@ then
   echo "Can't checkout to branch named $branch"
   exit
 fi
+git submodule update
 debuild -us -uc -b -j$(nproc)
 cd ../
 mv *.deb ..
