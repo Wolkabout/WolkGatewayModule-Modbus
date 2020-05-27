@@ -1,0 +1,25 @@
+sudo: false
+
+jobs:
+  include:
+    - stage: compile
+      dist: bionic
+      language: cpp
+      addons:
+        apt:
+          packages:
+            - automake
+            - autotools-dev
+            - autoconf
+            - m4
+            - zlib1g-dev
+            - libtool
+            - libssl-dev
+            - cmake
+            - gcc
+            - g++
+            - lcov
+      script:
+        - ./configure.sh
+        - pushd out
+        - make -j$(nproc)
