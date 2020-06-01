@@ -7,7 +7,6 @@ WolkGateway module for connecting Modbus devices to WolkAbout IoT Platform by co
 
 **Version 0.6.2**
 - [IMPROVEMENT] - Automated .zip/.deb creation for release. This utilizes either local fs/Docker to create necessary things.
-                  Plan is to include these in .travis.yml for automatic master release creation.
 
 **Version 0.6.1**
 - [BUGFIX] - Applied bugfixes by updating the MoreModbus library.
