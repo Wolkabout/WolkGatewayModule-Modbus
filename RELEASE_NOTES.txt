@@ -5,6 +5,9 @@
 
 WolkGateway module for connecting Modbus devices to WolkAbout IoT Platform by communicating with WolkGateway.
 
+**Version 0.6.2**
+- [IMPROVEMENT] - Automated .zip/.deb creation for release. This utilizes either local fs/Docker to create necessary things.
+
 **Version 0.6.1**
 - [BUGFIX] - Applied bugfixes by updating the MoreModbus library.
 - [BUGFIX] - Now exists a cmake target 'tests' that will create tests if that's what the user wants. This is done by updating

@@ -1,4 +1,4 @@
-# Copyright 2018 WolkAbout Technology s.r.o.
+# Copyright 2020 WolkAbout Technology s.r.o.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -63,6 +63,20 @@ file(GLOB_RECURSE EXAMPLE_SOURCE_FILES "application/*.cpp")
 add_executable(modbusModule ${EXAMPLE_SOURCE_FILES})
 target_link_libraries(modbusModule ${PROJECT_NAME})
 set_target_properties(modbusModule PROPERTIES INSTALL_RPATH "$ORIGIN/lib")
+
+# Place the library files in /usr/lib
+install(DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} DESTINATION /usr
+        FILES_MATCHING
+        PATTERN "*so*")
+
+# Place the executable file in /usr/bin
+install(TARGETS modbusModule DESTINATION /usr/bin)
+
+# Place the config files and service unit file.
+install(FILES out/moduleConfiguration.json out/devicesConfiguration.json DESTINATION /etc/modbusModule
+        PERMISSIONS OWNER_WRITE OWNER_READ GROUP_WRITE GROUP_READ WORLD_READ)
+
+install(CODE "MESSAGE(\"Installed modbusModule. Configuration files for the module are placed in /etc/modbusModule.\")")
 
 add_subdirectory(cmake)
 
