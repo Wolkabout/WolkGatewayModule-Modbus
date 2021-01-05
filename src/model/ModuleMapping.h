@@ -61,6 +61,7 @@ public:
 
     double getMinimum() const;
     double getMaximum() const;
+    float getDeadbandValue() const;
 
     int getAddress() const;
     LabelMap getLabelMap() const;
@@ -80,6 +81,7 @@ private:
 
     double m_minimum = 0.0;
     double m_maximum = 1.0;
+    float m_deadbandValue = 0.0;
 
     int m_address = -1;
     LabelMap m_labelMap{};

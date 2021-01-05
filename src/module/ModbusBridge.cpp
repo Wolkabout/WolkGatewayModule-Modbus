@@ -151,7 +151,37 @@ ModbusBridge::ModbusBridge(
             }
         });
 
-        device->setOnMappingValueChange([=](const std::shared_ptr<RegisterMapping>& mapping) {
+        device->setOnMappingValueChange(
+          [=](const std::shared_ptr<RegisterMapping>& mapping, const std::vector<uint16_t>& bytes) {
+              switch (m_registerMappingTypeByReference.at(device->getName() + SEPARATOR + mapping->getReference()))
+              {
+              case ModuleMapping::MappingType::DEFAULT:
+                  if (mapping->getRegisterType() == RegisterMapping::RegisterType::COIL ||
+                      mapping->getRegisterType() == RegisterMapping::RegisterType::HOLDING_REGISTER)
+                  {
+                      m_onActuatorStatusChange(device->getName(), mapping->getReference(), readFromMapping(mapping));
+                  }
+                  else
+                  {
+                      m_onSensorChange(device->getName(), mapping->getReference(), readFromMapping(mapping));
+                  }
+                  break;
+              case ModuleMapping::MappingType::SENSOR:
+                  m_onSensorChange(device->getName(), mapping->getReference(), readFromMapping(mapping));
+                  break;
+              case ModuleMapping::MappingType::ACTUATOR:
+                  m_onActuatorStatusChange(device->getName(), mapping->getReference(), readFromMapping(mapping));
+                  break;
+              case ModuleMapping::MappingType::ALARM:
+                  m_onAlarmChange(device->getName(), mapping->getReference(),
+                                  std::dynamic_pointer_cast<BoolMapping>(mapping)->getBoolValue());
+                  break;
+              case ModuleMapping::MappingType::CONFIGURATION:
+                  m_onConfigurationChange(device->getName());
+                  break;
+              }
+          });
+        device->setOnMappingValueChange([=](const std::shared_ptr<RegisterMapping>& mapping, bool data) {
             switch (m_registerMappingTypeByReference.at(device->getName() + SEPARATOR + mapping->getReference()))
             {
             case ModuleMapping::MappingType::DEFAULT:
