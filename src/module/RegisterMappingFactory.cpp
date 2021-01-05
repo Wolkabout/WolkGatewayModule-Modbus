@@ -15,6 +15,7 @@
  */
 
 #include "RegisterMappingFactory.h"
+
 #include "mappings/BoolMapping.h"
 #include "mappings/FloatMapping.h"
 #include "mappings/Int16Mapping.h"

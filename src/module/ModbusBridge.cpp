@@ -15,6 +15,7 @@
  */
 
 #include "ModbusBridge.h"
+
 #include "ActuationHandlerPerDevice.h"
 #include "ActuatorStatusProviderPerDevice.h"
 #include "DeviceStatusProvider.h"

@@ -15,6 +15,7 @@
  */
 
 #include "TcpIpConfiguration.h"
+
 #include "utilities/FileSystemUtils.h"
 
 namespace wolkabout

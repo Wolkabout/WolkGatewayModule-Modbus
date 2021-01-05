@@ -15,6 +15,7 @@
  */
 
 #include "SerialRtuConfiguration.h"
+
 #include "utilities/FileSystemUtils.h"
 
 namespace wolkabout
