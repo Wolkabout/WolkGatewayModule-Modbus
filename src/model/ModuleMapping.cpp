@@ -105,7 +105,7 @@ double ModuleMapping::getMaximum() const
     return m_maximum;
 }
 
-float ModuleMapping::getDeadbandValue() const
+double ModuleMapping::getDeadbandValue() const
 {
     return m_deadbandValue;
 }
