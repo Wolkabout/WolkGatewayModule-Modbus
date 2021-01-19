@@ -15,6 +15,7 @@
  */
 
 #include "ModuleMapping.h"
+
 #include "utilities/Deserializers.h"
 #include "utilities/JsonReaderParser.h"
 #include "utilities/Logger.h"
@@ -38,6 +39,7 @@ ModuleMapping::ModuleMapping(nlohmann::json j)
 
     m_minimum = JsonReaderParser::readOrDefault(j, "minimum", 0.0);
     m_maximum = JsonReaderParser::readOrDefault(j, "maximum", 1.0);
+    m_deadbandValue = JsonReaderParser::readOrDefault(j, "deadbandValue", 0.0);
 
     m_address = JsonReaderParser::readOrDefault(j, "address", -1);
     try
@@ -101,6 +103,11 @@ double ModuleMapping::getMinimum() const
 double ModuleMapping::getMaximum() const
 {
     return m_maximum;
+}
+
+double ModuleMapping::getDeadbandValue() const
+{
+    return m_deadbandValue;
 }
 
 int ModuleMapping::getAddress() const

@@ -173,7 +173,8 @@ for each of its values, which you assign in the `labelMap`.
           "maximum": 4000,
           "address": 1,
           "registerType": "HOLDING_REGISTER",
-          "dataType": "FLOAT"
+          "dataType": "FLOAT",
+          "deadbandValue": 4.0              // Optional - Indicates a change in value of the mapping that is insignificant data. Applicable to numeric mappings.
       },
       {
          "name": "mappingName3",
