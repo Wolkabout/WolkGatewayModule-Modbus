@@ -40,6 +40,8 @@ ModuleMapping::ModuleMapping(nlohmann::json j)
     m_minimum = JsonReaderParser::readOrDefault(j, "minimum", 0.0);
     m_maximum = JsonReaderParser::readOrDefault(j, "maximum", 1.0);
     m_deadbandValue = JsonReaderParser::readOrDefault(j, "deadbandValue", 0.0);
+    m_frequencyFilterValue =
+      static_cast<unsigned long long>(JsonReaderParser::readOrDefault(j, "frequencyFilterValue", 0));
 
     m_address = JsonReaderParser::readOrDefault(j, "address", -1);
     try
@@ -108,6 +110,11 @@ double ModuleMapping::getMaximum() const
 double ModuleMapping::getDeadbandValue() const
 {
     return m_deadbandValue;
+}
+
+unsigned long long ModuleMapping::getFrequencyFilterValue() const
+{
+    return m_frequencyFilterValue;
 }
 
 int ModuleMapping::getAddress() const

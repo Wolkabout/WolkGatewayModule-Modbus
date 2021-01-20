@@ -62,6 +62,7 @@ public:
     double getMinimum() const;
     double getMaximum() const;
     double getDeadbandValue() const;
+    unsigned long long getFrequencyFilterValue() const;
 
     int getAddress() const;
     LabelMap getLabelMap() const;
@@ -82,6 +83,7 @@ private:
     double m_minimum = 0.0;
     double m_maximum = 1.0;
     double m_deadbandValue = 0.0;
+    unsigned long long m_frequencyFilterValue = 0;
 
     int m_address = -1;
     LabelMap m_labelMap{};
