@@ -20,6 +20,7 @@
 #include "RegisterMapping.h"
 #include "utilities/json.hpp"
 
+#include <chrono>
 #include <map>
 #include <memory>
 #include <string>
@@ -62,6 +63,7 @@ public:
     double getMinimum() const;
     double getMaximum() const;
     double getDeadbandValue() const;
+    std::chrono::milliseconds getFrequencyFilterValue() const;
 
     int getAddress() const;
     LabelMap getLabelMap() const;
@@ -82,6 +84,7 @@ private:
     double m_minimum = 0.0;
     double m_maximum = 1.0;
     double m_deadbandValue = 0.0;
+    std::chrono::milliseconds m_frequencyFilterValue = std::chrono::milliseconds(0);
 
     int m_address = -1;
     LabelMap m_labelMap{};
