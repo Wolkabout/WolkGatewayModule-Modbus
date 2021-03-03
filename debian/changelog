@@ -1,12 +1,5 @@
-wolkgatewaymodule-modbus (0.6.2) stable; urgency=medium
+wolkgatewaymodule-modbus (0.7.0) stable; urgency=medium
 
-  * Polished DEB release, automated DEB creation for both amd64/armv7l
+  * Added option to apply data filtering to modbus data: frequency filtering - process only a single value change every defined interval; deadband filtering - process only significant changes in value.
 
- -- Wolkabout ELab <elab@wolkabout.com>  Mon, 26 May 2020 00:00:00 +0100
-
-
-wolkgatewaymodule-modbus (0.6.1) stable; urgency=medium
-
-  * Inital DEB release, implementing `make tests` and `make install`
- 
- -- Wolkabout ELab <elab@wolkabout.com>  Mon, 18 May 2020 00:00:00 +0100
+ -- Wolkabout ELab <elab@wolkabout.com>  Wed, 03 Mar 2021 10:15:00 +0100
