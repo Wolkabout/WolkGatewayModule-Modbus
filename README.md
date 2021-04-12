@@ -174,7 +174,7 @@ for each of its values, which you assign in the `labelMap`.
           "address": 1,
           "registerType": "HOLDING_REGISTER",
           "dataType": "FLOAT",
-          "deadbandValue": 4.,                 // Optional - Indicates a change in value of the mapping that is insignificant data. Applicable to numeric mappings.
+          "deadbandValue": 4.0,                // Optional - Indicates a change in value of the mapping that is insignificant data. Applicable to numeric mappings.
           "frequencyFilterValue": 250          // Optional - When register changes value often, disregard changes until X milliseconds pass since last accepted value.
       },
       {
