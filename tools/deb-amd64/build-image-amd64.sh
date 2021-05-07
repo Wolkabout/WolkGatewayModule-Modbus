@@ -16,6 +16,7 @@
 #
 
 cp ../make_deb.sh .
+cp ../*.zip .
 
 docker build -t wolkabout:wgmm-amd64 .
 rm make_deb.sh

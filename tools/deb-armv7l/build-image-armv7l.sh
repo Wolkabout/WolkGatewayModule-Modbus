@@ -16,10 +16,10 @@
 #
 
 echo "If something doesn\'t work, install the dependencies: 'apt-get install qemu qemu-user-static binfmt-support'"
-
 docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
 cp ../make_deb.sh .
+cp ../*.zip .
 
 docker build -t wolkabout:wgmm-armv7l .
 rm make_deb.sh
