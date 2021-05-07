@@ -5,6 +5,9 @@
 
 WolkGateway module for connecting Modbus devices to WolkAbout IoT Platform by communicating with WolkGateway.
 
+**Version 0.8.0**
+    - [IMPROVEMENT] - Updated to newest WolkSDK-Cpp and WolkGatewayModule-SDK-Cpp to use the newest built libraries/.so files that are not in conflict with new WolkGateway versions.
+
 **Version 0.7.0**
 - [IMPROVEMENT] - Added option to apply data filtering to modbus data: frequency filtering - process only a single value change every defined interval; deadband filtering - process only significant changes in value.
 
