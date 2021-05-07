@@ -50,8 +50,3 @@ jobs:
         shell: bash
         # Execute the build.  You can specify a specific target.
         run: make -j$(nproc)
-
-      - name: Run Tests
-        working-directory: ${{runner.workspace}}/out
-        shell: bash
-        run: make tests -j$(nproc) && ctest .
