@@ -15,7 +15,12 @@
 #  limitations under the License.
 #
 
-cp ../make_deb.sh .
+echo "If something doesn\'t work, install the dependencies: 'apt-get install qemu qemu-user-static binfmt-support'"
 
-docker build -t wolkabout:wgmm-amd64 .
+docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+cp ../make_deb.sh .
+cp ../*.zip .
+
+docker build -t wolkabout:wgmm-arm64 .
 rm make_deb.sh

@@ -15,7 +15,30 @@
 #  limitations under the License.
 #
 
-cp ../make_deb.sh .
+./build-image-arm64.sh
 
-docker build -t wolkabout:wgmm-amd64 .
-rm make_deb.sh
+docker container stop debuilder
+docker container rm debuilder
+
+branch=$(git rev-parse --abbrev-ref HEAD)
+if [ $? -eq 1 ]; then
+  branch=master
+fi
+
+docker run -dit --name debuilder --cpus $(nproc) wolkabout:wgmm-arm64 || exit
+docker exec -it debuilder unzip /build/*.zip -d WolkGatewayModule-Modbus || exit
+docker exec -it debuilder /build/make_deb.sh $branch || exit
+docker cp debuilder:/build/ .
+
+docker container stop debuilder
+docker container rm debuilder
+
+mv ./build/*.deb .
+rm -rf ./build/
+
+rm *dbgsym*
+
+rm ./make_deb.sh
+rm ./*.zip
+
+chown "$USER:$USER" *.deb

@@ -15,12 +15,8 @@
 #  limitations under the License.
 #
 
-if [ "$EUID" -ne 0 ]
-  then echo "Please run as sudo."
-  exit
-fi
+echo "If something doesn\'t work, install the dependencies: 'apt-get install qemu qemu-user-static binfmt-support'"
 
-sudo apt-get install qemu binfmt-support qemu-user-static
 docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
 cp ../make_deb.sh .
