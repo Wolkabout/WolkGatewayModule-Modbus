@@ -23,7 +23,7 @@
 #include "ConfigurationProviderPerDevice.h"
 #include "DeviceStatusProvider.h"
 #include "ModbusReader.h"
-#include "model/ConfigurationItem.h"
+#include "core/model/ConfigurationItem.h"
 #include "model/Device.h"
 #include "model/DevicesConfigurationTemplate.h"
 

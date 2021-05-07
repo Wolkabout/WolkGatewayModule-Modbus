@@ -16,9 +16,9 @@
 
 #include "ModuleMapping.h"
 
+#include "core/utilities/Logger.h"
 #include "utilities/Deserializers.h"
 #include "utilities/JsonReaderParser.h"
-#include "utilities/Logger.h"
 
 #include <set>
 #include <stdexcept>

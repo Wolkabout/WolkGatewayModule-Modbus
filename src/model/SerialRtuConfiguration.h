@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
+#include "core/utilities/json.hpp"
 #include "modbus/LibModbusSerialRtuClient.h"
-#include "utilities/json.hpp"
 
 #include <string>
 

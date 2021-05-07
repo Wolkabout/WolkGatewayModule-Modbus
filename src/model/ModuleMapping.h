@@ -18,7 +18,7 @@
 #define MODBUSREGISTERMAPPING_H
 
 #include "RegisterMapping.h"
-#include "utilities/json.hpp"
+#include "core/utilities/json.hpp"
 
 #include <chrono>
 #include <map>

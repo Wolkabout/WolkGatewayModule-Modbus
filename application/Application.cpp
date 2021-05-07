@@ -15,6 +15,8 @@
  */
 
 #include "Wolk.h"
+#include "core/service/FirmwareInstaller.h"
+#include "core/utilities/Logger.h"
 #include "mappings/StringMapping.h"
 #include "modbus/LibModbusSerialRtuClient.h"
 #include "modbus/LibModbusTcpIpClient.h"
@@ -22,8 +24,6 @@
 #include "model/ModuleConfiguration.h"
 #include "module/ModbusBridge.h"
 #include "module/WolkaboutTemplateFactory.h"
-#include "service/FirmwareInstaller.h"
-#include "utilities/ConsoleLogger.h"
 #include "utilities/JsonReaderParser.h"
 
 #include <algorithm>
@@ -120,9 +120,7 @@ void generateDevices(wolkabout::ModuleConfiguration* moduleConfiguration,
 int main(int argc, char** argv)
 {
     // Setup logger
-    auto logger = std::unique_ptr<wolkabout::ConsoleLogger>(new wolkabout::ConsoleLogger());
-    logger->setLogLevel(wolkabout::LogLevel::DEBUG);
-    wolkabout::Logger::setInstance(std::move(logger));
+    wolkabout::Logger::init(wolkabout::LogLevel::TRACE, wolkabout::Logger::Type::CONSOLE);
 
     const auto& stringMapping = std::make_shared<wolkabout::StringMapping>(
       "STR1", wolkabout::RegisterMapping::RegisterType::HOLDING_REGISTER, std::vector<std::int32_t>{0, 1, 2},

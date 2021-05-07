@@ -16,8 +16,8 @@
 
 #include "ModuleConfiguration.h"
 
-#include "utilities/FileSystemUtils.h"
-#include "utilities/json.hpp"
+#include "core/utilities/FileSystemUtils.h"
+#include "core/utilities/json.hpp"
 
 namespace wolkabout
 {

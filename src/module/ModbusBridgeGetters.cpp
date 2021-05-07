@@ -15,6 +15,7 @@
  */
 
 #include "ModbusBridge.h"
+#include "core/utilities/Logger.h"
 #include "mappings/BoolMapping.h"
 #include "mappings/FloatMapping.h"
 #include "mappings/Int16Mapping.h"
@@ -22,7 +23,6 @@
 #include "mappings/StringMapping.h"
 #include "mappings/UInt16Mapping.h"
 #include "mappings/UInt32Mapping.h"
-#include "utilities/Logger.h"
 
 namespace wolkabout
 {

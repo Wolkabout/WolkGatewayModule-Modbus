@@ -45,15 +45,13 @@ bool WolkaboutTemplateFactory::processDefaultMapping(const ModuleMapping& mappin
     case RegisterMapping::RegisterType::HOLDING_REGISTER:
     case RegisterMapping::RegisterType::COIL:
     {
-        actuatorTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType, mapping.getDescription(),
-                                       mapping.getMinimum(), mapping.getMaximum());
+        actuatorTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType, mapping.getDescription());
         return true;
     }
     case RegisterMapping::RegisterType::INPUT_REGISTER:
     case RegisterMapping::RegisterType::INPUT_CONTACT:
     {
-        sensorTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType, mapping.getDescription(),
-                                     mapping.getMinimum(), mapping.getMaximum());
+        sensorTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType, mapping.getDescription());
         return true;
     }
     default:
@@ -67,8 +65,7 @@ bool WolkaboutTemplateFactory::processDefaultMapping(const ModuleMapping& mappin
 bool WolkaboutTemplateFactory::processSensorMapping(const ModuleMapping& mapping, const DataType& dataType,
                                                     std::vector<SensorTemplate>& sensorTemplates)
 {
-    sensorTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType, mapping.getDescription(),
-                                 mapping.getMinimum(), mapping.getMaximum());
+    sensorTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType, mapping.getDescription());
     return true;
 }
 
@@ -79,8 +76,7 @@ bool WolkaboutTemplateFactory::processActuatorMapping(const ModuleMapping& mappi
     {
     case RegisterMapping::RegisterType::COIL:
     case RegisterMapping::RegisterType::HOLDING_REGISTER:
-        actuatorTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType, mapping.getDescription(),
-                                       mapping.getMinimum(), mapping.getMaximum());
+        actuatorTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType, mapping.getDescription());
         return true;
     default:
         throw std::logic_error("WolkGatewayModbusModule Application: Mapping with reference '" +
@@ -106,8 +102,7 @@ bool WolkaboutTemplateFactory::processConfigurationMapping(const ModuleMapping& 
         if (mapping.getLabelMap().empty())
         {
             configurationTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType,
-                                                mapping.getDescription(), std::string("0"), mapping.getMinimum(),
-                                                mapping.getMaximum());
+                                                mapping.getDescription(), std::string("0"));
         }
         else
         {
@@ -117,8 +112,7 @@ bool WolkaboutTemplateFactory::processConfigurationMapping(const ModuleMapping& 
                 labels.push_back(kvp.first);
             }
             configurationTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType,
-                                                mapping.getDescription(), std::string("0"), labels,
-                                                mapping.getMinimum(), mapping.getMaximum());
+                                                mapping.getDescription(), std::string("0"), labels);
         }
         return true;
     default:
