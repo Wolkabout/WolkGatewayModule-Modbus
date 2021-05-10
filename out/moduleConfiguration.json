@@ -1,8 +1,8 @@
 {
     "mqttHost": "tcp://localhost:1883",
-    "connectionType": "TCP/IP",
+    "connectionType": "SERIAL/RTU",
     "tcp/ip": {
-        "host": "10.0.50.136",
+        "host": "192.168.x.x",
         "port": 502
     },
     "serial/rtu": {
