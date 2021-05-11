@@ -107,13 +107,7 @@ void ModbusBridge::writeToStringMapping(const std::shared_ptr<RegisterMapping>& 
         return;
     }
 
-    std::string stringValue = value;
-    for (uint i = static_cast<uint>(value.size()); i < static_cast<uint>(stringMapping->getRegisterCount() * 2); i++)
-    {
-        stringValue += ' ';
-    }
-
-    stringMapping->writeValue(stringValue);
+    stringMapping->writeValue(value);
 }
 
 // handleActuation and helper methods
