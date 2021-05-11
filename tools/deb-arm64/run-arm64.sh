@@ -15,11 +15,30 @@
 #  limitations under the License.
 #
 
-echo "If something doesn\'t work, install the dependencies: 'apt-get install qemu qemu-user-static binfmt-support'"
-docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+./build-image-arm64.sh
 
-cp ../make_deb.sh .
-cp ../*.zip .
+docker container stop debuilder
+docker container rm debuilder
 
-docker build -t wolkabout:wgmm-armv7l .
-rm make_deb.sh
+branch=$(git rev-parse --abbrev-ref HEAD)
+if [ $? -eq 1 ]; then
+  branch=master
+fi
+
+docker run -dit --name debuilder --cpus $(nproc) wolkabout:wgmm-arm64 || exit
+docker exec -it debuilder unzip /build/*.zip -d WolkGatewayModule-Modbus || exit
+docker exec -it debuilder /build/make_deb.sh $branch || exit
+docker cp debuilder:/build/ .
+
+docker container stop debuilder
+docker container rm debuilder
+
+mv ./build/*.deb .
+rm -rf ./build/
+
+rm *dbgsym*
+
+rm ./make_deb.sh
+rm ./*.zip
+
+chown "$USER:$USER" *.deb

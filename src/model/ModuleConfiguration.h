@@ -19,7 +19,7 @@
 
 #include "SerialRtuConfiguration.h"
 #include "TcpIpConfiguration.h"
-#include "utilities/json.hpp"
+#include "core/utilities/json.hpp"
 
 #include <chrono>
 #include <memory>

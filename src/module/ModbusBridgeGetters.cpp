@@ -15,6 +15,7 @@
  */
 
 #include "ModbusBridge.h"
+#include "core/utilities/Logger.h"
 #include "mappings/BoolMapping.h"
 #include "mappings/FloatMapping.h"
 #include "mappings/Int16Mapping.h"
@@ -22,7 +23,6 @@
 #include "mappings/StringMapping.h"
 #include "mappings/UInt16Mapping.h"
 #include "mappings/UInt32Mapping.h"
-#include "utilities/Logger.h"
 
 namespace wolkabout
 {
@@ -167,6 +167,9 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatus(const std::string& dev
                    << "' can not be treated as actuator - Modbus register must be of type 'HOLDING_REGISTER' or 'COIL'";
         return ActuatorStatus("", ActuatorStatus::State::ERROR);
     }
+
+    if (mapping->isReadRestricted())
+        return ActuatorStatus("", ActuatorStatus::State::READY);
 
     return mapping->getRegisterType() == RegisterMapping::RegisterType::HOLDING_REGISTER ?
              getActuatorStatusFromHoldingRegister(mapping) :

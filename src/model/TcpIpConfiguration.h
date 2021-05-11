@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "utilities/json.hpp"
+#include "core/utilities/json.hpp"
 
 #include <string>
 

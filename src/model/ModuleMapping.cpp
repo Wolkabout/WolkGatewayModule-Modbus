@@ -16,9 +16,9 @@
 
 #include "ModuleMapping.h"
 
+#include "core/utilities/Logger.h"
 #include "utilities/Deserializers.h"
 #include "utilities/JsonReaderParser.h"
-#include "utilities/Logger.h"
 
 #include <set>
 #include <stdexcept>
@@ -37,32 +37,18 @@ ModuleMapping::ModuleMapping(nlohmann::json j)
     m_reference = j.at("reference").get<std::string>();
     m_description = JsonReaderParser::readOrDefault(j, "description", "");
 
-    m_minimum = JsonReaderParser::readOrDefault(j, "minimum", 0.0);
-    m_maximum = JsonReaderParser::readOrDefault(j, "maximum", 1.0);
+    if (j.find("minimum") != j.end() || j.find("maximum") != j.end())
+        LOG(WARN) << "Minimum and maximum are disabled by the Wolkabout protocol, they will not be used.";
+
     m_deadbandValue = JsonReaderParser::readOrDefault(j, "deadbandValue", 0.0);
     m_frequencyFilterValue =
       static_cast<std::chrono::milliseconds>(JsonReaderParser::readOrDefault(j, "frequencyFilterValue", 0));
 
     m_address = JsonReaderParser::readOrDefault(j, "address", -1);
-    try
-    {
-        auto tempLabelMap = std::map<std::string, int>(j.at("labelMap").get<std::map<std::string, int>>());
-        typedef std::function<bool(std::pair<std::string, int>, std::pair<std::string, int>)> Comparator;
-        Comparator compFunctor = [](const std::pair<std::string, int>& elem1,
-                                    const std::pair<std::string, int>& elem2) { return elem1.second < elem2.second; };
-        std::set<std::pair<std::string, int>, Comparator> setOfWords(tempLabelMap.begin(), tempLabelMap.end(),
-                                                                     compFunctor);
 
-        // labelMap was already initialized
-        for (const auto& element : setOfWords)
-        {
-            m_labelMap.emplace_back(element);
-        }
-    }
-    catch (std::exception&)
-    {
-        m_labelMap.clear();
-    }
+    if (j.find("labelMap") != j.end())
+        throw std::runtime_error("The multi-value configurations are not enabled by the Wolkabout protocol!");
+
     m_bitIndex = JsonReaderParser::readOrDefault(j, "bitIndex", -1);
     m_addressCount = JsonReaderParser::readOrDefault(j, "addressCount", -1);
 

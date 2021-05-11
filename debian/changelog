@@ -1,5 +1,10 @@
-wolkgatewaymodule-modbus (0.7.0) stable; urgency=medium
+wolkgatewaymodule-modbus (0.8.1) stable; urgency=medium
 
-  * Added option to apply data filtering to modbus data: frequency filtering - process only a single value change every defined interval; deadband filtering - process only significant changes in value.
+      * Removed multi-value configurations as they have been disabled by the protocol.
+      * Imported the newest MoreModbus that fixed strings and null characters.
+      * Fixed the actuator status for readRestricted mappings.
+      * Properly set the slave address in the mapping when actuator is being set.
+      * Fixed data sending before the registration is sent out. Now we either wait 5s, or when a registration is returned.
+      * Fixed all the release creation scripts, covering more architectures.
 
- -- Wolkabout ELab <elab@wolkabout.com>  Wed, 03 Mar 2021 10:15:00 +0100
+ -- Wolkabout ELab <elab@wolkabout.com>  Tue, 11 May 2021 00:00:00 +0100

@@ -18,7 +18,7 @@
 #define WOLKGATEWAYMODBUSMODULE_WOLKABOUTTEMPLATEFACTORY_H
 
 #include "RegisterMapping.h"
-#include "model/DeviceTemplate.h"
+#include "core/model/DeviceTemplate.h"
 #include "model/DevicesConfigurationTemplate.h"
 
 namespace wolkabout

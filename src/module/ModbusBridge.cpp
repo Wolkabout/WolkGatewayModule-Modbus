@@ -20,9 +20,9 @@
 #include "ActuatorStatusProviderPerDevice.h"
 #include "DeviceStatusProvider.h"
 #include "RegisterMappingFactory.h"
+#include "core/utilities/Logger.h"
 #include "mappings/BoolMapping.h"
 #include "modbus/ModbusClient.h"
-#include "utilities/Logger.h"
 
 #include <algorithm>
 #include <chrono>

@@ -20,7 +20,7 @@ set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 
 set(CMAKE_CXX_STANDARD 11)
 
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}    -Wall -Wextra -pedantic                                                    \
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}    -Wall -Wextra -pedantic                                                    \
                                             -pedantic-errors -Wcast-align                                              \
                                             -Wcast-qual -Wconversion                                                   \
                                             -Wdisabled-optimization                                                    \

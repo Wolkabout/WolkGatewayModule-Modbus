@@ -15,6 +15,7 @@
  */
 
 #include "ModbusBridge.h"
+#include "core/utilities/Logger.h"
 #include "mappings/BoolMapping.h"
 #include "mappings/FloatMapping.h"
 #include "mappings/Int16Mapping.h"
@@ -22,7 +23,6 @@
 #include "mappings/StringMapping.h"
 #include "mappings/UInt16Mapping.h"
 #include "mappings/UInt32Mapping.h"
-#include "utilities/Logger.h"
 
 namespace wolkabout
 {
@@ -107,13 +107,7 @@ void ModbusBridge::writeToStringMapping(const std::shared_ptr<RegisterMapping>& 
         return;
     }
 
-    std::string stringValue = value;
-    for (uint i = static_cast<uint>(value.size()); i < static_cast<uint>(stringMapping->getRegisterCount() * 2); i++)
-    {
-        stringValue += ' ';
-    }
-
-    stringMapping->writeValue(stringValue);
+    stringMapping->writeValue(value);
 }
 
 // handleActuation and helper methods
@@ -150,6 +144,7 @@ void ModbusBridge::handleActuation(const std::string& deviceKey, const std::stri
     }
 
     auto mapping = m_registerMappingByReference[deviceKey + '.' + reference];
+    mapping->setSlaveAddress(slaveAddress);
 
     // Discard if the mapping is incorrect
     if (mapping->getRegisterType() != RegisterMapping::RegisterType::HOLDING_REGISTER &&
