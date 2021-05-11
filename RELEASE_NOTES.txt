@@ -5,6 +5,14 @@
 
 WolkGateway module for connecting Modbus devices to WolkAbout IoT Platform by communicating with WolkGateway.
 
+**Version 0.8.1**
+    - [BUGFIX] - Removed multi-value configurations as they have been disabled by the protocol.
+    - [BUGFIX] - Imported the newest MoreModbus that fixed strings and null characters.
+    - [BUGFIX] - Fixed the actuator status for readRestricted mappings.
+    - [BUGFIX] - Properly set the slave address in the mapping when actuator is being set.
+    - [BUGFIX] - Fixed data sending before the registration is sent out. Now we either wait 5s, or when a registration is returned.
+    - [IMPROVEMENT] - Fixed all the release creation scripts, covering more architectures.
+
 **Version 0.8.0**
     - [IMPROVEMENT] - Updated to newest WolkSDK-Cpp and WolkGatewayModule-SDK-Cpp to use the newest built libraries/.so files that are not in conflict with new WolkGateway versions.
 

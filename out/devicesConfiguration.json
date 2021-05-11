@@ -1,92 +1,74 @@
 {
-    "devices": [
+  "devices": [
+    {
+      "name": "Modbus Device 1",
+      "key": "MD1",
+      "slaveAddress": 1,
+      "template": "Modbus Default Device"
+    }
+  ],
+  "templates": [
+    {
+      "name": "Modbus Default Device",
+      "mappings": [
         {
-            "name": "DEVICE_NAME",
-            "key": "DEVICE_KEY",
-	    "slaveAddress": 1,
-            "template": "TEMPLATE_NAME"
-        }
-    ],
-    "templates": [
+          "name": "Sensor",
+          "reference": "S",
+          "address": 0,
+          "registerType": "INPUT_REGISTER",
+          "dataType": "INT16"
+        },
         {
-            "name": "TEMPLATE_NAME",
-            "mappings": [
-                {
-                    "name":"mappingReference1",
-                    "reference": "mappingReference1",
-                    "minimum": -32768,
-                    "maximum": 32767,
-                    "address": 0,
-                    "registerType": "INPUT_REGISTER",
-                    "dataType": "INT16"
-                },
-                {
-                    "name":"mappingName2",
-                    "reference": "mappingReference2",
-                    "minimum": -4000,
-                    "maximum": 4000,
-                    "address": 1,
-                    "registerType": "HOLDING_REGISTER",
-                    "dataType": "FLOAT"
-                },
-                {
-                    "name": "mappingName3",
-                    "reference": "mappingReference3",
-                    "address": 1,
-                    "registerType": "INPUT_CONTACT",
-                    "dataType": "BOOL",
-                    "mappingType": "ALARM"
-                },
-                {
-                    "name":"mappingName4",
-                    "reference": "mappingReference4",
-                    "address": 2,
-                    "registerType": "HOLDING_REGISTER",
-                    "operationType": "MERGE_BIG_ENDIAN",
-                    "dataType": "UINT32",
-                    "mappingType": "CONFIGURATION"
-                },
-                {
-                    "name": "mappingName5",
-                    "reference": "mappingReference5",
-                    "minimum": 0,
-                    "maximum": 1000,
-                    "labelMap": {
-                        "firstConfig": 0,
-                        "secondConfig": 1,
-                        "thirdConfig": 2
-                    },
-                    "registerType": "HOLDING_REGISTER",
-                    "dataType": "INT16",
-                    "mappingType": "CONFIGURATION"
-                },
-                {
-                    "name":"mappingReference6",
-                    "reference": "mappingReference6",
-                    "address": 3,
-                    "registerType": "COIL",
-                    "dataType": "BOOL",
-                    "writeOnly": true
-                },
-                {
-                    "name": "mappingReference7",
-                    "reference": "mappingReference7",
-                    "address": 10,
-                    "addressCount": 10,
-                    "registerType": "HOLDING_REGISTER",
-                    "dataType": "STRING",
-                    "operationType": "STRINGIFY_ASCII"
-                },
-                {
-                    "name": "mappingReference8",
-                    "reference": "mappingReference8",
-                    "address": 8,
-                    "bitIndex": 0,
-                    "registerType": "INPUT_REGISTER",
-                    "operationType": "TAKE_BIT",
-                    "dataType": "BOOL"
-                }
-            ]
+          "name": "Floating Point Sensor",
+          "reference": "FPS",
+          "address": 1,
+          "registerType": "HOLDING_REGISTER",
+          "dataType": "FLOAT"
+        },
+        {
+          "name": "Alarm",
+          "reference": "A",
+          "address": 1,
+          "registerType": "INPUT_CONTACT",
+          "dataType": "BOOL",
+          "mappingType": "ALARM"
+        },
+        {
+          "name": "UInt32 Configuration",
+          "reference": "U32C",
+          "address": 3,
+          "registerType": "HOLDING_REGISTER",
+          "operationType": "MERGE_BIG_ENDIAN",
+          "dataType": "UINT32",
+          "mappingType": "CONFIGURATION"
+        },
+        {
+          "name": "Write-Only Actuator",
+          "reference": "WOA",
+          "address": 3,
+          "registerType": "COIL",
+          "dataType": "BOOL",
+          "writeOnly": true
+        },
+        {
+          "name": "ASCII String Actuator",
+          "reference": "ASA",
+          "address": 10,
+          "addressCount": 10,
+          "registerType": "HOLDING_REGISTER",
+          "dataType": "STRING",
+          "operationType": "STRINGIFY_ASCII"
+        },
+        {
+          "name": "Bit Sensor",
+          "reference": "BS",
+          "address": 8,
+          "bitIndex": 0,
+          "registerType": "INPUT_REGISTER",
+          "operationType": "TAKE_BIT",
+          "dataType": "BOOL"
         }
-    ]
+      ]
+    }
+  ]
 }
