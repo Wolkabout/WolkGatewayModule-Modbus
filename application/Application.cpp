@@ -224,16 +224,27 @@ int main(int argc, char** argv)
                                                                   deviceTemplateMap, devices,
                                                                   moduleConfiguration.getRegisterReadPeriod());
 
+    // Track if we registered or not
+    bool registered = false;
+    std::mutex mutex;
+    std::condition_variable variable;
+    std::unique_lock<std::mutex> lock{mutex};
+
     // Connect the bridge to Wolk instance
     LOG(DEBUG) << "Connecting with Wolk...";
-    std::unique_ptr<wolkabout::Wolk> wolk = wolkabout::Wolk::newBuilder()
-                                              .deviceStatusProvider(modbusBridge)
-                                              .actuatorStatusProvider(modbusBridge)
-                                              .actuationHandler(modbusBridge)
-                                              .configurationProvider(modbusBridge)
-                                              .configurationHandler(modbusBridge)
-                                              .host(moduleConfiguration.getMqttHost())
-                                              .build();
+    std::unique_ptr<wolkabout::Wolk> wolk =
+      wolkabout::Wolk::newBuilder()
+        .deviceStatusProvider(modbusBridge)
+        .actuatorStatusProvider(modbusBridge)
+        .actuationHandler(modbusBridge)
+        .configurationProvider(modbusBridge)
+        .configurationHandler(modbusBridge)
+        .host(moduleConfiguration.getMqttHost())
+        .withRegistrationResponseHandler([&](const std::string& deviceKey, wolkabout::PlatformResult::Code code) {
+            registered = true;
+            variable.notify_one();
+        })
+        .build();
 
     // Setup all the necessary callbacks for value changes from inside the modbusBridge
     modbusBridge->setOnSensorChange(
@@ -265,7 +276,13 @@ int main(int argc, char** argv)
         wolk->addDevice(*device.second);
     }
 
-    wolk->connect();
+    wolk->connect(false);
+
+    if (!registered)
+    {
+        variable.wait_for(lock, std::chrono::seconds(5), [&]() { return registered; });
+    }
+
     modbusBridge->start();
 
     while (modbusBridge->isRunning())
