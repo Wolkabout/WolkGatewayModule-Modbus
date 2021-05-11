@@ -144,6 +144,7 @@ void ModbusBridge::handleActuation(const std::string& deviceKey, const std::stri
     }
 
     auto mapping = m_registerMappingByReference[deviceKey + '.' + reference];
+    mapping->setSlaveAddress(slaveAddress);
 
     // Discard if the mapping is incorrect
     if (mapping->getRegisterType() != RegisterMapping::RegisterType::HOLDING_REGISTER &&
