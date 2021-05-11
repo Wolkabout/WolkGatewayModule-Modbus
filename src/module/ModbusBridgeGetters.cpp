@@ -168,6 +168,9 @@ wolkabout::ActuatorStatus ModbusBridge::getActuatorStatus(const std::string& dev
         return ActuatorStatus("", ActuatorStatus::State::ERROR);
     }
 
+    if (mapping->isReadRestricted())
+        return ActuatorStatus("", ActuatorStatus::State::READY);
+
     return mapping->getRegisterType() == RegisterMapping::RegisterType::HOLDING_REGISTER ?
              getActuatorStatusFromHoldingRegister(mapping) :
              getActuatorStatusFromCoil(mapping);
