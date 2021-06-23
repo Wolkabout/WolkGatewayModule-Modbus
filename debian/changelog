@@ -1,10 +1,5 @@
-wolkgatewaymodule-modbus (0.8.1) stable; urgency=medium
+wolkgatewaymodule-modbus (0.8.2) stable; urgency=medium
 
-      * Removed multi-value configurations as they have been disabled by the protocol.
-      * Imported the newest MoreModbus that fixed strings and null characters.
-      * Fixed the actuator status for readRestricted mappings.
-      * Properly set the slave address in the mapping when actuator is being set.
-      * Fixed data sending before the registration is sent out. Now we either wait 5s, or when a registration is returned.
-      * Fixed all the release creation scripts, covering more architectures.
+      * Received data that is not the expected data type will no longer crash the application.
 
- -- Wolkabout ELab <elab@wolkabout.com>  Tue, 11 May 2021 00:00:00 +0100
+ -- Wolkabout ELab <elab@wolkabout.com>  Wed, 23 Jun 2021 00:00:00 +0100
