@@ -5,6 +5,9 @@
 
 WolkGateway module for connecting Modbus devices to WolkAbout IoT Platform by communicating with WolkGateway.
 
+**Version 0.8.2**
+    - [BUGFIX] - Received data that is not the expected data type will no longer crash the application.
+
 **Version 0.8.1**
     - [BUGFIX] - Removed multi-value configurations as they have been disabled by the protocol.
     - [BUGFIX] - Imported the newest MoreModbus that fixed strings and null characters.

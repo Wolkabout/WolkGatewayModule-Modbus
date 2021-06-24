@@ -57,43 +57,91 @@ void ModbusBridge::writeToMapping(const std::shared_ptr<RegisterMapping>& mappin
 void ModbusBridge::writeToBoolMapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value)
 {
     auto& boolMapping = (const std::shared_ptr<BoolMapping>&)mapping;
-    bool boolValue = std::find(TRUE_VALUES.begin(), TRUE_VALUES.end(), value) != TRUE_VALUES.end();
-    boolMapping->writeValue(boolValue);
+    try
+    {
+        bool boolValue = std::find(TRUE_VALUES.begin(), TRUE_VALUES.end(), value) != TRUE_VALUES.end();
+        boolMapping->writeValue(boolValue);
+    }
+    catch (...)
+    {
+        LOG(WARN) << "ModbusBridge: Issue occurred when trying to write value '" << value
+                  << "' to a bool mapped register: " << boolMapping->getReference();
+    }
 }
 
 void ModbusBridge::writeToUInt16Mapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value)
 {
     auto& uint16Mapping = (const std::shared_ptr<UInt16Mapping>&)mapping;
-    const auto uint16Value = static_cast<uint16_t>(std::stoul(value));
-    uint16Mapping->writeValue(uint16Value);
+    try
+    {
+        const auto uint16Value = static_cast<uint16_t>(std::stoul(value));
+        uint16Mapping->writeValue(uint16Value);
+    }
+    catch (...)
+    {
+        LOG(WARN) << "ModbusBridge: Issue occurred when trying to write value '" << value
+                  << "' to an uint16 mapped register: " << uint16Mapping->getReference();
+    }
 }
 
 void ModbusBridge::writeToInt16Mapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value)
 {
     auto& int16Mapping = (const std::shared_ptr<Int16Mapping>&)mapping;
-    const auto int16Value = static_cast<int16_t>(std::stoi(value));
-    int16Mapping->writeValue(int16Value);
+    try
+    {
+        const auto int16Value = static_cast<int16_t>(std::stoi(value));
+        int16Mapping->writeValue(int16Value);
+    }
+    catch (...)
+    {
+        LOG(WARN) << "ModbusBridge: Issue occurred when trying to write value '" << value
+                  << "' to an int16 mapped register: " << int16Mapping->getReference();
+    }
 }
 
 void ModbusBridge::writeToUInt32Mapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value)
 {
     auto& uint32Mapping = (const std::shared_ptr<UInt32Mapping>&)mapping;
-    const auto uint32Value = static_cast<uint32_t>(std::stoul(value));
-    uint32Mapping->writeValue(uint32Value);
+    try
+    {
+        const auto uint32Value = static_cast<uint32_t>(std::stoul(value));
+        uint32Mapping->writeValue(uint32Value);
+    }
+    catch (...)
+    {
+        LOG(WARN) << "ModbusBridge: Issue occurred when trying to write value '" << value
+                  << "' to an uint32 mapped register: " << uint32Mapping->getReference();
+    }
 }
 
 void ModbusBridge::writeToInt32Mapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value)
 {
     auto& int32Mapping = (const std::shared_ptr<Int32Mapping>&)mapping;
-    const auto int32Value = static_cast<int32_t>(std::stoi(value));
-    int32Mapping->writeValue(int32Value);
+    try
+    {
+        const auto int32Value = static_cast<int32_t>(std::stoi(value));
+        int32Mapping->writeValue(int32Value);
+    }
+    catch (...)
+    {
+        LOG(WARN) << "ModbusBridge: Issue occurred when trying to write value '" << value
+                  << "' to an int32 mapped register: " << int32Mapping->getReference();
+    }
 }
 
 void ModbusBridge::writeToFloatMapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value)
 {
     auto& floatMapping = (const std::shared_ptr<FloatMapping>&)mapping;
-    const auto floatValue = static_cast<float>(std::stof(value));
-    floatMapping->writeValue(floatValue);
+    try
+    {
+        const auto floatValue = static_cast<float>(std::stof(value));
+        floatMapping->writeValue(floatValue);
+    }
+    catch (...)
+    {
+        LOG(WARN) << "ModbusBridge: Issue occurred when trying to write value '" << value
+                  << "' to a float mapped register: " << floatMapping->getReference();
+    }
 }
 
 void ModbusBridge::writeToStringMapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value)
