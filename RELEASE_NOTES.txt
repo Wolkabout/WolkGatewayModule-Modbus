@@ -5,6 +5,9 @@
 
 WolkGateway module for connecting Modbus devices to WolkAbout IoT Platform by communicating with WolkGateway.
 
+**Version 0.8.3**
+    - [BUGFIX] - Updated to newest WolkGatewayModule-SDK-Cpp which fixes running tests.
+
 **Version 0.8.2**
     - [BUGFIX] - Received data that is not the expected data type will no longer crash the application.
 
