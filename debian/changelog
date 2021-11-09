@@ -1,5 +1,5 @@
-wolkgatewaymodule-modbus (0.8.2) stable; urgency=medium
+wolkgatewaymodule-modbus (0.8.3) stable; urgency=medium
 
-      * Received data that is not the expected data type will no longer crash the application.
+      * Updated to newest WolkGatewayModule-SDK-Cpp which fixes running tests.
 
- -- Wolkabout ELab <elab@wolkabout.com>  Wed, 23 Jun 2021 00:00:00 +0100
+ -- Wolkabout ELab <elab@wolkabout.com>  Tue, 09 Nov 2021 00:00:00 +0100
