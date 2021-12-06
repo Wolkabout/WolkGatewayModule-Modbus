@@ -16,13 +16,13 @@
 
 #include "RegisterMappingFactory.h"
 
-#include "mappings/BoolMapping.h"
-#include "mappings/FloatMapping.h"
-#include "mappings/Int16Mapping.h"
-#include "mappings/Int32Mapping.h"
-#include "mappings/StringMapping.h"
-#include "mappings/UInt16Mapping.h"
-#include "mappings/UInt32Mapping.h"
+#include "more_modbus/mappings/BoolMapping.h"
+#include "more_modbus/mappings/FloatMapping.h"
+#include "more_modbus/mappings/Int16Mapping.h"
+#include "more_modbus/mappings/Int32Mapping.h"
+#include "more_modbus/mappings/StringMapping.h"
+#include "more_modbus/mappings/UInt16Mapping.h"
+#include "more_modbus/mappings/UInt32Mapping.h"
 
 namespace wolkabout
 {

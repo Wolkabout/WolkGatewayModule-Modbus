@@ -15,7 +15,7 @@
  */
 
 #include "core/utilities/json.hpp"
-#include "modbus/LibModbusSerialRtuClient.h"
+#include "more_modbus/modbus/LibModbusSerialRtuClient.h"
 
 #include <string>
 
