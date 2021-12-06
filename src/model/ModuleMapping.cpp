@@ -20,11 +20,8 @@
 #include "more_modbus/utilities/Deserializers.h"
 #include "utilities/JsonReaderParser.h"
 
-#include <set>
 #include <stdexcept>
 #include <string>
-#include <utility>
-#include <vector>
 
 namespace wolkabout
 {
@@ -66,6 +63,27 @@ ModuleMapping::ModuleMapping(nlohmann::json j)
         m_mappingType = ModuleMapping::MappingType::DEFAULT;
     else
         m_mappingType = MappingTypeConversion::deserializeMappingType(m_mappingTypeString);
+
+    // Now attempt to read the repeat and default value
+    m_repeat = static_cast<uint64_t>(JsonReaderParser::readOrDefault(j, "repeat", 0));
+
+    if (j.find("defaultValue") != j.end())
+    {
+        switch (j.at("defaultValue").type())
+        {
+        case json::value_t::number_integer:
+        case json::value_t::number_unsigned:
+            m_defaultValue = std::to_string(JsonReaderParser::readOrDefault(j, "defaultValue", 0));
+            break;
+        case json::value_t::number_float:
+            m_defaultValue = std::to_string(JsonReaderParser::readOrDefault(j, "defaultValue", double(0.0)));
+            break;
+        default:
+            m_defaultValue = JsonReaderParser::readOrDefault(j, "defaultValue", "");
+            break;
+        }
+    }
+    LOG(INFO) << m_defaultValue;
 }
 
 const std::string& ModuleMapping::getName() const
@@ -81,6 +99,16 @@ const std::string& ModuleMapping::getReference() const
 const std::string& ModuleMapping::getDescription() const
 {
     return m_description;
+}
+
+uint64_t ModuleMapping::getRepeat() const
+{
+    return m_repeat;
+}
+
+const std::string& ModuleMapping::getDefaultValue() const
+{
+    return m_defaultValue;
 }
 
 double ModuleMapping::getMinimum() const

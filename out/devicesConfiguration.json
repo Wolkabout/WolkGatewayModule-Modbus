@@ -23,7 +23,9 @@
           "reference": "FPS",
           "address": 1,
           "registerType": "HOLDING_REGISTER",
-          "dataType": "FLOAT"
+          "dataType": "FLOAT",
+          "repeat": 3000,
+          "defaultValue": 10.0
         },
         {
           "name": "Alarm",
@@ -40,7 +42,9 @@
           "registerType": "HOLDING_REGISTER",
           "operationType": "MERGE_BIG_ENDIAN",
           "dataType": "UINT32",
-          "mappingType": "CONFIGURATION"
+          "mappingType": "CONFIGURATION",
+          "repeat": 3000,
+          "defaultValue": 10
         },
         {
           "name": "Write-Only Actuator",
