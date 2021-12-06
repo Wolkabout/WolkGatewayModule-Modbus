@@ -21,8 +21,8 @@
 #include "DeviceStatusProvider.h"
 #include "RegisterMappingFactory.h"
 #include "core/utilities/Logger.h"
-#include "mappings/BoolMapping.h"
-#include "modbus/ModbusClient.h"
+#include "more_modbus/mappings/BoolMapping.h"
+#include "more_modbus/modbus/ModbusClient.h"
 
 #include <algorithm>
 #include <chrono>

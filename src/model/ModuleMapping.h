@@ -17,8 +17,8 @@
 #ifndef MODBUSREGISTERMAPPING_H
 #define MODBUSREGISTERMAPPING_H
 
-#include "RegisterMapping.h"
 #include "core/utilities/json.hpp"
+#include "more_modbus/RegisterMapping.h"
 
 #include <chrono>
 #include <map>

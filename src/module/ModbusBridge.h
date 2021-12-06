@@ -22,10 +22,10 @@
 #include "ConfigurationHandlerPerDevice.h"
 #include "ConfigurationProviderPerDevice.h"
 #include "DeviceStatusProvider.h"
-#include "ModbusReader.h"
 #include "core/model/ConfigurationItem.h"
 #include "model/Device.h"
 #include "model/DevicesConfigurationTemplate.h"
+#include "more_modbus/ModbusReader.h"
 
 #include <atomic>
 #include <chrono>

@@ -17,13 +17,13 @@
 #include "Wolk.h"
 #include "core/service/FirmwareInstaller.h"
 #include "core/utilities/Logger.h"
-#include "mappings/StringMapping.h"
-#include "modbus/LibModbusSerialRtuClient.h"
-#include "modbus/LibModbusTcpIpClient.h"
 #include "model/DevicesConfiguration.h"
 #include "model/ModuleConfiguration.h"
 #include "module/ModbusBridge.h"
 #include "module/WolkaboutTemplateFactory.h"
+#include "more_modbus/mappings/StringMapping.h"
+#include "more_modbus/modbus/LibModbusSerialRtuClient.h"
+#include "more_modbus/modbus/LibModbusTcpIpClient.h"
 #include "utilities/JsonReaderParser.h"
 
 #include <algorithm>

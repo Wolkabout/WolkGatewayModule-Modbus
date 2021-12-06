@@ -17,7 +17,7 @@
 #include "ModuleMapping.h"
 
 #include "core/utilities/Logger.h"
-#include "utilities/Deserializers.h"
+#include "more_modbus/utilities/Deserializers.h"
 #include "utilities/JsonReaderParser.h"
 
 #include <set>
