@@ -60,6 +60,9 @@ public:
     const std::string& getReference() const;
     const std::string& getDescription() const;
 
+    uint64_t getRepeat() const;
+    const std::string& getDefaultValue() const;
+
     double getMinimum() const;
     double getMaximum() const;
     double getDeadbandValue() const;
@@ -80,6 +83,9 @@ private:
     std::string m_name;
     std::string m_reference;
     std::string m_description;
+
+    std::uint64_t m_repeat;
+    std::string m_defaultValue;
 
     double m_minimum = 0.0;
     double m_maximum = 1.0;
