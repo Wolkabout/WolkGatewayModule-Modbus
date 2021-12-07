@@ -327,28 +327,39 @@ void ModbusBridge::platformStatus(ConnectivityStatus status)
             {
             case RegisterMapping::OutputType::BOOL:
                 if (pair.second == "true" || pair.second == "false")
+                {
                     writeToBoolMapping(mapping, pair.second);
+                    mapping->getGroup()->getDevice()->triggerOnMappingValueChange(mapping, mapping->getBoolValue());
+                }
                 else
+                {
                     LOG(WARN) << "Failed to write in SafeMode value for '" << pair.first
                               << "' - not a valid boolean value.";
+                }
                 break;
             case RegisterMapping::OutputType::UINT16:
                 writeToUInt16Mapping(mapping, pair.second);
+                mapping->getGroup()->getDevice()->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
                 break;
             case RegisterMapping::OutputType::INT16:
                 writeToInt16Mapping(mapping, pair.second);
+                mapping->getGroup()->getDevice()->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
                 break;
             case RegisterMapping::OutputType::UINT32:
                 writeToUInt32Mapping(mapping, pair.second);
+                mapping->getGroup()->getDevice()->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
                 break;
             case RegisterMapping::OutputType::INT32:
                 writeToInt32Mapping(mapping, pair.second);
+                mapping->getGroup()->getDevice()->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
                 break;
             case RegisterMapping::OutputType::FLOAT:
                 writeToFloatMapping(mapping, pair.second);
+                mapping->getGroup()->getDevice()->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
                 break;
             case RegisterMapping::OutputType::STRING:
                 writeToStringMapping(mapping, pair.second);
+                mapping->getGroup()->getDevice()->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
                 break;
             }
         }
