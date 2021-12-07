@@ -24,6 +24,8 @@
 #include "more_modbus/mappings/UInt16Mapping.h"
 #include "more_modbus/mappings/UInt32Mapping.h"
 
+#include <regex>
+
 namespace wolkabout
 {
 void ModbusBridge::writeToMapping(const std::shared_ptr<RegisterMapping>& mapping, const std::string& value)
@@ -62,10 +64,11 @@ void ModbusBridge::writeToBoolMapping(const std::shared_ptr<RegisterMapping>& ma
         bool boolValue = std::find(TRUE_VALUES.begin(), TRUE_VALUES.end(), value) != TRUE_VALUES.end();
         boolMapping->writeValue(boolValue);
     }
-    catch (...)
+    catch (const std::exception& exception)
     {
         LOG(WARN) << "ModbusBridge: Issue occurred when trying to write value '" << value
-                  << "' to a bool mapped register: " << boolMapping->getReference();
+                  << "' to a bool mapped register: " << boolMapping->getReference() << " -> '" << exception.what()
+                  << "'.";
     }
 }
 
@@ -249,7 +252,20 @@ void ModbusBridge::handleConfiguration(const std::string& deviceKey,
     for (auto& config : configuration)
     {
         const std::string& reference = config.getReference();
-        auto mappings = m_configurationMappingByDeviceKeyAndRef[deviceKey + '.' + reference];
+        if (reference.find("SMV(") == 0 && reference.rfind(')') == reference.length() - 1)
+        {
+            // We have received a value for a safe mode value
+            LOG(INFO) << reference;
+            const auto ref = reference.substr(reference.find("SMV(") + 4, reference.length() - 5);
+            const auto value = config.getValues().front();
+
+            // Find all devices that have the same device type and change it for them all!
+            m_safeModeMappingByReference[deviceKey + SEPARATOR + ref] = value;
+            m_safeModePersistence.storeSafeModeValue(deviceKey, ref, value);
+            continue;
+        }
+
+        auto mappings = m_configurationMappingByDeviceKeyAndRef[deviceKey + SEPARATOR + reference];
 
         if (mappings.size() != config.getValues().size())
         {

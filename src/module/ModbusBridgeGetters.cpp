@@ -210,31 +210,38 @@ std::string ModbusBridge::getConfigurationStatusFromCoil(const std::shared_ptr<R
 std::vector<ConfigurationItem> ModbusBridge::getConfiguration(const std::string& deviceKey)
 {
     std::vector<ConfigurationItem> configurations;
-    for (const auto& deviceConfigurations : m_configurationMappingByDeviceKey)
+    for (const auto& mappingRef : m_configurationMappingByDeviceKey[deviceKey])
     {
-        for (const auto& mappingRef : deviceConfigurations.second)
-        {
-            const auto& ref = mappingRef.substr(mappingRef.find(SEPARATOR) + 1);
-            auto& mappings = m_configurationMappingByDeviceKeyAndRef[mappingRef];
+        const auto& ref = mappingRef.substr(mappingRef.find(SEPARATOR) + 1);
+        auto& mappings = m_configurationMappingByDeviceKeyAndRef[mappingRef];
 
-            std::vector<std::string> values;
-            for (const auto& mapping : mappings)
+        std::vector<std::string> values;
+        for (const auto& mapping : mappings)
+        {
+            switch (mapping.second->getRegisterType())
             {
-                switch (mapping.second->getRegisterType())
-                {
-                case RegisterMapping::RegisterType::COIL:
-                    values.emplace_back(getConfigurationStatusFromCoil(mapping.second));
-                    break;
-                case RegisterMapping::RegisterType::HOLDING_REGISTER:
-                    values.emplace_back(getConfigurationStatusFromHoldingRegister(mapping.second));
-                    break;
-                default:
-                    throw std::logic_error("ModbusReader: Configuration mapping " + ref +
-                                           " is of invalid register type.");
-                }
+            case RegisterMapping::RegisterType::COIL:
+                values.emplace_back(getConfigurationStatusFromCoil(mapping.second));
+                break;
+            case RegisterMapping::RegisterType::HOLDING_REGISTER:
+                values.emplace_back(getConfigurationStatusFromHoldingRegister(mapping.second));
+                break;
+            default:
+                throw std::logic_error("ModbusReader: Configuration mapping " + ref + " is of invalid register type.");
             }
-            configurations.emplace_back(ConfigurationItem(values, ref));
         }
+        configurations.emplace_back(ConfigurationItem(values, ref));
+    }
+
+    for (const auto& safeMode : m_safeModeMappingByReference)
+    {
+        const auto& reference = safeMode.first;
+        const auto device = reference.substr(0, reference.find(SEPARATOR));
+        if (device != deviceKey)
+            continue;
+        const auto config = reference.substr(reference.find(SEPARATOR) + 1);
+
+        configurations.emplace_back(std::vector<std::string>{safeMode.second}, "SMV(" + config + ")");
     }
 
     return configurations;

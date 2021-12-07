@@ -22,9 +22,11 @@
 #include "ConfigurationHandlerPerDevice.h"
 #include "ConfigurationProviderPerDevice.h"
 #include "DeviceStatusProvider.h"
+#include "api/PlatformStatusListener.h"
 #include "core/model/ConfigurationItem.h"
 #include "model/Device.h"
 #include "model/DevicesConfigurationTemplate.h"
+#include "module/SafeModeValuePersistence.h"
 #include "more_modbus/ModbusReader.h"
 
 #include <atomic>
@@ -51,7 +53,8 @@ class ModbusBridge : public ActuationHandlerPerDevice,
                      public ActuatorStatusProviderPerDevice,
                      public ConfigurationHandlerPerDevice,
                      public ConfigurationProviderPerDevice,
-                     public DeviceStatusProvider
+                     public DeviceStatusProvider,
+                     public PlatformStatusListener
 {
 public:
     /**
@@ -104,6 +107,8 @@ public:
      * @brief Stop the modbus reader logic.
      */
     void stop();
+
+    void platformStatus(ConnectivityStatus status) override;
 
 protected:
     /**
@@ -239,11 +244,18 @@ private:
     std::map<int, DeviceStatus::Status> m_devicesStatusBySlaveAddress;
     // Watcher for all the mappings. This is the shortcut for handle and get queries to get to the mapping they need.
     std::map<std::string, std::shared_ptr<RegisterMapping>> m_registerMappingByReference;
+    std::map<std::string, std::string> m_safeModeMappingByReference;
     std::map<std::string, ModuleMapping::MappingType> m_registerMappingTypeByReference;
     // Configurations grouped per device. Necessary for getConfiguration.
     std::map<std::string, std::vector<std::string>> m_configurationMappingByDeviceKey;
     std::map<std::string, std::map<std::string, std::shared_ptr<RegisterMapping>>>
       m_configurationMappingByDeviceKeyAndRef;
+
+    // Store connectivity status
+    ConnectivityStatus m_connectivityStatus;
+
+    // Here we store the persistence
+    SafeModeValuePersistence m_safeModePersistence;
 
     // All the callbacks from the modbusBridge to explicitly target Wolk instance and notify of data
     std::function<void(const std::string& deviceKey, const std::string& reference, const std::string& value)>
