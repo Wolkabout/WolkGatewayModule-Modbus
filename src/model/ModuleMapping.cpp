@@ -78,6 +78,8 @@ ModuleMapping::ModuleMapping(nlohmann::json j)
         case json::value_t::number_float:
             m_defaultValue = std::to_string(JsonReaderParser::readOrDefault(j, "defaultValue", double(0.0)));
             break;
+        case json::value_t::boolean:
+            m_defaultValue = j.at("defaultValue").get<bool>() ? "true" : "false";
         default:
             m_defaultValue = JsonReaderParser::readOrDefault(j, "defaultValue", "");
             break;
