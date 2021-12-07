@@ -239,6 +239,7 @@ int main(int argc, char** argv)
         .actuationHandler(modbusBridge)
         .configurationProvider(modbusBridge)
         .configurationHandler(modbusBridge)
+        .withPlatformStatusListener(modbusBridge)
         .host(moduleConfiguration.getMqttHost())
         .withRegistrationResponseHandler([&](const std::string& deviceKey, wolkabout::PlatformResult::Code code) {
             registered = true;
@@ -284,6 +285,10 @@ int main(int argc, char** argv)
     }
 
     modbusBridge->start();
+    for (const auto& device : devices)
+    {
+        wolk->publishConfiguration(device.second->getKey());
+    }
 
     while (modbusBridge->isRunning())
     {

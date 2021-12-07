@@ -49,8 +49,10 @@ ModbusBridge::ModbusBridge(
 , m_deviceKeyBySlaveAddress()
 , m_registerMappingByReference()
 , m_configurationMappingByDeviceKeyAndRef()
+, m_connectivityStatus(ConnectivityStatus::NONE)
 {
     std::vector<std::shared_ptr<ModbusDevice>> modbusDevices;
+    auto safeModeValues = m_safeModePersistence.loadSafeModeValues();
 
     for (const auto& templateRegistered : deviceAddressesByTemplate)
     {
@@ -58,6 +60,7 @@ ModbusBridge::ModbusBridge(
         // be configuration mappings,
         const auto& configurationTemplate = *(configurationTemplates).at(templateRegistered.first);
         std::vector<std::shared_ptr<RegisterMapping>> mappings;
+        std::map<std::string, std::string> safeMappings;
         std::map<std::string, ModuleMapping::MappingType> mappingTypeByReference;
         std::map<std::string, std::string> configurationKeysAndLabels;
 
@@ -81,12 +84,16 @@ ModbusBridge::ModbusBridge(
 
             mappings.emplace_back(RegisterMappingFactory::fromJSONMapping(mapping));
             mappingTypeByReference.emplace(mapping.getReference(), mapping.getMappingType());
+
+            if (mapping.hasSafeMode())
+                safeMappings.emplace(mapping.getReference(), mapping.getSafeModeValue());
         }
 
         // Foreach device slaveAddress, copy over the mappings to create the device.
         for (const auto& slaveAddress : templateRegistered.second)
         {
             const std::string& key = devices.at(slaveAddress)->getKey();
+            const auto& safeModeValueForDevice = safeModeValues[key];
             const auto& device = std::make_shared<ModbusDevice>(key, slaveAddress);
             device->createGroups(mappings);
 
@@ -104,6 +111,16 @@ ModbusBridge::ModbusBridge(
                                                          mapping.second);
                     m_registerMappingTypeByReference.emplace(key + SEPARATOR + mapping.second->getReference(),
                                                              mappingTypeByReference[mapping.second->getReference()]);
+                    const auto safeIt = safeMappings.find(mapping.second->getReference());
+                    if (safeIt != safeMappings.cend())
+                    {
+                        auto safeModeValue = safeIt->second;
+                        const auto it = safeModeValueForDevice.find(mapping.second->getReference());
+                        if (it != safeModeValueForDevice.cend())
+                            safeModeValue = it->second;
+                        m_safeModeMappingByReference.emplace(key + SEPARATOR + mapping.second->getReference(),
+                                                             safeModeValue);
+                    }
 
                     const auto& it = configurationKeysAndLabels.find(mapping.second->getReference());
                     if (it != configurationKeysAndLabels.end())
@@ -282,6 +299,59 @@ void ModbusBridge::stop()
     for (const auto& device : m_deviceKeyBySlaveAddress)
     {
         m_onDeviceStatusChange(device.second, DeviceStatus::Status::OFFLINE);
+    }
+}
+
+void ModbusBridge::platformStatus(ConnectivityStatus status)
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    // Look if the status has changed
+    if (m_connectivityStatus == status)
+        return;
+    m_connectivityStatus = status;
+
+    // Go through all the safe mode mappings and write their safe mode values in
+    if (m_connectivityStatus == ConnectivityStatus::OFFLINE)
+    {
+        // Go through all safe mode mappings and write them all in
+        for (const auto& pair : m_safeModeMappingByReference)
+        {
+            LOG(DEBUG) << "Triggered SafeMode write for '" << pair.first << "'.";
+
+            // Find the mapping
+            const auto& mapping = m_registerMappingByReference[pair.first];
+
+            // Now check out the mapping type, try to convert the value
+            switch (mapping->getOutputType())
+            {
+            case RegisterMapping::OutputType::BOOL:
+                if (pair.second == "true" || pair.second == "false")
+                    writeToBoolMapping(mapping, pair.second);
+                else
+                    LOG(WARN) << "Failed to write in SafeMode value for '" << pair.first
+                              << "' - not a valid boolean value.";
+                break;
+            case RegisterMapping::OutputType::UINT16:
+                writeToUInt16Mapping(mapping, pair.second);
+                break;
+            case RegisterMapping::OutputType::INT16:
+                writeToInt16Mapping(mapping, pair.second);
+                break;
+            case RegisterMapping::OutputType::UINT32:
+                writeToUInt32Mapping(mapping, pair.second);
+                break;
+            case RegisterMapping::OutputType::INT32:
+                writeToInt32Mapping(mapping, pair.second);
+                break;
+            case RegisterMapping::OutputType::FLOAT:
+                writeToFloatMapping(mapping, pair.second);
+                break;
+            case RegisterMapping::OutputType::STRING:
+                writeToStringMapping(mapping, pair.second);
+                break;
+            }
+        }
     }
 }
 }    // namespace wolkabout

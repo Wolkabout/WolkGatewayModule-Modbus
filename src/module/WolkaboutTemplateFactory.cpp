@@ -160,6 +160,11 @@ std::unique_ptr<DeviceTemplate> WolkaboutTemplateFactory::makeTemplateFromDevice
         default:
             break;
         }
+
+        if (mapping.hasSafeMode())
+            configurationTemplates.emplace_back("SafeModeValue of " + mapping.getName(),
+                                                "SMV(" + mapping.getReference() + ")", dataType,
+                                                mapping.getDescription(), mapping.getSafeModeValue());
     }
 
     return std::unique_ptr<DeviceTemplate>(new DeviceTemplate({configurationTemplates}, {sensorTemplates},

@@ -80,12 +80,41 @@ ModuleMapping::ModuleMapping(nlohmann::json j)
             break;
         case json::value_t::boolean:
             m_defaultValue = j.at("defaultValue").get<bool>() ? "true" : "false";
+            break;
         default:
             m_defaultValue = JsonReaderParser::readOrDefault(j, "defaultValue", "");
             break;
         }
     }
-    LOG(INFO) << m_defaultValue;
+
+    // And safe mode
+    m_safeMode = false;
+    if (j.find("safeMode") != j.end())
+    {
+        if (m_registerType == RegisterMapping::RegisterType::INPUT_REGISTER ||
+            m_registerType == RegisterMapping::RegisterType::INPUT_CONTACT)
+            throw std::runtime_error("You can not create a read-only register with a safe mode value -> '" +
+                                     m_reference + "'.");
+
+        m_safeMode = true;
+
+        switch (j.at("safeMode").type())
+        {
+        case json::value_t::number_integer:
+        case json::value_t::number_unsigned:
+            m_safeModeValue = std::to_string(JsonReaderParser::readOrDefault(j, "safeMode", 0));
+            break;
+        case json::value_t::number_float:
+            m_safeModeValue = std::to_string(JsonReaderParser::readOrDefault(j, "safeMode", double(0.0)));
+            break;
+        case json::value_t::boolean:
+            m_safeModeValue = j.at("safeMode").get<bool>() ? "true" : "false";
+            break;
+        default:
+            m_safeModeValue = JsonReaderParser::readOrDefault(j, "safeMode", "");
+            break;
+        }
+    }
 }
 
 const std::string& ModuleMapping::getName() const
@@ -191,6 +220,16 @@ bool ModuleMapping::isReadRestricted() const
 RegisterMapping::OperationType ModuleMapping::getOperationType() const
 {
     return m_operationType;
+}
+
+bool ModuleMapping::hasSafeMode() const
+{
+    return m_safeMode;
+}
+
+const std::string& ModuleMapping::getSafeModeValue() const
+{
+    return m_safeModeValue;
 }
 
 ModuleMapping::MappingType MappingTypeConversion::deserializeMappingType(const std::string& mappingType)

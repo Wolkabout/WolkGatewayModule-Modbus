@@ -63,6 +63,9 @@ public:
     uint64_t getRepeat() const;
     const std::string& getDefaultValue() const;
 
+    bool hasSafeMode() const;
+    const std::string& getSafeModeValue() const;
+
     double getMinimum() const;
     double getMaximum() const;
     double getDeadbandValue() const;
@@ -86,6 +89,9 @@ private:
 
     std::uint64_t m_repeat;
     std::string m_defaultValue;
+
+    bool m_safeMode;
+    std::string m_safeModeValue;
 
     double m_minimum = 0.0;
     double m_maximum = 1.0;

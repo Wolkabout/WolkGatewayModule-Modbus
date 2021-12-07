@@ -44,7 +44,8 @@
           "dataType": "UINT32",
           "mappingType": "CONFIGURATION",
           "repeat": 3000,
-          "defaultValue": 10
+          "defaultValue": 10,
+          "safeMode": 456
         },
         {
           "name": "Write-Only Actuator",
@@ -61,7 +62,8 @@
           "addressCount": 10,
           "registerType": "HOLDING_REGISTER",
           "dataType": "STRING",
-          "operationType": "STRINGIFY_ASCII"
+          "operationType": "STRINGIFY_ASCII",
+          "safeMode": "Aloha!"
         },
         {
           "name": "Bit Sensor",
