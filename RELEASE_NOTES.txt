@@ -5,6 +5,9 @@
 
 WolkGateway module for connecting Modbus devices to WolkAbout IoT Platform by communicating with WolkGateway.
 
+**Version 0.8.5**
+    - [IMPROVEMENT] - Implemented the `safeMode` attribute. Requires WolkGateway 4.3.1 or newer to function.
+
 **Version 0.8.4**
     - [IMPROVEMENT] - Added the `repeat` and `defaultValue` mapping attributes.
 

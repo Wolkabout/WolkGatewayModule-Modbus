@@ -1,5 +1,5 @@
-wolkgatewaymodule-modbus (0.8.4) stable; urgency=medium
+wolkgatewaymodule-modbus (0.8.5) stable; urgency=medium
 
-      * Added the `repeat` and `defaultValue` mapping attributes.
+      * Implemented the `safeMode` attribute. Requires WolkGateway 4.3.1 or newer to function.
 
- -- Wolkabout ELab <elab@wolkabout.com>  Mon, 06 Dec 2021 00:00:00 +0100
+ -- Wolkabout ELab <elab@wolkabout.com>  Wed, 08 Dec 2021 00:00:00 +0100
