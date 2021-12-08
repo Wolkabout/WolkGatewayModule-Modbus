@@ -212,7 +212,7 @@ std::vector<ConfigurationItem> ModbusBridge::getConfiguration(const std::string&
     std::vector<ConfigurationItem> configurations;
     for (const auto& mappingRef : m_configurationMappingByDeviceKey[deviceKey])
     {
-        const auto& ref = mappingRef.substr(mappingRef.find(SEPARATOR) + 1);
+        const auto ref = mappingRef.substr(mappingRef.find(SEPARATOR) + 1);
         auto& mappings = m_configurationMappingByDeviceKeyAndRef[mappingRef];
 
         std::vector<std::string> values;

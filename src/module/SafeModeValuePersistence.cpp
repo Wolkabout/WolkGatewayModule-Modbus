@@ -28,12 +28,12 @@ const std::string JSON_PATH = "./safe-mode.json";
 const std::string SEPARATOR = ".";
 
 bool SafeModeValuePersistence::storeSafeModeValue(const std::string& deviceKey, const std::string& reference,
-                                                  std::string value)
+                                                  const std::string& value)
 {
     LOG(TRACE) << METHOD_INFO;
 
     // Check if the file exists
-    auto j = json{};
+    json j;
     if (FileSystemUtils::isFilePresent(JSON_PATH))
     {
         // Read the content of the file
@@ -65,36 +65,42 @@ std::map<std::string, std::map<std::string, std::string>> SafeModeValuePersisten
     auto map = std::map<std::string, std::map<std::string, std::string>>{};
 
     // Now try to read the file
-    if (FileSystemUtils::isFilePresent(JSON_PATH))
+    if (!FileSystemUtils::isFilePresent(JSON_PATH))
     {
-        // Make place for the file content
-        auto content = std::string{};
-        if (FileSystemUtils::readFileContent(JSON_PATH, content))
-        {
-            try
-            {
-                // Parse the JSON
-                auto j = json::parse(content);
-                for (const auto& pair : j.items())
-                {
-                    // Split the key into type and reference
-                    const auto& key = pair.key();
-                    const auto deviceType = key.substr(0, key.find(SEPARATOR));
-                    const auto reference = key.substr(key.find(SEPARATOR) + 1);
-
-                    // Check if the map already has an entry for the device type
-                    if (map.find(deviceType) != map.cend())
-                        map[deviceType].emplace(reference, pair.value());
-                    else
-                        map.emplace(deviceType, std::map<std::string, std::string>{{reference, pair.value()}});
-                }
-            }
-            catch (...)
-            {
-            }
-        }
+        LOG(WARN) << "Failed to load SafeMode values -> The json file is not present.";
+        return map;
     }
 
+    // Make place for the file content
+    auto content = std::string{};
+    if (!FileSystemUtils::readFileContent(JSON_PATH, content))
+    {
+        LOG(WARN) << "Failed to load SafeMode values -> Failed to read the content of the file.";
+        return map;
+    }
+
+    try
+    {
+        // Parse the JSON
+        auto j = json::parse(content);
+        for (const auto& pair : j.items())
+        {
+            // Split the key into type and reference
+            const auto& key = pair.key();
+            const auto deviceType = key.substr(0, key.find(SEPARATOR));
+            const auto reference = key.substr(key.find(SEPARATOR) + 1);
+
+            // Check if the map already has an entry for the device type
+            if (map.find(deviceType) != map.cend())
+                map[deviceType].emplace(reference, pair.value());
+            else
+                map.emplace(deviceType, std::map<std::string, std::string>{{reference, pair.value()}});
+        }
+    }
+    catch (const std::exception& exception)
+    {
+        LOG(ERROR) << "Failed to load SafeMode values -> '" << exception.what() << "'.";
+    }
     // Return the map in any way shape or form we have it
     return map;
 }
