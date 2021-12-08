@@ -65,7 +65,7 @@ ModuleMapping::ModuleMapping(nlohmann::json j)
         m_mappingType = MappingTypeConversion::deserializeMappingType(m_mappingTypeString);
 
     // Now attempt to read the repeat and default value
-    m_repeat = static_cast<uint64_t>(JsonReaderParser::readOrDefault(j, "repeat", 0));
+    m_repeat = std::chrono::milliseconds(JsonReaderParser::readOrDefault(j, "repeat", 0));
 
     if (j.find("defaultValue") != j.end())
     {
@@ -132,7 +132,7 @@ const std::string& ModuleMapping::getDescription() const
     return m_description;
 }
 
-uint64_t ModuleMapping::getRepeat() const
+std::chrono::milliseconds ModuleMapping::getRepeat() const
 {
     return m_repeat;
 }

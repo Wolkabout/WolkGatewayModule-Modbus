@@ -29,6 +29,11 @@ class SafeModeValuePersistence
 {
 public:
     /**
+     * Default virtual destructor.
+     */
+    virtual ~SafeModeValuePersistence() = default;
+
+    /**
      * This method allows the user to change a safe mode value in persistence.
      *
      * @param deviceKey The name of the device type in which the mapping belongs.
@@ -36,14 +41,15 @@ public:
      * @param value The new value for the safe mode of the mapping.
      * @return Whether the value was stored successfully.
      */
-    bool storeSafeModeValue(const std::string& deviceKey, const std::string& reference, std::string value);
+    virtual bool storeSafeModeValue(const std::string& deviceKey, const std::string& reference,
+                                    const std::string& value);
 
     /**
      * This method allows the user to read all the persisted safe mode values.
      *
      * @return The values that have been read from the json file.
      */
-    std::map<std::string, std::map<std::string, std::string>> loadSafeModeValues();
+    virtual std::map<std::string, std::map<std::string, std::string>> loadSafeModeValues();
 };
 }    // namespace wolkabout
 

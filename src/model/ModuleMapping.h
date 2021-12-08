@@ -60,7 +60,7 @@ public:
     const std::string& getReference() const;
     const std::string& getDescription() const;
 
-    uint64_t getRepeat() const;
+    std::chrono::milliseconds getRepeat() const;
     const std::string& getDefaultValue() const;
 
     bool hasSafeMode() const;
@@ -87,7 +87,7 @@ private:
     std::string m_reference;
     std::string m_description;
 
-    std::uint64_t m_repeat;
+    std::chrono::milliseconds m_repeat;
     std::string m_defaultValue;
 
     bool m_safeMode;

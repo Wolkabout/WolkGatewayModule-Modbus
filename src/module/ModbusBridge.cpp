@@ -92,9 +92,9 @@ ModbusBridge::ModbusBridge(
         // Foreach device slaveAddress, copy over the mappings to create the device.
         for (const auto& slaveAddress : templateRegistered.second)
         {
-            const std::string& key = devices.at(slaveAddress)->getKey();
-            const auto& safeModeValueForDevice = safeModeValues[key];
-            const auto& device = std::make_shared<ModbusDevice>(key, slaveAddress);
+            const auto& key = devices.at(slaveAddress)->getKey();
+            const auto safeModeValueForDevice = safeModeValues[key];
+            const auto device = std::make_shared<ModbusDevice>(key, slaveAddress);
             device->createGroups(mappings);
 
             modbusDevices.emplace_back(device);
