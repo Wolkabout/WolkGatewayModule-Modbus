@@ -158,7 +158,7 @@ ModbusBridge::ModbusBridge(
     // Setup the device mapping value change logic.
     for (const auto& device : modbusDevices)
     {
-        device->setOnStatusChange([=](bool status) {
+        device->setOnStatusChange([this, device](bool status) {
             const auto newStatus = status ? DeviceStatus::Status::CONNECTED : DeviceStatus::Status::OFFLINE;
 
             if (m_devicesStatusBySlaveAddress[device->getSlaveAddress()] != newStatus)
@@ -169,7 +169,7 @@ ModbusBridge::ModbusBridge(
         });
 
         device->setOnMappingValueChange(
-          [=](const std::shared_ptr<RegisterMapping>& mapping, const std::vector<uint16_t>& bytes) {
+          [this, device](const std::shared_ptr<RegisterMapping>& mapping, const std::vector<uint16_t>& bytes) {
               switch (m_registerMappingTypeByReference.at(device->getName() + SEPARATOR + mapping->getReference()))
               {
               case ModuleMapping::MappingType::DEFAULT:
@@ -197,8 +197,15 @@ ModbusBridge::ModbusBridge(
                   m_onConfigurationChange(device->getName());
                   break;
               }
+
+              if (m_devicesStatusBySlaveAddress[device->getSlaveAddress()] != DeviceStatus::Status::CONNECTED)
+              {
+                  m_devicesStatusBySlaveAddress[device->getSlaveAddress()] = DeviceStatus::Status::CONNECTED;
+                  m_onDeviceStatusChange(device->getName(), DeviceStatus::Status::CONNECTED);
+              }
           });
-        device->setOnMappingValueChange([=](const std::shared_ptr<RegisterMapping>& mapping, bool data) {
+
+        device->setOnMappingValueChange([this, device](const std::shared_ptr<RegisterMapping>& mapping, bool data) {
             switch (m_registerMappingTypeByReference.at(device->getName() + SEPARATOR + mapping->getReference()))
             {
             case ModuleMapping::MappingType::DEFAULT:
@@ -225,6 +232,12 @@ ModbusBridge::ModbusBridge(
             case ModuleMapping::MappingType::CONFIGURATION:
                 m_onConfigurationChange(device->getName());
                 break;
+            }
+
+            if (m_devicesStatusBySlaveAddress[device->getSlaveAddress()] != DeviceStatus::Status::CONNECTED)
+            {
+                m_devicesStatusBySlaveAddress[device->getSlaveAddress()] = DeviceStatus::Status::CONNECTED;
+                m_onDeviceStatusChange(device->getName(), DeviceStatus::Status::CONNECTED);
             }
         });
     }
