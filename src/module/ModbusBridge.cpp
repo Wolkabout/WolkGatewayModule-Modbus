@@ -16,13 +16,12 @@
 
 #include "ModbusBridge.h"
 
-#include "ActuationHandlerPerDevice.h"
-#include "ActuatorStatusProviderPerDevice.h"
 #include "DeviceStatusProvider.h"
 #include "RegisterMappingFactory.h"
 #include "core/utilities/Logger.h"
 #include "more_modbus/mappings/BoolMapping.h"
 #include "more_modbus/modbus/ModbusClient.h"
+#include "more_modbus/utilities/DataParsers.h"
 
 #include <algorithm>
 #include <chrono>
@@ -38,6 +37,9 @@ namespace wolkabout
 {
 const char ModbusBridge::SEPARATOR = '.';
 const std::vector<std::string> ModbusBridge::TRUE_VALUES = {"true", "1", "1.0", "ON"};
+const std::string DEFAULT_VALUE_PERSISTENCE_FILE = "./default-values.json";
+const std::string REPEATED_WRITE_PERSISTENCE_FILE = "./repeat-write.json";
+const std::string SAFE_MODE_WRITE_PERSISTENCE_FILE = "./safe-mode.json";
 
 ModbusBridge::ModbusBridge(
   ModbusClient& modbusClient,
@@ -50,9 +52,14 @@ ModbusBridge::ModbusBridge(
 , m_registerMappingByReference()
 , m_configurationMappingByDeviceKeyAndRef()
 , m_connectivityStatus(ConnectivityStatus::NONE)
+, m_defaultValuePersistence(DEFAULT_VALUE_PERSISTENCE_FILE)
+, m_repeatValuePersistence(REPEATED_WRITE_PERSISTENCE_FILE)
+, m_safeModePersistence(SAFE_MODE_WRITE_PERSISTENCE_FILE)
 {
     std::vector<std::shared_ptr<ModbusDevice>> modbusDevices;
-    auto safeModeValues = m_safeModePersistence.loadSafeModeValues();
+    auto defaultValues = m_defaultValuePersistence.loadValues();
+    auto repeatedValues = m_repeatValuePersistence.loadValues();
+    auto safeModeValues = m_safeModePersistence.loadValues();
 
     for (const auto& templateRegistered : deviceAddressesByTemplate)
     {
@@ -60,6 +67,8 @@ ModbusBridge::ModbusBridge(
         // be configuration mappings,
         const auto& configurationTemplate = *(configurationTemplates).at(templateRegistered.first);
         std::vector<std::shared_ptr<RegisterMapping>> mappings;
+        std::map<std::string, std::string> defaultValueMappings;
+        std::map<std::string, std::chrono::milliseconds> repeatValueMappings;
         std::map<std::string, std::string> safeMappings;
         std::map<std::string, ModuleMapping::MappingType> mappingTypeByReference;
         std::map<std::string, std::string> configurationKeysAndLabels;
@@ -85,6 +94,11 @@ ModbusBridge::ModbusBridge(
             mappings.emplace_back(RegisterMappingFactory::fromJSONMapping(mapping));
             mappingTypeByReference.emplace(mapping.getReference(), mapping.getMappingType());
 
+            // If any of the mappings are in the special categories
+            if (!mapping.getDefaultValue().empty())
+                defaultValueMappings.emplace(mapping.getReference(), mapping.getDefaultValue());
+            if (mapping.getRepeat().count() > 0)
+                repeatValueMappings.emplace(mapping.getReference(), mapping.getRepeat());
             if (mapping.hasSafeMode())
                 safeMappings.emplace(mapping.getReference(), mapping.getSafeModeValue());
         }
@@ -92,8 +106,34 @@ ModbusBridge::ModbusBridge(
         // Foreach device slaveAddress, copy over the mappings to create the device.
         for (const auto& slaveAddress : templateRegistered.second)
         {
-            const auto& key = devices.at(slaveAddress)->getKey();
-            const auto safeModeValueForDevice = safeModeValues[key];
+            const auto key = devices.at(slaveAddress)->getKey();
+
+            // Filter out the default, repeat and safe mode values for this device
+            const auto defaultValuesForDevice = [&]() {
+                auto map = std::map<std::string, std::string>{};
+                std::copy_if(defaultValues.cbegin(), defaultValues.cend(), std::inserter(map, map.end()),
+                             [&](const std::pair<std::string, std::string>& pair) {
+                                 return pair.first.find(key + SEPARATOR) != std::string::npos;
+                             });
+                return map;
+            }();
+            const auto repeatValuesForDevice = [&]() {
+                auto map = std::map<std::string, std::string>{};
+                std::copy_if(repeatedValues.cbegin(), repeatedValues.cend(), std::inserter(map, map.end()),
+                             [&](const std::pair<std::string, std::string>& pair) {
+                                 return pair.first.find(key + SEPARATOR) != std::string::npos;
+                             });
+                return map;
+            }();
+            const auto safeModeValueForDevice = [&]() {
+                auto map = std::map<std::string, std::string>{};
+                std::copy_if(safeModeValues.cbegin(), safeModeValues.cend(), std::inserter(map, map.end()),
+                             [&](const std::pair<std::string, std::string>& pair) {
+                                 return pair.first.find(key + SEPARATOR) != std::string::npos;
+                             });
+                return map;
+            }();
+
             const auto device = std::make_shared<ModbusDevice>(key, slaveAddress);
             device->createGroups(mappings);
 
@@ -111,11 +151,44 @@ ModbusBridge::ModbusBridge(
                                                          mapping.second);
                     m_registerMappingTypeByReference.emplace(key + SEPARATOR + mapping.second->getReference(),
                                                              mappingTypeByReference[mapping.second->getReference()]);
+
+                    const auto defaultValueIt = defaultValueMappings.find(mapping.second->getReference());
+                    if (defaultValueIt != defaultValueMappings.cend())
+                    {
+                        auto defaultValue = defaultValueIt->second;
+                        const auto it = defaultValuesForDevice.find(key + SEPARATOR + mapping.second->getReference());
+                        if (it != defaultValuesForDevice.cend())
+                            defaultValue = it->second;
+                        m_defaultValueMappingByReference.emplace(key + SEPARATOR + mapping.second->getReference(),
+                                                                 defaultValue);
+                    }
+                    const auto repeatIt = repeatValueMappings.find(mapping.second->getReference());
+                    if (repeatIt != repeatValueMappings.cend())
+                    {
+                        auto repeatValue = repeatIt->second;
+                        const auto it = repeatValuesForDevice.find(key + SEPARATOR + mapping.second->getReference());
+                        if (it != repeatValuesForDevice.cend())
+                        {
+                            try
+                            {
+                                repeatValue = std::chrono::milliseconds(std::stoull(it->second));
+                            }
+                            catch (const std::exception& exception)
+                            {
+                                LOG(WARN) << "Found invalid persisted `repeat` value for '" << key << "'/'"
+                                          << mapping.second->getReference() << "'.";
+                            }
+                        }
+                        m_repeatedWriteMappingByReference.emplace(key + SEPARATOR + mapping.second->getReference(),
+                                                                  repeatValue);
+
+                        mapping.second->setRepeatedWrite(repeatValue);
+                    }
                     const auto safeIt = safeMappings.find(mapping.second->getReference());
                     if (safeIt != safeMappings.cend())
                     {
                         auto safeModeValue = safeIt->second;
-                        const auto it = safeModeValueForDevice.find(mapping.second->getReference());
+                        const auto it = safeModeValueForDevice.find(key + SEPARATOR + mapping.second->getReference());
                         if (it != safeModeValueForDevice.cend())
                             safeModeValue = it->second;
                         m_safeModeMappingByReference.emplace(key + SEPARATOR + mapping.second->getReference(),
@@ -302,6 +375,15 @@ void ModbusBridge::setOnDeviceStatusChange(
 void ModbusBridge::start()
 {
     m_modbusReader->start();
+    for (const auto& defaultValue : m_defaultValueMappingByReference)
+    {
+        const auto& mapping = m_registerMappingByReference[defaultValue.first];
+        writeToMapping(mapping, defaultValue.second);
+        if (mapping->getOutputType() == RegisterMapping::OutputType::BOOL)
+            mapping->getGroup()->getDevice()->triggerOnMappingValueChange(mapping, mapping->getBoolValue());
+        else
+            mapping->getGroup()->getDevice()->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
+    }
 }
 
 void ModbusBridge::stop()

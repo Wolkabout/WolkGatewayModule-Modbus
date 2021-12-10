@@ -233,6 +233,27 @@ std::vector<ConfigurationItem> ModbusBridge::getConfiguration(const std::string&
         configurations.emplace_back(ConfigurationItem(values, ref));
     }
 
+    for (const auto& defaultValue : m_defaultValueMappingByReference)
+    {
+        const auto& reference = defaultValue.first;
+        const auto device = reference.substr(0, reference.find(SEPARATOR));
+        if (device != deviceKey)
+            continue;
+        const auto config = reference.substr(reference.find(SEPARATOR) + 1);
+
+        configurations.emplace_back(std::vector<std::string>{defaultValue.second}, "DFV(" + config + ")");
+    }
+    for (const auto& repeated : m_repeatedWriteMappingByReference)
+    {
+        const auto& reference = repeated.first;
+        const auto device = reference.substr(0, reference.find(SEPARATOR));
+        if (device != deviceKey)
+            continue;
+        const auto config = reference.substr(reference.find(SEPARATOR) + 1);
+
+        configurations.emplace_back(std::vector<std::string>{std::to_string(repeated.second.count())},
+                                    "RPW(" + config + ")");
+    }
     for (const auto& safeMode : m_safeModeMappingByReference)
     {
         const auto& reference = safeMode.first;

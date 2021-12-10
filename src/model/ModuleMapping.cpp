@@ -66,6 +66,8 @@ ModuleMapping::ModuleMapping(nlohmann::json j)
 
     // Now attempt to read the repeat and default value
     m_repeat = std::chrono::milliseconds(JsonReaderParser::readOrDefault(j, "repeat", 0));
+    if (m_repeat.count() > 0 && j.find("defaultValue") == j.end())
+        throw std::runtime_error("You can not create a `repeat` mapping without a `defaultValue`.");
 
     if (j.find("defaultValue") != j.end())
     {

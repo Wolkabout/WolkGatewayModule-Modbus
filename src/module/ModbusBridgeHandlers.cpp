@@ -251,7 +251,45 @@ void ModbusBridge::handleConfiguration(const std::string& deviceKey,
 
     for (auto& config : configuration)
     {
-        const std::string& reference = config.getReference();
+        const auto& reference = config.getReference();
+        if (reference.find("DFV(") == 0 && reference.rfind(')') == reference.length() - 1)
+        {
+            // We have received a value for a default value
+            LOG(INFO) << reference;
+            const auto ref = reference.substr(reference.find("DFV(") + 4, reference.length() - 5);
+            const auto value = config.getValues().front();
+
+            // Find all devices that have the same device type and change it for them all!
+            m_defaultValueMappingByReference[deviceKey + SEPARATOR + ref] = value;
+            m_defaultValuePersistence.storeValue(deviceKey + SEPARATOR + ref, value);
+            continue;
+        }
+        if (reference.find("RPW(") == 0 && reference.rfind(')') == reference.length() - 1)
+        {
+            // We have received a value for a repeated write
+            LOG(INFO) << reference;
+            const auto ref = reference.substr(reference.find("RPW(") + 4, reference.length() - 5);
+            const auto value = config.getValues().front();
+
+            // Check if the value can be parsed
+            auto milliseconds = std::chrono::milliseconds{};
+            try
+            {
+                milliseconds = std::chrono::milliseconds{std::stoull(value)};
+            }
+            catch (const std::exception& exception)
+            {
+                LOG(ERROR) << "Failed to accept a new `repeat` value for `" << deviceKey << "`/`" << ref
+                           << "` - The value is not a valid number.";
+                continue;
+            }
+
+            // Find all devices that have the same device type and change it for them all!
+            m_repeatedWriteMappingByReference[deviceKey + SEPARATOR + ref] = milliseconds;
+            m_registerMappingByReference[deviceKey + SEPARATOR + ref]->setRepeatedWrite(milliseconds);
+            m_repeatValuePersistence.storeValue(deviceKey + SEPARATOR + ref, value);
+            continue;
+        }
         if (reference.find("SMV(") == 0 && reference.rfind(')') == reference.length() - 1)
         {
             // We have received a value for a safe mode value
@@ -261,7 +299,7 @@ void ModbusBridge::handleConfiguration(const std::string& deviceKey,
 
             // Find all devices that have the same device type and change it for them all!
             m_safeModeMappingByReference[deviceKey + SEPARATOR + ref] = value;
-            m_safeModePersistence.storeSafeModeValue(deviceKey, ref, value);
+            m_safeModePersistence.storeValue(deviceKey + SEPARATOR + ref, value);
             continue;
         }
 
