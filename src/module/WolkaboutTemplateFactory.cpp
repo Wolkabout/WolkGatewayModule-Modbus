@@ -161,10 +161,18 @@ std::unique_ptr<DeviceTemplate> WolkaboutTemplateFactory::makeTemplateFromDevice
             break;
         }
 
+        if (mapping.getRepeat().count() > 0)
+            configurationTemplates.emplace_back("RepeatedWrite of " + mapping.getName(),
+                                                "RPW(" + mapping.getReference() + ")", DataType::NUMERIC,
+                                                mapping.getDescription(), std::to_string(mapping.getRepeat().count()));
         if (mapping.hasSafeMode())
             configurationTemplates.emplace_back("SafeModeValue of " + mapping.getName(),
                                                 "SMV(" + mapping.getReference() + ")", dataType,
                                                 mapping.getDescription(), mapping.getSafeModeValue());
+        if (!mapping.getDefaultValue().empty())
+            configurationTemplates.emplace_back("DefaultValue of " + mapping.getName(),
+                                                "DFV(" + mapping.getReference() + ")", dataType,
+                                                mapping.getDescription(), mapping.getDefaultValue());
     }
 
     return std::unique_ptr<DeviceTemplate>(new DeviceTemplate({configurationTemplates}, {sensorTemplates},
