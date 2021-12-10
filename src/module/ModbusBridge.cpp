@@ -379,10 +379,17 @@ void ModbusBridge::start()
     {
         const auto& mapping = m_registerMappingByReference[defaultValue.first];
         writeToMapping(mapping, defaultValue.second);
-        if (mapping->getOutputType() == RegisterMapping::OutputType::BOOL)
-            mapping->getGroup()->getDevice()->triggerOnMappingValueChange(mapping, mapping->getBoolValue());
-        else
-            mapping->getGroup()->getDevice()->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
+
+        if (auto group = mapping->getGroup().lock())
+        {
+            if (auto device = group->getDevice().lock())
+            {
+                if (mapping->getOutputType() == RegisterMapping::OutputType::BOOL)
+                    device->triggerOnMappingValueChange(mapping, mapping->getBoolValue());
+                else
+                    device->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
+            }
+        }
     }
 }
 
@@ -424,7 +431,9 @@ void ModbusBridge::platformStatus(ConnectivityStatus status)
                 if (pair.second == "true" || pair.second == "false")
                 {
                     writeToBoolMapping(mapping, pair.second);
-                    mapping->getGroup()->getDevice()->triggerOnMappingValueChange(mapping, mapping->getBoolValue());
+                    if (auto group = mapping->getGroup().lock())
+                        if (auto device = group->getDevice().lock())
+                            device->triggerOnMappingValueChange(mapping, mapping->getBoolValue());
                 }
                 else
                 {
@@ -434,27 +443,39 @@ void ModbusBridge::platformStatus(ConnectivityStatus status)
                 break;
             case RegisterMapping::OutputType::UINT16:
                 writeToUInt16Mapping(mapping, pair.second);
-                mapping->getGroup()->getDevice()->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
+                if (auto group = mapping->getGroup().lock())
+                    if (auto device = group->getDevice().lock())
+                        device->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
                 break;
             case RegisterMapping::OutputType::INT16:
                 writeToInt16Mapping(mapping, pair.second);
-                mapping->getGroup()->getDevice()->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
+                if (auto group = mapping->getGroup().lock())
+                    if (auto device = group->getDevice().lock())
+                        device->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
                 break;
             case RegisterMapping::OutputType::UINT32:
                 writeToUInt32Mapping(mapping, pair.second);
-                mapping->getGroup()->getDevice()->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
+                if (auto group = mapping->getGroup().lock())
+                    if (auto device = group->getDevice().lock())
+                        device->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
                 break;
             case RegisterMapping::OutputType::INT32:
                 writeToInt32Mapping(mapping, pair.second);
-                mapping->getGroup()->getDevice()->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
+                if (auto group = mapping->getGroup().lock())
+                    if (auto device = group->getDevice().lock())
+                        device->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
                 break;
             case RegisterMapping::OutputType::FLOAT:
                 writeToFloatMapping(mapping, pair.second);
-                mapping->getGroup()->getDevice()->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
+                if (auto group = mapping->getGroup().lock())
+                    if (auto device = group->getDevice().lock())
+                        device->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
                 break;
             case RegisterMapping::OutputType::STRING:
                 writeToStringMapping(mapping, pair.second);
-                mapping->getGroup()->getDevice()->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
+                if (auto group = mapping->getGroup().lock())
+                    if (auto device = group->getDevice().lock())
+                        device->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
                 break;
             }
         }
