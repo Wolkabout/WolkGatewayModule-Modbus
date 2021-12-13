@@ -26,7 +26,7 @@
 #include "core/model/ConfigurationItem.h"
 #include "model/Device.h"
 #include "model/DevicesConfigurationTemplate.h"
-#include "module/persistence/JsonFilePersistence.h"
+#include "module/persistence/KeyValuePersistence.h"
 #include "more_modbus/ModbusReader.h"
 
 #include <atomic>
@@ -73,7 +73,10 @@ public:
     ModbusBridge(ModbusClient& modbusClient,
                  const std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& configurationTemplates,
                  const std::map<std::string, std::vector<int>>& deviceAddressesByTemplate,
-                 const std::map<int, std::unique_ptr<Device>>& devices, std::chrono::milliseconds registerReadPeriod);
+                 const std::map<int, std::unique_ptr<Device>>& devices, std::chrono::milliseconds registerReadPeriod,
+                 std::unique_ptr<KeyValuePersistence> defaultValuePersistence,
+                 std::unique_ptr<KeyValuePersistence> repeatValuePersistence,
+                 std::unique_ptr<KeyValuePersistence> safeModePersistence);
 
     ~ModbusBridge() override;
 
@@ -257,9 +260,9 @@ private:
     ConnectivityStatus m_connectivityStatus;
 
     // Here we store the persistence
-    JsonFilePersistence m_defaultValuePersistence;
-    JsonFilePersistence m_repeatValuePersistence;
-    JsonFilePersistence m_safeModePersistence;
+    std::unique_ptr<KeyValuePersistence> m_defaultValuePersistence;
+    std::unique_ptr<KeyValuePersistence> m_repeatValuePersistence;
+    std::unique_ptr<KeyValuePersistence> m_safeModePersistence;
 
     // All the callbacks from the modbusBridge to explicitly target Wolk instance and notify of data
     std::function<void(const std::string& deviceKey, const std::string& reference, const std::string& value)>

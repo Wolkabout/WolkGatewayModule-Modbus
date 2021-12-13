@@ -21,6 +21,7 @@
 #include "model/ModuleConfiguration.h"
 #include "module/ModbusBridge.h"
 #include "module/WolkaboutTemplateFactory.h"
+#include "module/persistence/JsonFilePersistence.h"
 #include "more_modbus/mappings/StringMapping.h"
 #include "more_modbus/modbus/LibModbusSerialRtuClient.h"
 #include "more_modbus/modbus/LibModbusTcpIpClient.h"
@@ -34,6 +35,11 @@
 #include <string>
 #include <thread>
 #include <utility>
+
+// Paths for persistence files
+const std::string DEFAULT_VALUE_PERSISTENCE_FILE = "./default-values.json";
+const std::string REPEATED_WRITE_PERSISTENCE_FILE = "./repeat-write.json";
+const std::string SAFE_MODE_WRITE_PERSISTENCE_FILE = "./safe-mode.json";
 
 std::map<std::string, std::unique_ptr<wolkabout::DeviceTemplate>> generateTemplates(
   wolkabout::DevicesConfiguration* devicesConfiguration)
@@ -220,9 +226,15 @@ int main(int argc, char** argv)
 
     // Pass everything necessary to initialize the bridge
     LOG(DEBUG) << "Initializing the bridge...";
-    auto modbusBridge = std::make_shared<wolkabout::ModbusBridge>(*libModbusClient, devicesConfiguration.getTemplates(),
-                                                                  deviceTemplateMap, devices,
-                                                                  moduleConfiguration.getRegisterReadPeriod());
+    auto modbusBridge = std::make_shared<wolkabout::ModbusBridge>(
+      *libModbusClient, devicesConfiguration.getTemplates(), deviceTemplateMap, devices,
+      moduleConfiguration.getRegisterReadPeriod(),
+      std::unique_ptr<wolkabout::JsonFilePersistence>{
+        new wolkabout::JsonFilePersistence(DEFAULT_VALUE_PERSISTENCE_FILE)},
+      std::unique_ptr<wolkabout::JsonFilePersistence>{
+        new wolkabout::JsonFilePersistence(REPEATED_WRITE_PERSISTENCE_FILE)},
+      std::unique_ptr<wolkabout::JsonFilePersistence>{
+        new wolkabout::JsonFilePersistence(SAFE_MODE_WRITE_PERSISTENCE_FILE)});
 
     // Track if we registered or not
     bool registered = false;
