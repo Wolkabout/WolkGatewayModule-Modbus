@@ -17,6 +17,8 @@
 #ifndef WOLKGATEWAYMODBUSMODULE_JSONFILEPERSISTENCE_H
 #define WOLKGATEWAYMODBUSMODULE_JSONFILEPERSISTENCE_H
 
+#include "module/persistence/KeyValuePersistence.h"
+
 #include <map>
 #include <string>
 
@@ -25,7 +27,7 @@ namespace wolkabout
 /**
  * This class represents persistent key value storage.
  */
-class JsonFilePersistence
+class JsonFilePersistence : public KeyValuePersistence
 {
 public:
     /**
@@ -36,25 +38,20 @@ public:
     explicit JsonFilePersistence(std::string filePath);
 
     /**
-     * Default virtual destructor.
-     */
-    virtual ~JsonFilePersistence() = default;
-
-    /**
      * This method allows the user to store/modify a value in persistent storage.
      *
      * @param key The key under which the value will be placed
      * @param value The new value which will be stored.
      * @return Whether the value was stored successfully.
      */
-    virtual bool storeValue(const std::string& key, const std::string& value);
+    bool storeValue(const std::string& key, const std::string& value) override;
 
     /**
      * This method allows the user to read all the persisted key value pairs.
      *
      * @return The values that have been read from the json file.
      */
-    virtual std::map<std::string, std::string> loadValues();
+    std::map<std::string, std::string> loadValues() override;
 
 private:
     // This is where we store the file path in which the values are placed/read from.

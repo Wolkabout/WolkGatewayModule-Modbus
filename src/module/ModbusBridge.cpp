@@ -21,7 +21,6 @@
 #include "core/utilities/Logger.h"
 #include "more_modbus/mappings/BoolMapping.h"
 #include "more_modbus/modbus/ModbusClient.h"
-#include "more_modbus/utilities/DataParsers.h"
 
 #include <algorithm>
 #include <chrono>
@@ -37,29 +36,28 @@ namespace wolkabout
 {
 const char ModbusBridge::SEPARATOR = '.';
 const std::vector<std::string> ModbusBridge::TRUE_VALUES = {"true", "1", "1.0", "ON"};
-const std::string DEFAULT_VALUE_PERSISTENCE_FILE = "./default-values.json";
-const std::string REPEATED_WRITE_PERSISTENCE_FILE = "./repeat-write.json";
-const std::string SAFE_MODE_WRITE_PERSISTENCE_FILE = "./safe-mode.json";
 
 ModbusBridge::ModbusBridge(
   ModbusClient& modbusClient,
   const std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& configurationTemplates,
   const std::map<std::string, std::vector<int>>& deviceAddressesByTemplate,
-  const std::map<int, std::unique_ptr<Device>>& devices, std::chrono::milliseconds registerReadPeriod)
+  const std::map<int, std::unique_ptr<Device>>& devices, std::chrono::milliseconds registerReadPeriod,
+  std::unique_ptr<KeyValuePersistence> defaultValuePersistence,
+  std::unique_ptr<KeyValuePersistence> repeatValuePersistence, std::unique_ptr<KeyValuePersistence> safeModePersistence)
 : m_modbusClient(modbusClient)
 , m_registerReadPeriod(registerReadPeriod)
 , m_deviceKeyBySlaveAddress()
 , m_registerMappingByReference()
 , m_configurationMappingByDeviceKeyAndRef()
 , m_connectivityStatus(ConnectivityStatus::NONE)
-, m_defaultValuePersistence(DEFAULT_VALUE_PERSISTENCE_FILE)
-, m_repeatValuePersistence(REPEATED_WRITE_PERSISTENCE_FILE)
-, m_safeModePersistence(SAFE_MODE_WRITE_PERSISTENCE_FILE)
+, m_defaultValuePersistence(std::move(defaultValuePersistence))
+, m_repeatValuePersistence(std::move(repeatValuePersistence))
+, m_safeModePersistence(std::move(safeModePersistence))
 {
     std::vector<std::shared_ptr<ModbusDevice>> modbusDevices;
-    auto defaultValues = m_defaultValuePersistence.loadValues();
-    auto repeatedValues = m_repeatValuePersistence.loadValues();
-    auto safeModeValues = m_safeModePersistence.loadValues();
+    auto defaultValues = m_defaultValuePersistence->loadValues();
+    auto repeatedValues = m_repeatValuePersistence->loadValues();
+    auto safeModeValues = m_safeModePersistence->loadValues();
 
     for (const auto& templateRegistered : deviceAddressesByTemplate)
     {
@@ -162,6 +160,7 @@ ModbusBridge::ModbusBridge(
                         m_defaultValueMappingByReference.emplace(key + SEPARATOR + mapping.second->getReference(),
                                                                  defaultValue);
                     }
+
                     const auto repeatIt = repeatValueMappings.find(mapping.second->getReference());
                     if (repeatIt != repeatValueMappings.cend())
                     {
@@ -184,6 +183,7 @@ ModbusBridge::ModbusBridge(
 
                         mapping.second->setRepeatedWrite(repeatValue);
                     }
+
                     const auto safeIt = safeMappings.find(mapping.second->getReference());
                     if (safeIt != safeMappings.cend())
                     {
@@ -385,9 +385,13 @@ void ModbusBridge::start()
             if (auto device = group->getDevice().lock())
             {
                 if (mapping->getOutputType() == RegisterMapping::OutputType::BOOL)
+                {
                     device->triggerOnMappingValueChange(mapping, mapping->getBoolValue());
+                }
                 else
+                {
                     device->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
+                }
             }
         }
     }
@@ -432,8 +436,10 @@ void ModbusBridge::platformStatus(ConnectivityStatus status)
                 {
                     writeToBoolMapping(mapping, pair.second);
                     if (auto group = mapping->getGroup().lock())
+                    {
                         if (auto device = group->getDevice().lock())
                             device->triggerOnMappingValueChange(mapping, mapping->getBoolValue());
+                    }
                 }
                 else
                 {
@@ -444,38 +450,50 @@ void ModbusBridge::platformStatus(ConnectivityStatus status)
             case RegisterMapping::OutputType::UINT16:
                 writeToUInt16Mapping(mapping, pair.second);
                 if (auto group = mapping->getGroup().lock())
+                {
                     if (auto device = group->getDevice().lock())
                         device->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
+                }
                 break;
             case RegisterMapping::OutputType::INT16:
                 writeToInt16Mapping(mapping, pair.second);
                 if (auto group = mapping->getGroup().lock())
+                {
                     if (auto device = group->getDevice().lock())
                         device->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
+                }
                 break;
             case RegisterMapping::OutputType::UINT32:
                 writeToUInt32Mapping(mapping, pair.second);
                 if (auto group = mapping->getGroup().lock())
+                {
                     if (auto device = group->getDevice().lock())
                         device->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
+                }
                 break;
             case RegisterMapping::OutputType::INT32:
                 writeToInt32Mapping(mapping, pair.second);
                 if (auto group = mapping->getGroup().lock())
+                {
                     if (auto device = group->getDevice().lock())
                         device->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
+                }
                 break;
             case RegisterMapping::OutputType::FLOAT:
                 writeToFloatMapping(mapping, pair.second);
                 if (auto group = mapping->getGroup().lock())
+                {
                     if (auto device = group->getDevice().lock())
                         device->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
+                }
                 break;
             case RegisterMapping::OutputType::STRING:
                 writeToStringMapping(mapping, pair.second);
                 if (auto group = mapping->getGroup().lock())
+                {
                     if (auto device = group->getDevice().lock())
                         device->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
+                }
                 break;
             }
         }

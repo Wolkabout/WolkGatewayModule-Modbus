@@ -261,7 +261,7 @@ void ModbusBridge::handleConfiguration(const std::string& deviceKey,
 
             // Find all devices that have the same device type and change it for them all!
             m_defaultValueMappingByReference[deviceKey + SEPARATOR + ref] = value;
-            m_defaultValuePersistence.storeValue(deviceKey + SEPARATOR + ref, value);
+            m_defaultValuePersistence->storeValue(deviceKey + SEPARATOR + ref, value);
             continue;
         }
         if (reference.find("RPW(") == 0 && reference.rfind(')') == reference.length() - 1)
@@ -287,7 +287,7 @@ void ModbusBridge::handleConfiguration(const std::string& deviceKey,
             // Find all devices that have the same device type and change it for them all!
             m_repeatedWriteMappingByReference[deviceKey + SEPARATOR + ref] = milliseconds;
             m_registerMappingByReference[deviceKey + SEPARATOR + ref]->setRepeatedWrite(milliseconds);
-            m_repeatValuePersistence.storeValue(deviceKey + SEPARATOR + ref, value);
+            m_repeatValuePersistence->storeValue(deviceKey + SEPARATOR + ref, value);
             continue;
         }
         if (reference.find("SMV(") == 0 && reference.rfind(')') == reference.length() - 1)
@@ -299,7 +299,7 @@ void ModbusBridge::handleConfiguration(const std::string& deviceKey,
 
             // Find all devices that have the same device type and change it for them all!
             m_safeModeMappingByReference[deviceKey + SEPARATOR + ref] = value;
-            m_safeModePersistence.storeValue(deviceKey + SEPARATOR + ref, value);
+            m_safeModePersistence->storeValue(deviceKey + SEPARATOR + ref, value);
             continue;
         }
 
