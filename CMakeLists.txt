@@ -15,8 +15,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(WolkGatewayModbusModule C CXX)
 
-set_property(GLOBAL PROPERTY ALLOW_DUPLICATE_CUSTOM_TARGETS 1)
-
 set(CMAKE_CXX_STANDARD 11)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}     -Wall -Wextra -pedantic                                                    \
@@ -41,52 +39,78 @@ set(CMAKE_LIBRARY_INCLUDE_DIRECTORY ${CMAKE_BINARY_DIR}/include)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR}/build)
 
-# Add all the link directories
-link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+# Update the link and include directories
 link_directories(${CMAKE_PREFIX_PATH}/lib)
+link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+include_directories(SYSTEM ${CMAKE_PREFIX_PATH}/include)
 
-# WolkAbout c++ SDK and MoreModbus
-if (NOT TARGET WolkGatewayModule)
-    add_subdirectory(WolkGatewayModule-SDK-Cpp)
-endif ()
+# Introduce submodules if necessary
 if (NOT TARGET MoreModbus)
     add_subdirectory(MoreModbus)
 endif ()
+if (NOT TARGET WolkAboutConnector)
+    add_subdirectory(WolkConnect-Cpp)
+endif ()
+
+# Define the version of the software
+set(WOLKGATEWAY_MODBUS_VERSION_MAJOR 1)
+set(WOLKGATEWAY_MODBUS_VERSION_MINOR 0)
+set(WOLKGATEWAY_MODBUS_VERSION_PATCH 0)
+set(WOLKGATEWAY_MODBUS_VERSION_SUFFIX prerelease)
+
+set(WOLKGATEWAY_MODBUS_VERSION_STRING "${WOLKGATEWAY_MODBUS_VERSION_MAJOR}.${WOLKGATEWAY_MODBUS_VERSION_MINOR}.${WOLKGATEWAY_MODBUS_VERSION_PATCH}")
+if (NOT "${WOLKGATEWAY_MODBUS_VERSION_SUFFIX}" STREQUAL "")
+    set(WOLKGATEWAY_MODBUS_VERSION_STRING "${WOLKGATEWAY_MODBUS_VERSION_STRING}-${WOLKGATEWAY_MODBUS_VERSION_SUFFIX}")
+endif ()
 
 # WolkAbout Modbus Module
-include_directories("src")
+set(MODBUS_SOURCE_FILES modbus/model/DeviceInformation.cpp
+        modbus/model/DevicesConfiguration.cpp
+        modbus/model/DevicesConfigurationTemplate.cpp
+        modbus/model/ModuleConfiguration.cpp
+        modbus/model/ModuleMapping.cpp
+        modbus/model/SerialRtuConfiguration.cpp
+        modbus/model/TcpIpConfiguration.cpp
+        modbus/module/persistence/JsonFilePersistence.cpp
+        modbus/module/ModbusBridge.cpp
+        modbus/module/ModbusBridgeGetters.cpp
+        modbus/module/ModbusBridgeHandlers.cpp
+        modbus/module/RegisterMappingFactory.cpp
+        modbus/module/WolkaboutTemplateFactory.cpp)
+set(MODBUS_HEADER_FILES modbus/model/DeviceInformation.h
+        modbus/model/DevicesConfiguration.h
+        modbus/model/DevicesConfigurationTemplate.h
+        modbus/model/ModuleConfiguration.h
+        modbus/model/ModuleMapping.h
+        modbus/model/SerialRtuConfiguration.h
+        modbus/model/TcpIpConfiguration.h
+        modbus/module/persistence/JsonFilePersistence.h
+        modbus/module/persistence/KeyValuePersistence.h
+        modbus/module/ModbusBridge.h
+        modbus/module/RegisterMappingFactory.h
+        modbus/module/WolkaboutTemplateFactory.h
+        modbus/utilities/JsonReaderParser.h)
 
-file(GLOB_RECURSE HEADER_FILES "src/*.h" "src/*.hpp")
-file(GLOB_RECURSE SOURCE_FILES "src/*.c" "src/*.cpp")
-
-add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES})
-target_link_libraries(${PROJECT_NAME} WolkGatewayModule MoreModbus)
+add_library(${PROJECT_NAME} SHARED ${MODBUS_SOURCE_FILES} ${MODBUS_HEADER_FILES})
+target_link_libraries(${PROJECT_NAME} WolkAboutConnector MoreModbus)
+target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR})
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} ${CMAKE_PREFIX_PATH}/include)
 set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
+set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${WOLKGATEWAY_MODBUS_VERSION_STRING} SOVERSION ${WOLKGATEWAY_MODBUS_VERSION_MAJOR}.${WOLKGATEWAY_MODBUS_VERSION_MINOR}.${WOLKGATEWAY_MODBUS_VERSION_PATCH})
 
 # Example
-include_directories("application")
-file(GLOB_RECURSE EXAMPLE_SOURCE_FILES "application/*.cpp")
+set(APPLICATION_SOURCE_FILES application/Application.cpp)
 
-add_executable(modbusModule ${EXAMPLE_SOURCE_FILES})
-target_link_libraries(modbusModule ${PROJECT_NAME})
-set_target_properties(modbusModule PROPERTIES INSTALL_RPATH "$ORIGIN/lib")
+add_executable(ModbusModule ${APPLICATION_SOURCE_FILES})
+target_link_libraries(ModbusModule ${PROJECT_NAME})
+set_target_properties(ModbusModule PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
 
-# Place the library files in /usr/lib
-install(DIRECTORY ${CMAKE_PREFIX_PATH}/lib DESTINATION ${CMAKE_INSTALL_PREFIX}
-        FILES_MATCHING
-        PATTERN "*so*")
-install(DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} DESTINATION ${CMAKE_INSTALL_PREFIX}
-        FILES_MATCHING
-        PATTERN "*so*")
-
-# Place the executable file in /usr/bin
+# Create the install rule
+include(GNUInstallDirs)
+install(DIRECTORY ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} DESTINATION ${CMAKE_INSTALL_PREFIX} PATTERN *.h)
+install(DIRECTORY ${CMAKE_PREFIX_PATH}/include DESTINATION ${CMAKE_INSTALL_PREFIX} PATTERN *.h)
+install(DIRECTORY ${CMAKE_PREFIX_PATH}/lib/ DESTINATION ${CMAKE_INSTALL_PREFIX}/lib FILES_MATCHING PATTERN "*so*")
+install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 install(TARGETS modbusModule DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-
-# Place the config files and service unit file.
 install(FILES out/moduleConfiguration.json out/devicesConfiguration.json DESTINATION /etc/modbusModule
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_WRITE GROUP_READ WORLD_READ)
-
-install(CODE "MESSAGE(\"Installed modbusModule. Configuration files for the module are placed in /etc/modbusModule.\")")
-
-add_subdirectory(cmake)
-
