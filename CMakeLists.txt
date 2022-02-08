@@ -45,11 +45,12 @@ link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 include_directories(SYSTEM ${CMAKE_PREFIX_PATH}/include)
 
 # Introduce submodules if necessary
-if (NOT TARGET MoreModbus)
-    add_subdirectory(MoreModbus)
-endif ()
+option(BUILD_POCO_HTTP_DOWNLOADER "" OFF)
 if (NOT TARGET WolkAboutConnector)
     add_subdirectory(WolkConnect-Cpp)
+endif ()
+if (NOT TARGET MoreModbus)
+    add_subdirectory(MoreModbus)
 endif ()
 
 # Define the version of the software
@@ -111,6 +112,6 @@ install(DIRECTORY ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} DESTINATION ${CMAKE_INSTALL
 install(DIRECTORY ${CMAKE_PREFIX_PATH}/include DESTINATION ${CMAKE_INSTALL_PREFIX} PATTERN *.h)
 install(DIRECTORY ${CMAKE_PREFIX_PATH}/lib/ DESTINATION ${CMAKE_INSTALL_PREFIX}/lib FILES_MATCHING PATTERN "*so*")
 install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-install(TARGETS modbusModule DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+install(TARGETS ModbusModule DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 install(FILES out/moduleConfiguration.json out/devicesConfiguration.json DESTINATION /etc/modbusModule
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_WRITE GROUP_READ WORLD_READ)

@@ -17,7 +17,7 @@
 #ifndef DEVICETEMPLATEMODULE_H
 #define DEVICETEMPLATEMODULE_H
 
-#include "model/ModuleMapping.h"
+#include "modbus/model/ModuleMapping.h"
 
 namespace wolkabout
 {
