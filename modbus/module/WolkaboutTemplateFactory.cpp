@@ -14,168 +14,98 @@
  * limitations under the License.
  */
 
-#include "WolkaboutTemplateFactory.h"
+#include "modbus/module/WolkaboutTemplateFactory.h"
 
 namespace wolkabout
 {
+namespace modbus
+{
+std::unique_ptr<wolkabout::DeviceRegistrationData>
+WolkaboutTemplateFactory::makeRegistrationDataFromDeviceConfigTemplate(const DeviceTemplate& configTemplate)
+{
+    // Make place for the feeds and attributes
+    auto feeds = std::map<std::string, Feed>{};
+    auto attributes = std::map<std::string, Attribute>{};
+
+    // Go through all the mappings
+    for (const ModuleMapping& mapping : configTemplate.getMappings())
+    {
+        const auto mappingType = mapping.getMappingType();
+        const auto dataType = getDataTypeFromMapping(mapping);
+
+        if (mappingType == MappingType::Attribute)
+        {
+            attributes.emplace(mapping.getReference(),
+                               Attribute{mapping.getName(), dataType, mapping.getDefaultValue()});
+        }
+        else
+        {
+            feeds.emplace(mapping.getReference(), Feed{mapping.getName(), mapping.getReference(),
+                                                       getFeedTypeFromMapping(mapping), toString(dataType)});
+        }
+
+        // Create special feeds
+        if (mapping.getRepeat().count() > 0)
+        {
+            auto repeatFeed = Feed{"RepeatedWrite of " + mapping.getName(), "RPW(" + mapping.getReference() + ")",
+                                   FeedType::IN_OUT, toString(DataType::NUMERIC)};
+            feeds.emplace(repeatFeed.getReference(), std::move(repeatFeed));
+        }
+        if (mapping.hasSafeMode())
+        {
+            auto safeModeFeed = Feed{"SafeModeValue of " + mapping.getName(), "SMV(" + mapping.getReference() + ")",
+                                     FeedType::IN_OUT, toString(dataType)};
+            feeds.emplace(safeModeFeed.getReference(), std::move(safeModeFeed));
+        }
+        if (!mapping.getDefaultValue().empty())
+        {
+            auto defaultValueFeed = Feed{"DefaultValue of " + mapping.getName(), "DFV(" + mapping.getReference() + ")",
+                                         FeedType::IN_OUT, toString(dataType)};
+            feeds.emplace(defaultValueFeed.getReference(), std::move(defaultValueFeed));
+        }
+    }
+
+    // Return the empty DeviceRegistrationData value with the generated feeds and attributes.
+    return std::unique_ptr<DeviceRegistrationData>(new DeviceRegistrationData{"", "", "", {}, feeds, attributes});
+}
+
 DataType WolkaboutTemplateFactory::getDataTypeFromMapping(const ModuleMapping& mapping)
 {
-    if (mapping.getRegisterType() == RegisterMapping::RegisterType::COIL ||
-        mapping.getRegisterType() == RegisterMapping::RegisterType::INPUT_CONTACT)
+    if (mapping.getRegisterType() == more_modbus::RegisterType::COIL ||
+        mapping.getRegisterType() == more_modbus::RegisterType::INPUT_CONTACT)
     {
         return DataType::BOOLEAN;
     }
     else
     {
-        if (mapping.getOperationType() == RegisterMapping::OperationType::TAKE_BIT)
+        if (mapping.getOperationType() == more_modbus::OperationType::TAKE_BIT)
             return DataType::BOOLEAN;
-        else if (mapping.getOperationType() == RegisterMapping::OperationType::STRINGIFY_UNICODE ||
-                 mapping.getOperationType() == RegisterMapping::OperationType::STRINGIFY_ASCII)
+        else if (mapping.getOperationType() == more_modbus::OperationType::STRINGIFY_UNICODE ||
+                 mapping.getOperationType() == more_modbus::OperationType::STRINGIFY_ASCII)
             return DataType::STRING;
         return DataType::NUMERIC;
     }
 }
 
-bool WolkaboutTemplateFactory::processDefaultMapping(const ModuleMapping& mapping, const DataType& dataType,
-                                                     std::vector<SensorTemplate>& sensorTemplates,
-                                                     std::vector<ActuatorTemplate>& actuatorTemplates)
+FeedType WolkaboutTemplateFactory::getFeedTypeFromMapping(const ModuleMapping& mapping)
 {
-    switch (mapping.getRegisterType())
+    switch (mapping.getMappingType())
     {
-    case RegisterMapping::RegisterType::HOLDING_REGISTER:
-    case RegisterMapping::RegisterType::COIL:
-    {
-        actuatorTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType, mapping.getDescription());
-        return true;
-    }
-    case RegisterMapping::RegisterType::INPUT_REGISTER:
-    case RegisterMapping::RegisterType::INPUT_CONTACT:
-    {
-        sensorTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType, mapping.getDescription());
-        return true;
-    }
-    default:
-    {
-        throw std::logic_error("WolkGatewayModbusModule Application: Mapping with reference '" +
-                               mapping.getReference() + "' not added to device manifest - Unknown register type");
-    }
-    }
-}
-
-bool WolkaboutTemplateFactory::processSensorMapping(const ModuleMapping& mapping, const DataType& dataType,
-                                                    std::vector<SensorTemplate>& sensorTemplates)
-{
-    sensorTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType, mapping.getDescription());
-    return true;
-}
-
-bool WolkaboutTemplateFactory::processActuatorMapping(const ModuleMapping& mapping, const DataType& dataType,
-                                                      std::vector<ActuatorTemplate>& actuatorTemplates)
-{
-    switch (mapping.getRegisterType())
-    {
-    case RegisterMapping::RegisterType::COIL:
-    case RegisterMapping::RegisterType::HOLDING_REGISTER:
-        actuatorTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType, mapping.getDescription());
-        return true;
-    default:
-        throw std::logic_error("WolkGatewayModbusModule Application: Mapping with reference '" +
-                               mapping.getReference() +
-                               "' not added to device manifest - Incompatible Mapping and Register type combination");
-    }
-}
-
-bool WolkaboutTemplateFactory::processAlarmMapping(const ModuleMapping& mapping, const DataType& dataType,
-                                                   std::vector<AlarmTemplate>& alarmTemplates)
-{
-    alarmTemplates.emplace_back(mapping.getName(), mapping.getReference(), mapping.getDescription());
-    return true;
-}
-
-bool WolkaboutTemplateFactory::processConfigurationMapping(const ModuleMapping& mapping, const DataType& dataType,
-                                                           std::vector<ConfigurationTemplate>& configurationTemplates)
-{
-    switch (mapping.getRegisterType())
-    {
-    case RegisterMapping::RegisterType::COIL:
-    case RegisterMapping::RegisterType::HOLDING_REGISTER:
-        if (mapping.getLabelMap().empty())
+    case MappingType::Default:
+        switch (mapping.getRegisterType())
         {
-            configurationTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType,
-                                                mapping.getDescription(), std::string("0"));
-        }
-        else
-        {
-            std::vector<std::string> labels;
-            for (const auto& kvp : mapping.getLabelMap())
-            {
-                labels.push_back(kvp.first);
-            }
-            configurationTemplates.emplace_back(mapping.getName(), mapping.getReference(), dataType,
-                                                mapping.getDescription(), std::string("0"), labels);
-        }
-        return true;
-    default:
-        throw std::logic_error("WolkGatewayModbusModule Application: Mapping with reference '" +
-                               mapping.getReference() +
-                               "' not added to device manifest - Incompatible Mapping and Register type combination");
-    }
-}
-
-std::unique_ptr<DeviceTemplate> WolkaboutTemplateFactory::makeTemplateFromDeviceConfigTemplate(
-  DevicesConfigurationTemplate& configTemplate)
-{
-    std::vector<SensorTemplate> sensorTemplates;
-    std::vector<ActuatorTemplate> actuatorTemplates;
-    std::vector<AlarmTemplate> alarmTemplates;
-    std::vector<ConfigurationTemplate> configurationTemplates;
-
-    for (const ModuleMapping& mapping : configTemplate.getMappings())
-    {
-        auto mappingType = mapping.getMappingType();
-        DataType dataType = getDataTypeFromMapping(mapping);
-
-        switch (mappingType)
-        {
-        case ModuleMapping::MappingType::DEFAULT:
-            processDefaultMapping(mapping, dataType, sensorTemplates, actuatorTemplates);
-            break;
-
-        case ModuleMapping::MappingType::SENSOR:
-            processSensorMapping(mapping, dataType, sensorTemplates);
-            break;
-
-        case ModuleMapping::MappingType::ACTUATOR:
-            processActuatorMapping(mapping, dataType, actuatorTemplates);
-            break;
-
-        case ModuleMapping::MappingType::ALARM:
-            processAlarmMapping(mapping, dataType, alarmTemplates);
-            break;
-
-        case ModuleMapping::MappingType::CONFIGURATION:
-            processConfigurationMapping(mapping, dataType, configurationTemplates);
-            break;
-
+        case more_modbus::RegisterType::HOLDING_REGISTER:
+        case more_modbus::RegisterType::COIL:
+            return FeedType::IN_OUT;
         default:
-            break;
+            return FeedType::IN;
         }
-
-        if (mapping.getRepeat().count() > 0)
-            configurationTemplates.emplace_back("RepeatedWrite of " + mapping.getName(),
-                                                "RPW(" + mapping.getReference() + ")", DataType::NUMERIC,
-                                                mapping.getDescription(), std::to_string(mapping.getRepeat().count()));
-        if (mapping.hasSafeMode())
-            configurationTemplates.emplace_back("SafeModeValue of " + mapping.getName(),
-                                                "SMV(" + mapping.getReference() + ")", dataType,
-                                                mapping.getDescription(), mapping.getSafeModeValue());
-        if (!mapping.getDefaultValue().empty())
-            configurationTemplates.emplace_back("DefaultValue of " + mapping.getName(),
-                                                "DFV(" + mapping.getReference() + ")", dataType,
-                                                mapping.getDescription(), mapping.getDefaultValue());
+    case MappingType::ReadWrite:
+    case MappingType::WriteOnly:
+        return FeedType::IN_OUT;
+    default:
+        return FeedType::IN;
     }
-
-    return std::unique_ptr<DeviceTemplate>(new DeviceTemplate({configurationTemplates}, {sensorTemplates},
-                                                              {alarmTemplates}, {actuatorTemplates}, "", {}, {}, {}));
 }
+}    // namespace modbus
 }    // namespace wolkabout

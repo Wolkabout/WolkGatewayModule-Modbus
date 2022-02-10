@@ -31,57 +31,66 @@ class JsonReaderParser
 {
 public:
     /**
-     * @brief Read field of object as string, if it doesn't exist, return the default value.
-     * @param object json with values
-     * @param key being used for query
-     * @param defaultValue value that will be returned if json misses key, of type string
-     * @return value from json as string, or default value if key couldn't be found in json
+     * This is the method that will attempt to read a value from a json object. If it fails, it will return a readable
+     * exception that should be output to the user.
+     *
+     * @tparam T The type of the value being read from the json object.
+     * @param object The object from which the value is being read.
+     * @param key The key under which the value can be found.
+     * @return The read value.
      */
-    static std::string readOrDefault(json::object_t object, const std::string& key, std::string defaultValue)
+    template <class T> static T read(json::object_t object, const std::string& key)
     {
         try
         {
-            return object.at(key).get<std::string>();
+            return object.at(key).get<T>();
         }
-        catch (std::exception& e)
+        catch (const std::exception&)
         {
-            return defaultValue;
+            throw std::runtime_error("Failed to read field '" + key + "' of JSON object.");
+        }
+    }
+
+    static std::string readTypedValue(json::object_t object, const std::string& key)
+    {
+        try
+        {
+            switch (object.at(key).type())
+            {
+            case json::value_t::number_integer:
+            case json::value_t::number_unsigned:
+                return std::to_string(JsonReaderParser::readOrDefault(object, key, 0));
+            case json::value_t::number_float:
+                return std::to_string(JsonReaderParser::readOrDefault(object, key, double(0.0)));
+            case json::value_t::boolean:
+                return object.at(key).get<bool>() ? "true" : "false";
+            default:
+                return JsonReaderParser::readOrDefault(object, key, std::string{});
+            }
+        }
+        catch (const std::exception&)
+        {
+            throw std::runtime_error("Failed to read '" + key + "'.");
         }
     }
 
     /**
-     * @brief Read field of object as double, if it doesn't exist, return the default value.
-     * @param object json with values
-     * @param key being used for query
-     * @param defaultValue value that will be returned if json misses key, of type double
-     * @return value from json as double, or default value if key couldn't be found in json
+     * This is the method that will attempt to read a value from a json object. If it fails, it will just return the
+     * default value.
+     *
+     * @tparam T The type of the value being read from the json object.
+     * @param object The object from which the value is being read.
+     * @param key The key under which the value can be found.
+     * @param defaultValue The default value that will be returned in case the value does not exist.
+     * @return The read value or default value.
      */
-    static double readOrDefault(json::object_t object, const std::string& key, double defaultValue)
+    template <class T> static T readOrDefault(json::object_t object, const std::string& key, T defaultValue)
     {
         try
         {
-            return object.at(key).get<double>();
+            return object.at(key).get<T>();
         }
-        catch (std::exception& e)
-        {
-            return defaultValue;
-        }
-    }
-
-    /**
-     * @brief Read field of object as int, if it doesn't exist, return the default value.
-     * @param object json with values
-     * @param key being used for query
-     * @param defaultValue value that will be returned if json misses key, of type int
-     * @return value from json as int, or default value if key couldn't be found in json
-     */
-    static int readOrDefault(json::object_t object, const std::string& key, int defaultValue)
-    {
-        try
-        {
-            return object.at(key).get<int>();
-        }
-        catch (std::exception& e)
+        catch (const std::exception&)
         {
             return defaultValue;
         }

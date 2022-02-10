@@ -18,10 +18,12 @@
 
 #include "core/utilities/FileSystemUtils.h"
 
+#include <utility>
+
 namespace wolkabout
 {
-TcpIpConfiguration::TcpIpConfiguration(std::string ip, int port) : m_ip(ip), m_port(port) {}
-
+namespace modbus
+{
 TcpIpConfiguration::TcpIpConfiguration(nlohmann::json j)
 {
     try
@@ -43,6 +45,8 @@ TcpIpConfiguration::TcpIpConfiguration(nlohmann::json j)
     }
 }
 
+TcpIpConfiguration::TcpIpConfiguration(std::string ip, int port) : m_ip(std::move(ip)), m_port(port) {}
+
 const std::string& TcpIpConfiguration::getIp() const
 {
     return m_ip;
@@ -52,4 +56,5 @@ int TcpIpConfiguration::getPort() const
 {
     return m_port;
 }
+}    // namespace modbus
 }    // namespace wolkabout

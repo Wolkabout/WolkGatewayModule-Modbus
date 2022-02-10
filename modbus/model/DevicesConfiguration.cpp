@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-#include "DevicesConfiguration.h"
+#include "modbus/model/DevicesConfiguration.h"
 
 namespace wolkabout
+{
+namespace modbus
 {
 DevicesConfiguration::DevicesConfiguration(nlohmann::json j) : m_templates(), m_devices()
 {
     for (json::object_t templateJson : j["templates"].get<json::array_t>())
     {
         std::string templateName = templateJson["name"].get<std::string>();
-        m_templates.emplace(
-          templateName, std::unique_ptr<DevicesConfigurationTemplate>(new DevicesConfigurationTemplate(templateJson)));
+        m_templates.emplace(templateName, std::unique_ptr<DeviceTemplate>(new DeviceTemplate(templateJson)));
     }
 
     for (json::object_t deviceJson : j["devices"].get<json::array_t>())
@@ -33,24 +34,21 @@ DevicesConfiguration::DevicesConfiguration(nlohmann::json j) : m_templates(), m_
         std::string templateName = deviceJson["template"].get<std::string>();
 
         if (m_templates.find(templateName) != m_templates.end())
-        {
-            auto pointer = &(*m_templates.find(templateName)->second);
-            m_devices.emplace(keyName, std::unique_ptr<DeviceInformation>(new DeviceInformation(deviceJson, pointer)));
-        }
+            m_devices.emplace(keyName, std::unique_ptr<DeviceInformation>(
+                                         new DeviceInformation{deviceJson, *m_templates[templateName]}));
         else
-        {
             throw std::logic_error("Missing template " + templateName + " required by device " + keyName + ".");
-        }
     }
 }
 
-const std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& DevicesConfiguration::getTemplates()
+const std::map<std::string, std::unique_ptr<DeviceTemplate>>& DevicesConfiguration::getTemplates() const
 {
     return m_templates;
 }
 
-const std::map<std::string, std::unique_ptr<DeviceInformation>>& DevicesConfiguration::getDevices()
+const std::map<std::string, std::unique_ptr<DeviceInformation>>& DevicesConfiguration::getDevices() const
 {
     return m_devices;
 }
+}    // namespace modbus
 }    // namespace wolkabout

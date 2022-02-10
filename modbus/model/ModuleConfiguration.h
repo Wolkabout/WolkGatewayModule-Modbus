@@ -17,15 +17,17 @@
 #ifndef MODULECONFIGURATION_H
 #define MODULECONFIGURATION_H
 
-#include "SerialRtuConfiguration.h"
-#include "TcpIpConfiguration.h"
 #include "core/utilities/json.hpp"
+#include "modbus/model/SerialRtuConfiguration.h"
+#include "modbus/model/TcpIpConfiguration.h"
 
 #include <chrono>
 #include <memory>
 #include <string>
 
 namespace wolkabout
+{
+namespace modbus
 {
 using nlohmann::json;
 
@@ -80,6 +82,7 @@ private:
     std::chrono::milliseconds m_responseTimeout;
     std::chrono::milliseconds m_registerReadPeriod;
 };
+}    // namespace modbus
 }    // namespace wolkabout
 
 #endif

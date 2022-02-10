@@ -14,19 +14,26 @@
  * limitations under the License.
  */
 
-#include "DeviceInformation.h"
+#include "modbus/model/DeviceInformation.h"
 
 #include <utility>
 
 namespace wolkabout
 {
-wolkabout::DeviceInformation::DeviceInformation(const std::string& name, const std::string& key,
-                                                DevicesConfigurationTemplate* deviceTemplate, int slaveAddress)
-: m_name(name), m_key(key), m_slaveAddress(slaveAddress), m_templateString(), m_template(deviceTemplate)
+namespace modbus
+{
+DeviceInformation::DeviceInformation(std::string name, std::string key, const DeviceTemplate& deviceTemplate,
+                                     std::uint16_t slaveAddress)
+: m_name(std::move(name))
+, m_key(std::move(key))
+, m_slaveAddress(slaveAddress)
+, m_templateString()
+, m_template(deviceTemplate)
 {
 }
 
-DeviceInformation::DeviceInformation(nlohmann::json j) : m_template()
+DeviceInformation::DeviceInformation(nlohmann::json j, const DeviceTemplate& deviceTemplate)
+: m_template(deviceTemplate)
 {
     try
     {
@@ -55,30 +62,19 @@ DeviceInformation::DeviceInformation(nlohmann::json j) : m_template()
     {
         throw std::logic_error("Missing device information field - template name.");
     }
+    if (m_templateString != m_template.getName())
+    {
+        throw std::logic_error("The template passed to the Device is not the same as the one listed by name.");
+    }
 
     try
     {
-        m_slaveAddress = j["slaveAddress"].get<int>();
+        m_slaveAddress = j["slaveAddress"].get<std::uint16_t>();
     }
     catch (std::exception&)
     {
-        m_slaveAddress = -1;
+        m_slaveAddress = static_cast<std::uint16_t>(0);
     }
-}
-
-DeviceInformation::DeviceInformation(nlohmann::json j, DevicesConfigurationTemplate* templatePointer)
-: DeviceInformation(std::move(j))
-{
-    m_template = templatePointer;
-}
-
-DeviceInformation::DeviceInformation(const DeviceInformation& instance)
-: m_name(instance.getName())
-, m_key(instance.getKey())
-, m_slaveAddress(instance.getSlaveAddress())
-, m_templateString(instance.getTemplateString())
-, m_template(instance.getTemplate())
-{
 }
 
 const std::string& DeviceInformation::getName() const
@@ -91,12 +87,12 @@ const std::string& DeviceInformation::getKey() const
     return m_key;
 }
 
-int DeviceInformation::getSlaveAddress() const
+std::uint16_t DeviceInformation::getSlaveAddress() const
 {
     return m_slaveAddress;
 }
 
-void DeviceInformation::setSlaveAddress(int slaveAddress)
+void DeviceInformation::setSlaveAddress(std::uint16_t slaveAddress)
 {
     m_slaveAddress = slaveAddress;
 }
@@ -106,13 +102,9 @@ const std::string& DeviceInformation::getTemplateString() const
     return m_templateString;
 }
 
-DevicesConfigurationTemplate* DeviceInformation::getTemplate() const
+const DeviceTemplate& DeviceInformation::getTemplate() const
 {
     return m_template;
 }
-
-void DeviceInformation::setTemplate(DevicesConfigurationTemplate* templatePointer)
-{
-    m_template = templatePointer;
-}
+}    // namespace modbus
 }    // namespace wolkabout

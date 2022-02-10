@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "RegisterMappingFactory.h"
+#include "modbus/module/RegisterMappingFactory.h"
 
 #include "more_modbus/mappings/BoolMapping.h"
 #include "more_modbus/mappings/FloatMapping.h"
@@ -26,14 +26,16 @@
 
 namespace wolkabout
 {
-std::shared_ptr<RegisterMapping> RegisterMappingFactory::fromJSONMapping(const ModuleMapping& jsonMapping)
+namespace modbus
+{
+std::shared_ptr<more_modbus::RegisterMapping> RegisterMappingFactory::fromJSONMapping(const ModuleMapping& jsonMapping)
 {
     switch (jsonMapping.getDataType())
     {
-    case RegisterMapping::OutputType::BOOL:
+    case more_modbus::OutputType::BOOL:
     {
         // Make place for the mapping that should be returned
-        auto mapping = std::shared_ptr<BoolMapping>{};
+        auto mapping = std::shared_ptr<more_modbus::BoolMapping>{};
 
         // Check if the default value is anything
         auto lowerCase = jsonMapping.getDefaultValue();
@@ -54,43 +56,43 @@ std::shared_ptr<RegisterMapping> RegisterMappingFactory::fromJSONMapping(const M
         // Make the mapping based on the operation
         if (defaultSet)
         {
-            if (jsonMapping.getOperationType() == RegisterMapping::OperationType::TAKE_BIT)
+            if (jsonMapping.getOperationType() == more_modbus::OperationType::TAKE_BIT)
             {
-                mapping = std::make_shared<BoolMapping>(
+                mapping = std::make_shared<more_modbus::BoolMapping>(
                   jsonMapping.getReference(), jsonMapping.getRegisterType(), jsonMapping.getAddress(),
                   jsonMapping.getOperationType(), jsonMapping.getBitIndex(), jsonMapping.isReadRestricted(), -1,
                   jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat(), &defaultValue);
             }
             else
             {
-                mapping = std::make_shared<BoolMapping>(jsonMapping.getReference(), jsonMapping.getRegisterType(),
-                                                        jsonMapping.getAddress(), jsonMapping.isReadRestricted(), -1,
-                                                        jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat(),
-                                                        &defaultValue);
+                mapping = std::make_shared<more_modbus::BoolMapping>(
+                  jsonMapping.getReference(), jsonMapping.getRegisterType(), jsonMapping.getAddress(),
+                  jsonMapping.isReadRestricted(), -1, jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat(),
+                  &defaultValue);
             }
         }
         else
         {
-            if (jsonMapping.getOperationType() == RegisterMapping::OperationType::TAKE_BIT)
+            if (jsonMapping.getOperationType() == more_modbus::OperationType::TAKE_BIT)
             {
-                mapping = std::make_shared<BoolMapping>(jsonMapping.getReference(), jsonMapping.getRegisterType(),
-                                                        jsonMapping.getAddress(), jsonMapping.getOperationType(),
-                                                        jsonMapping.getBitIndex(), jsonMapping.isReadRestricted(), -1,
-                                                        jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat());
+                mapping = std::make_shared<more_modbus::BoolMapping>(
+                  jsonMapping.getReference(), jsonMapping.getRegisterType(), jsonMapping.getAddress(),
+                  jsonMapping.getOperationType(), jsonMapping.getBitIndex(), jsonMapping.isReadRestricted(), -1,
+                  jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat());
             }
             else
             {
-                mapping = std::make_shared<BoolMapping>(jsonMapping.getReference(), jsonMapping.getRegisterType(),
-                                                        jsonMapping.getAddress(), jsonMapping.isReadRestricted(), -1,
-                                                        jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat());
+                mapping = std::make_shared<more_modbus::BoolMapping>(
+                  jsonMapping.getReference(), jsonMapping.getRegisterType(), jsonMapping.getAddress(),
+                  jsonMapping.isReadRestricted(), -1, jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat());
             }
         }
         return mapping;
     }
-    case RegisterMapping::OutputType::UINT16:
+    case more_modbus::OutputType::UINT16:
     {
         // Make place for the mapping
-        auto mapping = std::shared_ptr<UInt16Mapping>{};
+        auto mapping = std::shared_ptr<more_modbus::UInt16Mapping>{};
 
         // Check if the default value is anything
         const auto& stringValue = jsonMapping.getDefaultValue();
@@ -108,7 +110,7 @@ std::shared_ptr<RegisterMapping> RegisterMappingFactory::fromJSONMapping(const M
         // Create the mapping
         if (defaultSet)
         {
-            mapping = std::make_shared<UInt16Mapping>(
+            mapping = std::make_shared<more_modbus::UInt16Mapping>(
               jsonMapping.getReference(), jsonMapping.getRegisterType(), jsonMapping.getAddress(),
               jsonMapping.isReadRestricted(), -1, jsonMapping.getDeadbandValue(), jsonMapping.getFrequencyFilterValue(),
               jsonMapping.getRepeat(), &defaultValue);
@@ -116,17 +118,17 @@ std::shared_ptr<RegisterMapping> RegisterMappingFactory::fromJSONMapping(const M
         else
         {
             // Make the mapping
-            mapping = std::make_shared<UInt16Mapping>(jsonMapping.getReference(), jsonMapping.getRegisterType(),
-                                                      jsonMapping.getAddress(), jsonMapping.isReadRestricted(), -1,
-                                                      jsonMapping.getDeadbandValue(),
-                                                      jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat());
+            mapping = std::make_shared<more_modbus::UInt16Mapping>(
+              jsonMapping.getReference(), jsonMapping.getRegisterType(), jsonMapping.getAddress(),
+              jsonMapping.isReadRestricted(), -1, jsonMapping.getDeadbandValue(), jsonMapping.getFrequencyFilterValue(),
+              jsonMapping.getRepeat());
         }
         return mapping;
     }
-    case RegisterMapping::OutputType::INT16:
+    case more_modbus::OutputType::INT16:
     {
         // Make place for the mapping
-        auto mapping = std::shared_ptr<Int16Mapping>{};
+        auto mapping = std::shared_ptr<more_modbus::Int16Mapping>{};
 
         // Check if the default value is anything
         const auto& stringValue = jsonMapping.getDefaultValue();
@@ -144,7 +146,7 @@ std::shared_ptr<RegisterMapping> RegisterMappingFactory::fromJSONMapping(const M
         // Create the mapping
         if (defaultSet)
         {
-            mapping = std::make_shared<Int16Mapping>(
+            mapping = std::make_shared<more_modbus::Int16Mapping>(
               jsonMapping.getReference(), jsonMapping.getRegisterType(), jsonMapping.getAddress(),
               jsonMapping.isReadRestricted(), -1, jsonMapping.getDeadbandValue(), jsonMapping.getFrequencyFilterValue(),
               jsonMapping.getRepeat(), &defaultValue);
@@ -152,17 +154,17 @@ std::shared_ptr<RegisterMapping> RegisterMappingFactory::fromJSONMapping(const M
         else
         {
             // Make the mapping
-            mapping = std::make_shared<Int16Mapping>(jsonMapping.getReference(), jsonMapping.getRegisterType(),
-                                                     jsonMapping.getAddress(), jsonMapping.isReadRestricted(), -1,
-                                                     jsonMapping.getDeadbandValue(),
-                                                     jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat());
+            mapping = std::make_shared<more_modbus::Int16Mapping>(
+              jsonMapping.getReference(), jsonMapping.getRegisterType(), jsonMapping.getAddress(),
+              jsonMapping.isReadRestricted(), -1, jsonMapping.getDeadbandValue(), jsonMapping.getFrequencyFilterValue(),
+              jsonMapping.getRepeat());
         }
         return mapping;
     }
-    case RegisterMapping::OutputType::UINT32:
+    case more_modbus::OutputType::UINT32:
     {
         // Make place for the mapping
-        auto mapping = std::shared_ptr<UInt32Mapping>{};
+        auto mapping = std::shared_ptr<more_modbus::UInt32Mapping>{};
 
         // Check if the default value is anything
         const auto& stringValue = jsonMapping.getDefaultValue();
@@ -180,7 +182,7 @@ std::shared_ptr<RegisterMapping> RegisterMappingFactory::fromJSONMapping(const M
         // Create the mapping
         if (defaultSet)
         {
-            mapping = std::make_shared<UInt32Mapping>(
+            mapping = std::make_shared<more_modbus::UInt32Mapping>(
               jsonMapping.getReference(), jsonMapping.getRegisterType(),
               std::vector<std::int32_t>{static_cast<short>(jsonMapping.getAddress()),
                                         static_cast<short>(jsonMapping.getAddress() + 1)},
@@ -190,7 +192,7 @@ std::shared_ptr<RegisterMapping> RegisterMappingFactory::fromJSONMapping(const M
         else
         {
             // Make the mapping
-            mapping = std::make_shared<UInt32Mapping>(
+            mapping = std::make_shared<more_modbus::UInt32Mapping>(
               jsonMapping.getReference(), jsonMapping.getRegisterType(),
               std::vector<std::int32_t>{static_cast<short>(jsonMapping.getAddress()),
                                         static_cast<short>(jsonMapping.getAddress() + 1)},
@@ -199,10 +201,10 @@ std::shared_ptr<RegisterMapping> RegisterMappingFactory::fromJSONMapping(const M
         }
         return mapping;
     }
-    case RegisterMapping::OutputType::INT32:
+    case more_modbus::OutputType::INT32:
     {
         // Make place for the mapping
-        auto mapping = std::shared_ptr<Int32Mapping>{};
+        auto mapping = std::shared_ptr<more_modbus::Int32Mapping>{};
 
         // Check if the default value is anything
         const auto& stringValue = jsonMapping.getDefaultValue();
@@ -220,7 +222,7 @@ std::shared_ptr<RegisterMapping> RegisterMappingFactory::fromJSONMapping(const M
         // Create the mapping
         if (defaultSet)
         {
-            mapping = std::make_shared<Int32Mapping>(
+            mapping = std::make_shared<more_modbus::Int32Mapping>(
               jsonMapping.getReference(), jsonMapping.getRegisterType(),
               std::vector<std::int32_t>{static_cast<short>(jsonMapping.getAddress()),
                                         static_cast<short>(jsonMapping.getAddress() + 1)},
@@ -230,7 +232,7 @@ std::shared_ptr<RegisterMapping> RegisterMappingFactory::fromJSONMapping(const M
         else
         {
             // Make the mapping
-            mapping = std::make_shared<Int32Mapping>(
+            mapping = std::make_shared<more_modbus::Int32Mapping>(
               jsonMapping.getReference(), jsonMapping.getRegisterType(),
               std::vector<std::int32_t>{static_cast<short>(jsonMapping.getAddress()),
                                         static_cast<short>(jsonMapping.getAddress() + 1)},
@@ -239,10 +241,10 @@ std::shared_ptr<RegisterMapping> RegisterMappingFactory::fromJSONMapping(const M
         }
         return mapping;
     }
-    case RegisterMapping::OutputType::FLOAT:
+    case more_modbus::OutputType::FLOAT:
     {
         // Make place for the mapping
-        auto mapping = std::shared_ptr<FloatMapping>{};
+        auto mapping = std::shared_ptr<more_modbus::FloatMapping>{};
 
         // Check if the default value is anything
         const auto& stringValue = jsonMapping.getDefaultValue();
@@ -260,7 +262,7 @@ std::shared_ptr<RegisterMapping> RegisterMappingFactory::fromJSONMapping(const M
         // Create the mapping
         if (defaultSet)
         {
-            mapping = std::make_shared<FloatMapping>(
+            mapping = std::make_shared<more_modbus::FloatMapping>(
               jsonMapping.getReference(), jsonMapping.getRegisterType(),
               std::vector<std::int32_t>{static_cast<short>(jsonMapping.getAddress()),
                                         static_cast<short>(jsonMapping.getAddress() + 1)},
@@ -270,7 +272,7 @@ std::shared_ptr<RegisterMapping> RegisterMappingFactory::fromJSONMapping(const M
         else
         {
             // Make the mapping
-            mapping = std::make_shared<FloatMapping>(
+            mapping = std::make_shared<more_modbus::FloatMapping>(
               jsonMapping.getReference(), jsonMapping.getRegisterType(),
               std::vector<std::int32_t>{static_cast<short>(jsonMapping.getAddress()),
                                         static_cast<short>(jsonMapping.getAddress() + 1)},
@@ -279,18 +281,19 @@ std::shared_ptr<RegisterMapping> RegisterMappingFactory::fromJSONMapping(const M
         }
         return mapping;
     }
-    case RegisterMapping::OutputType::STRING:
+    case more_modbus::OutputType::STRING:
         std::vector<std::int32_t> addresses;
         const auto startAddress = static_cast<std::int32_t>(jsonMapping.getAddress());
         for (int i = 0; i < jsonMapping.getRegisterCount(); i++)
         {
             addresses.emplace_back(startAddress + i);
         }
-        return std::make_shared<StringMapping>(jsonMapping.getReference(), jsonMapping.getRegisterType(), addresses,
-                                               jsonMapping.getOperationType(), jsonMapping.isReadRestricted(), -1,
-                                               jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat(),
-                                               jsonMapping.getDefaultValue());
+        return std::make_shared<more_modbus::StringMapping>(
+          jsonMapping.getReference(), jsonMapping.getRegisterType(), addresses, jsonMapping.getOperationType(),
+          jsonMapping.isReadRestricted(), -1, jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat(),
+          jsonMapping.getDefaultValue());
     }
     return nullptr;
 }
+}    // namespace modbus
 }    // namespace wolkabout

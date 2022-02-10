@@ -22,6 +22,8 @@
 
 namespace wolkabout
 {
+namespace modbus
+{
 /**
  * This interface defines a means of persisting key-value pairs.
  */
@@ -49,6 +51,7 @@ public:
      */
     virtual std::map<std::string, std::string> loadValues() = 0;
 };
+}    // namespace modbus
 }    // namespace wolkabout
 
 #endif    // WOLKGATEWAYMODBUSMODULE_KEYVALUEPERSISTENCE_H
