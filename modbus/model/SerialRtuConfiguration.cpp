@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
-#include "SerialRtuConfiguration.h"
+#include "modbus/model/SerialRtuConfiguration.h"
 
 #include "core/utilities/FileSystemUtils.h"
 
+#include <utility>
+
 namespace wolkabout
 {
-SerialRtuConfiguration::SerialRtuConfiguration(std::string& serialPort, int baudRate, char dataBits, char stopBits,
-                                               LibModbusSerialRtuClient::BitParity bitParity)
-: m_serialPort(serialPort), m_baudRate(baudRate), m_dataBits(dataBits), m_stopBits(stopBits), m_bitParity(bitParity)
+namespace modbus
+{
+SerialRtuConfiguration::SerialRtuConfiguration(std::string serialPort, int baudRate, char dataBits, char stopBits,
+                                               more_modbus::LibModbusSerialRtuClient::BitParity bitParity)
+: m_serialPort(std::move(serialPort))
+, m_baudRate(baudRate)
+, m_dataBits(dataBits)
+, m_stopBits(stopBits)
+, m_bitParity(bitParity)
 {
 }
 
@@ -67,25 +75,25 @@ SerialRtuConfiguration::SerialRtuConfiguration(nlohmann::json j)
     try
     {
         std::string bitParityStr = j.at("bitParity").get<std::string>();
-        m_bitParity = [&]() -> LibModbusSerialRtuClient::BitParity {
+        m_bitParity = [&]() -> more_modbus::LibModbusSerialRtuClient::BitParity {
             if (bitParityStr == "NONE")
             {
-                return LibModbusSerialRtuClient::BitParity::NONE;
+                return more_modbus::LibModbusSerialRtuClient::BitParity::NONE;
             }
             else if (bitParityStr == "EVEN")
             {
-                return LibModbusSerialRtuClient::BitParity::EVEN;
+                return more_modbus::LibModbusSerialRtuClient::BitParity::EVEN;
             }
             else if (bitParityStr == "ODD")
             {
-                return LibModbusSerialRtuClient::BitParity::ODD;
+                return more_modbus::LibModbusSerialRtuClient::BitParity::ODD;
             }
             throw std::logic_error("Unknown bit parity: " + bitParityStr);
         }();
     }
     catch (std::exception&)
     {
-        m_bitParity = LibModbusSerialRtuClient::BitParity::NONE;
+        m_bitParity = more_modbus::LibModbusSerialRtuClient::BitParity::NONE;
     }
 }
 
@@ -109,8 +117,9 @@ char SerialRtuConfiguration::getStopBits() const
     return m_stopBits;
 }
 
-LibModbusSerialRtuClient::BitParity SerialRtuConfiguration::getBitParity() const
+more_modbus::LibModbusSerialRtuClient::BitParity SerialRtuConfiguration::getBitParity() const
 {
     return m_bitParity;
 }
+}    // namespace modbus
 }    // namespace wolkabout

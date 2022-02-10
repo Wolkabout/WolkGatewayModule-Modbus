@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-#include "ModuleConfiguration.h"
+#include "modbus/model/ModuleConfiguration.h"
 
 #include "core/utilities/FileSystemUtils.h"
 #include "core/utilities/json.hpp"
 
 namespace wolkabout
+{
+namespace modbus
 {
 using nlohmann::json;
 
@@ -146,4 +148,5 @@ void ModuleConfiguration::setTcpIpConfiguration(std::unique_ptr<TcpIpConfigurati
 {
     m_tcpIpConfiguration = std::move(tcpIpConfiguration);
 }
+}    // namespace modbus
 }    // namespace wolkabout

@@ -1,5 +1,5 @@
-/*
- * Copyright 2020 WolkAbout Technology s.r.o.
+/**
+ * Copyright 2022 Wolkabout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,33 +14,26 @@
  * limitations under the License.
  */
 
-#include "core/utilities/json.hpp"
+#include "modbus/model/MappingType.h"
 
-#include <string>
+#include <algorithm>
 
 namespace wolkabout
 {
 namespace modbus
 {
-using nlohmann::json;
-
-/**
- * @brief Model class representing information necessary to create a TCP/IP connection.
- */
-class TcpIpConfiguration
+MappingType mappingTypeFromString(std::string value)
 {
-public:
-    explicit TcpIpConfiguration(nlohmann::json j);
-
-    TcpIpConfiguration(std::string ip, int port);
-
-    const std::string& getIp() const;
-
-    int getPort() const;
-
-private:
-    std::string m_ip;
-    int m_port;
-};
+    std::transform(value.cbegin(), value.cend(), value.begin(), ::toupper);
+    if (value == "READONLY")
+        return MappingType::ReadOnly;
+    else if (value == "READWRITE")
+        return MappingType::ReadWrite;
+    else if (value == "WRITEONLY")
+        return MappingType::WriteOnly;
+    else if (value == "ATTRIBUTE")
+        return MappingType::Attribute;
+    return MappingType::Default;
+}
 }    // namespace modbus
 }    // namespace wolkabout

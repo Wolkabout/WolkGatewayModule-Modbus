@@ -17,12 +17,14 @@
 #ifndef DEVICEINFORMATION_H
 #define DEVICEINFORMATION_H
 
-#include "DevicesConfigurationTemplate.h"
+#include "modbus/model/DeviceTemplate.h"
+
+using nlohmann::json;
 
 namespace wolkabout
 {
-using nlohmann::json;
-
+namespace modbus
+{
 /**
  * @brief Model class containing information necessary to create a single device for the module.
  *        Contained in the deviceConfiguration.json file.
@@ -30,36 +32,33 @@ using nlohmann::json;
 class DeviceInformation
 {
 public:
-    DeviceInformation(const std::string& name, const std::string& key, DevicesConfigurationTemplate* deviceTemplate,
-                      int slaveAddress);
+    DeviceInformation(std::string name, std::string key, const DeviceTemplate& deviceTemplate,
+                      std::uint16_t slaveAddress);
 
-    DeviceInformation(nlohmann::json j, DevicesConfigurationTemplate* templatePointer);
+    DeviceInformation(nlohmann::json j, const DeviceTemplate& deviceTemplate);
 
-    DeviceInformation(const DeviceInformation& instance);
-
-    explicit DeviceInformation(nlohmann::json j);
+    DeviceInformation(const DeviceInformation& instance) = default;
 
     const std::string& getName() const;
 
     const std::string& getKey() const;
 
-    int getSlaveAddress() const;
+    std::uint16_t getSlaveAddress() const;
 
-    void setSlaveAddress(int slaveAddress);
+    void setSlaveAddress(std::uint16_t slaveAddress);
 
     const std::string& getTemplateString() const;
 
-    DevicesConfigurationTemplate* getTemplate() const;
-
-    void setTemplate(DevicesConfigurationTemplate* templatePointer);
+    const DeviceTemplate& getTemplate() const;
 
 private:
     std::string m_name;
     std::string m_key;
-    int m_slaveAddress = -1;
+    std::uint16_t m_slaveAddress;
     std::string m_templateString;
-    DevicesConfigurationTemplate* m_template;
+    const DeviceTemplate& m_template;
 };
+}    // namespace modbus
 }    // namespace wolkabout
 
 #endif    // DEVICEINFORMATION_H

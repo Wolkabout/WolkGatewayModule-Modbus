@@ -17,9 +17,11 @@
 #ifndef WOLKGATEWAYMODBUSMODULE_REGISTERMAPPINGFACTORY_H
 #define WOLKGATEWAYMODBUSMODULE_REGISTERMAPPINGFACTORY_H
 
-#include "model/ModuleMapping.h"
+#include "modbus/model/ModuleMapping.h"
 
 namespace wolkabout
+{
+namespace modbus
 {
 /**
  * @brief Collection of method that create RegisterMappings for the MoreModbus library
@@ -33,8 +35,9 @@ public:
      * @param jsonMapping parsed json from the config file.
      * @return created instance of RegisterMapping.
      */
-    static std::shared_ptr<RegisterMapping> fromJSONMapping(const ModuleMapping& jsonMapping);
+    static std::shared_ptr<more_modbus::RegisterMapping> fromJSONMapping(const ModuleMapping& jsonMapping);
 };
+}    // namespace modbus
 }    // namespace wolkabout
 
 #endif    // WOLKGATEWAYMODBUSMODULE_REGISTERMAPPINGFACTORY_H

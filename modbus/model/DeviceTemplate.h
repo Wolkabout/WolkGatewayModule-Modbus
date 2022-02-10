@@ -21,20 +21,22 @@
 
 namespace wolkabout
 {
+namespace modbus
+{
 using nlohmann::json;
 
 /**
  * @brief Model class containing information for a single template created in a
  *        deviceConfiguration.json file.
  */
-class DevicesConfigurationTemplate
+class DeviceTemplate
 {
 public:
-    DevicesConfigurationTemplate(const std::string& name, const std::vector<ModuleMapping>& mappings);
+    DeviceTemplate(std::string name, std::vector<ModuleMapping> mappings);
 
-    DevicesConfigurationTemplate(const DevicesConfigurationTemplate& instance);
+    DeviceTemplate(const DeviceTemplate& instance);
 
-    explicit DevicesConfigurationTemplate(nlohmann::json json);
+    explicit DeviceTemplate(nlohmann::json json);
 
     const std::string& getName() const;
 
@@ -44,6 +46,7 @@ private:
     std::string m_name;
     std::vector<ModuleMapping> m_mappings;
 };
+}    // namespace modbus
 }    // namespace wolkabout
 
 #endif    // DEVICETEMPLATEMODULE_H

@@ -21,6 +21,8 @@
 
 namespace wolkabout
 {
+namespace modbus
+{
 using nlohmann::json;
 
 /**
@@ -29,8 +31,8 @@ using nlohmann::json;
 class SerialRtuConfiguration
 {
 public:
-    SerialRtuConfiguration(std::string& serialPort, int baudRate, char dataBits, char stopBits,
-                           LibModbusSerialRtuClient::BitParity bitParity);
+    SerialRtuConfiguration(std::string serialPort, int baudRate, char dataBits, char stopBits,
+                           more_modbus::LibModbusSerialRtuClient::BitParity bitParity);
 
     explicit SerialRtuConfiguration(nlohmann::json j);
 
@@ -42,13 +44,14 @@ public:
 
     char getStopBits() const;
 
-    LibModbusSerialRtuClient::BitParity getBitParity() const;
+    more_modbus::LibModbusSerialRtuClient::BitParity getBitParity() const;
 
 private:
     std::string m_serialPort;
     int m_baudRate;
     char m_dataBits;
     char m_stopBits;
-    LibModbusSerialRtuClient::BitParity m_bitParity;
+    more_modbus::LibModbusSerialRtuClient::BitParity m_bitParity;
 };
+}    // namespace modbus
 }    // namespace wolkabout

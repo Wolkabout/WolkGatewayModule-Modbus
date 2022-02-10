@@ -67,20 +67,20 @@ endif ()
 # WolkAbout Modbus Module
 set(MODBUS_SOURCE_FILES modbus/model/DeviceInformation.cpp
         modbus/model/DevicesConfiguration.cpp
-        modbus/model/DevicesConfigurationTemplate.cpp
+        modbus/model/DeviceTemplate.cpp
+        modbus/model/MappingType.cpp
         modbus/model/ModuleConfiguration.cpp
         modbus/model/ModuleMapping.cpp
         modbus/model/SerialRtuConfiguration.cpp
         modbus/model/TcpIpConfiguration.cpp
         modbus/module/persistence/JsonFilePersistence.cpp
         modbus/module/ModbusBridge.cpp
-        modbus/module/ModbusBridgeGetters.cpp
-        modbus/module/ModbusBridgeHandlers.cpp
         modbus/module/RegisterMappingFactory.cpp
         modbus/module/WolkaboutTemplateFactory.cpp)
 set(MODBUS_HEADER_FILES modbus/model/DeviceInformation.h
         modbus/model/DevicesConfiguration.h
-        modbus/model/DevicesConfigurationTemplate.h
+        modbus/model/DeviceTemplate.h
+        modbus/model/MappingType.h
         modbus/model/ModuleConfiguration.h
         modbus/model/ModuleMapping.h
         modbus/model/SerialRtuConfiguration.h
@@ -104,6 +104,7 @@ set(APPLICATION_SOURCE_FILES application/Application.cpp)
 
 add_executable(ModbusModule ${APPLICATION_SOURCE_FILES})
 target_link_libraries(ModbusModule ${PROJECT_NAME})
+target_include_directories(ModbusModule PRIVATE ${PROJECT_SOURCE_DIR})
 set_target_properties(ModbusModule PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
 
 # Create the install rule

@@ -18,6 +18,7 @@
 #define MODBUSREGISTERMAPPING_H
 
 #include "core/utilities/json.hpp"
+#include "modbus/model/MappingType.h"
 #include "more_modbus/RegisterMapping.h"
 
 #include <chrono>
@@ -28,28 +29,14 @@
 
 namespace wolkabout
 {
-using nlohmann::json;
-typedef std::vector<std::pair<std::string, int>> LabelMap;
-
+namespace modbus
+{
 /**
  * @brief Model class representing information necessary to create a mapping.
  */
 class ModuleMapping
 {
 public:
-    /**
-     * @brief Enumeration that provides the ability to override the mapping type that will
-     *        be created for the platform.
-     */
-    enum class MappingType
-    {
-        DEFAULT,
-        SENSOR,
-        ACTUATOR,
-        ALARM,
-        CONFIGURATION
-    };
-
     ModuleMapping(const ModuleMapping& mapping) = default;
 
     explicit ModuleMapping(nlohmann::json j);
@@ -58,7 +45,6 @@ public:
 
     const std::string& getName() const;
     const std::string& getReference() const;
-    const std::string& getDescription() const;
 
     std::chrono::milliseconds getRepeat() const;
     const std::string& getDefaultValue() const;
@@ -66,62 +52,46 @@ public:
     bool hasSafeMode() const;
     const std::string& getSafeModeValue() const;
 
-    double getMinimum() const;
-    double getMaximum() const;
     double getDeadbandValue() const;
     std::chrono::milliseconds getFrequencyFilterValue() const;
 
     int getAddress() const;
-    LabelMap getLabelMap() const;
     int getBitIndex() const;
     int getRegisterCount() const;
 
-    RegisterMapping::RegisterType getRegisterType() const;
-    RegisterMapping::OutputType getDataType() const;
-    RegisterMapping::OperationType getOperationType() const;
+    more_modbus::RegisterType getRegisterType() const;
+    more_modbus::OutputType getDataType() const;
+    more_modbus::OperationType getOperationType() const;
     MappingType getMappingType() const;
 
 private:
-    bool m_readRestricted;
+    // Identifying information
     std::string m_name;
     std::string m_reference;
-    std::string m_description;
 
+    // Register information
+    more_modbus::RegisterType m_registerType;
+    more_modbus::OutputType m_dataType;
+    more_modbus::OperationType m_operationType;
+    MappingType m_mappingType;
+
+    std::uint16_t m_address;
+    std::uint16_t m_bitIndex;
+    std::uint16_t m_addressCount;
+
+    // Deadband filtering information
+    double m_deadbandValue;
+    std::chrono::milliseconds m_frequencyFilterValue;
+
+    // Repeat write information
     std::chrono::milliseconds m_repeat;
     std::string m_defaultValue;
 
+    // Safe mode information
     bool m_safeMode;
     std::string m_safeModeValue;
-
-    double m_minimum = 0.0;
-    double m_maximum = 1.0;
-    double m_deadbandValue = 0.0;
-    std::chrono::milliseconds m_frequencyFilterValue = std::chrono::milliseconds(0);
-
-    int m_address = -1;
-    LabelMap m_labelMap{};
-    int m_bitIndex = -1;
-    int m_addressCount = -1;
-
-    RegisterMapping::RegisterType m_registerType;
-    RegisterMapping::OutputType m_dataType;
-    RegisterMapping::OperationType m_operationType;
-    MappingType m_mappingType;
 };
-
-/**
- * @brief Utility methods for parsing enumerations in ModuleMapping.
- */
-class MappingTypeConversion
-{
-public:
-    /**
-     * @brief Parse the mapping type parameter from string into an enumeration value.
-     * @param mappingType represented as a string file.
-     * @return mappingType parsed to enumeration.
-     */
-    static ModuleMapping::MappingType deserializeMappingType(const std::string& mappingType);
-};
+}    // namespace modbus
 }    // namespace wolkabout
 
 #endif

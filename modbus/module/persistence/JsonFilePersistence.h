@@ -17,12 +17,14 @@
 #ifndef WOLKGATEWAYMODBUSMODULE_JSONFILEPERSISTENCE_H
 #define WOLKGATEWAYMODBUSMODULE_JSONFILEPERSISTENCE_H
 
-#include "module/persistence/KeyValuePersistence.h"
+#include "modbus/module/persistence/KeyValuePersistence.h"
 
 #include <map>
 #include <string>
 
 namespace wolkabout
+{
+namespace modbus
 {
 /**
  * This class represents persistent key value storage.
@@ -57,6 +59,7 @@ private:
     // This is where we store the file path in which the values are placed/read from.
     std::string m_filePath;
 };
+}    // namespace modbus
 }    // namespace wolkabout
 
 #endif    // WOLKGATEWAYMODBUSMODULE_JSONFILEPERSISTENCE_H

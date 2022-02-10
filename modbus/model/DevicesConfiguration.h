@@ -17,9 +17,11 @@
 #ifndef WOLKGATEWAYMODBUSMODULE_DEVICESCONFIGURATION_H
 #define WOLKGATEWAYMODBUSMODULE_DEVICESCONFIGURATION_H
 
-#include "model/DeviceInformation.h"
+#include "modbus/model/DeviceInformation.h"
 
 namespace wolkabout
+{
+namespace modbus
 {
 using nlohmann::json;
 
@@ -31,14 +33,15 @@ class DevicesConfiguration
 public:
     explicit DevicesConfiguration(nlohmann::json j);
 
-    const std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>>& getTemplates();
+    const std::map<std::string, std::unique_ptr<DeviceTemplate>>& getTemplates() const;
 
-    const std::map<std::string, std::unique_ptr<DeviceInformation>>& getDevices();
+    const std::map<std::string, std::unique_ptr<DeviceInformation>>& getDevices() const;
 
 private:
-    std::map<std::string, std::unique_ptr<DevicesConfigurationTemplate>> m_templates;
+    std::map<std::string, std::unique_ptr<DeviceTemplate>> m_templates;
     std::map<std::string, std::unique_ptr<DeviceInformation>> m_devices;
 };
+}    // namespace modbus
 }    // namespace wolkabout
 
 #endif    // WOLKGATEWAYMODBUSMODULE_DEVICESCONFIGURATION_H

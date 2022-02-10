@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "JsonFilePersistence.h"
+#include "modbus/module/persistence/JsonFilePersistence.h"
 
 #include "core/utilities/FileSystemUtils.h"
 #include "core/utilities/Logger.h"
@@ -25,6 +25,8 @@
 using namespace nlohmann;
 
 namespace wolkabout
+{
+namespace modbus
 {
 JsonFilePersistence::JsonFilePersistence(std::string filePath) : m_filePath(std::move(filePath)) {}
 
@@ -95,4 +97,5 @@ std::map<std::string, std::string> JsonFilePersistence::loadValues()
     // Return the map in any way shape or form we have it
     return map;
 }
+}    // namespace modbus
 }    // namespace wolkabout
