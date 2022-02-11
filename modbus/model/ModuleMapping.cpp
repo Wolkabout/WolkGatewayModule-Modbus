@@ -34,7 +34,8 @@ ModuleMapping::ModuleMapping(nlohmann::json j)
 , m_reference{JsonReaderParser::read<std::string>(j, "reference")}
 , m_registerType{more_modbus::registerTypeFromString(JsonReaderParser::read<std::string>(j, "registerType"))}
 , m_dataType{more_modbus::outputTypeFromString(JsonReaderParser::read<std::string>(j, "dataType"))}
-, m_operationType{more_modbus::operationTypeFromString(JsonReaderParser::read<std::string>(j, "operationType"))}
+, m_operationType{more_modbus::operationTypeFromString(
+    JsonReaderParser::readOrDefault(j, "operationType", std::string{}))}
 , m_mappingType{mappingTypeFromString(JsonReaderParser::readOrDefault(j, "mappingType", std::string{}))}
 , m_address{JsonReaderParser::read<std::uint16_t>(j, "address")}
 , m_bitIndex{JsonReaderParser::readOrDefault<std::uint16_t>(j, "bitIndex", static_cast<std::uint16_t>(-1))}

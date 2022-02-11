@@ -120,8 +120,44 @@ std::pair<DeviceMap, DeviceTypeMap> generateDevices(const ModuleConfiguration& m
     }
 
     // Now return the maps
-    return std::make_pair(deviceMap, deviceTypeMap);
+    return std::make_pair(std::move(deviceMap), std::move(deviceTypeMap));
 }
+
+class StateHandler
+{
+public:
+    explicit StateHandler(ModbusBridge& modbusBridge)
+    : m_modbusBridge(modbusBridge), m_connected{false}, m_registered{false}
+    {
+    }
+
+    void changeConnected(bool connected)
+    {
+        m_connected = connected;
+        if (!connected)
+            m_modbusBridge.stop();
+        else if (connected)
+            if (m_registered)
+                m_modbusBridge.start();
+    }
+
+    void changeRegistered(bool registered)
+    {
+        m_registered = registered;
+        if (m_connected && registered)
+            m_modbusBridge.start();
+    }
+
+    bool isConnected() const { return m_connected; }
+
+    bool isRegistered() const { return m_registered; }
+
+private:
+    ModbusBridge& m_modbusBridge;
+
+    bool m_connected;
+    bool m_registered;
+};
 
 int main(int argc, char** argv)
 {
@@ -193,7 +229,6 @@ int main(int argc, char** argv)
 
         throw std::logic_error("Unsupported Modbus implementation specified in module configuration file");
     }();
-
     auto registrationData = generateRegistrationData(devicesConfiguration);
 
     // Execute linking logic
@@ -223,6 +258,7 @@ int main(int argc, char** argv)
       std::unique_ptr<JsonFilePersistence>{new JsonFilePersistence(DEFAULT_VALUE_PERSISTENCE_FILE)},
       std::unique_ptr<JsonFilePersistence>{new JsonFilePersistence(REPEATED_WRITE_PERSISTENCE_FILE)},
       std::unique_ptr<JsonFilePersistence>{new JsonFilePersistence(SAFE_MODE_WRITE_PERSISTENCE_FILE)});
+    auto stateHandler = StateHandler{*modbusBridge};
     modbusBridge->initialize(devicesConfiguration.getTemplates(), deviceTypeMap, deviceMap);
 
     // Connect the bridge to Wolk instance
@@ -253,23 +289,50 @@ int main(int argc, char** argv)
     std::unique_lock<std::mutex> lock{mutex};
 
     // Set up the connection status listener to trigger states
-    // TODO
-    wolk->setConnectionStatusListener([&](bool connected) {
-
-    });
-    wolk->connect();
-
-    // Register all the devices created
-    for (const auto& device : deviceMap)
-        wolk->registerDevices(*device.second);
-
-    modbusBridge->start();
-    for (const auto& device : devices)
+    auto devicesToRegister = std::vector<DeviceRegistrationData>{};
+    for (const auto& devicesPerTemplate : deviceTypeMap)
     {
-        wolk->publishConfiguration(device.second->getKey());
+        // Obtain the reference to the device registration data for this type
+        const auto templateIt = registrationData.find(devicesPerTemplate.first);
+        if (templateIt == registrationData.cend())
+            continue;
+        const auto& registrationDataOriginal = *templateIt->second;
+
+        // Now for every device copy the data and emplace it in the vector
+        for (const auto& device : devicesPerTemplate.second)
+        {
+            // Obtain the device information
+            const auto deviceIt = deviceMap.find(device);
+            if (deviceIt == deviceMap.cend())
+                continue;
+            const auto& deviceInfo = *deviceIt->second;
+
+            // Make the copy and emplace
+            auto copy = DeviceRegistrationData{registrationDataOriginal};
+            copy.name = deviceInfo.getName();
+            copy.key = deviceInfo.getKey();
+            devicesToRegister.emplace_back(std::move(copy));
+        }
     }
 
-    while (modbusBridge->isRunning())
+    // Make the callback for registration
+    auto callbackForRegistration =
+      std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)>{};
+    callbackForRegistration = [&](const std::vector<std::string>& registeredDevices, const std::vector<std::string>&) {
+        if (registeredDevices.size() == devicesToRegister.size())
+            stateHandler.changeRegistered(true);
+        else
+            wolk->registerDevices(devicesToRegister, callbackForRegistration);
+    };
+
+    // Now make the loop that will on connect, trigger register, and stuff like that...
+    wolk->setConnectionStatusListener([&](bool newConnectionState) {
+        stateHandler.changeConnected(newConnectionState);
+        if (!stateHandler.isRegistered())
+            wolk->registerDevices(devicesToRegister, callbackForRegistration);
+    });
+    wolk->connect();
+    while (modbusBridge != nullptr)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }

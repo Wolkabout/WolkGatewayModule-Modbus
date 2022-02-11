@@ -286,7 +286,7 @@ private:
     std::shared_ptr<more_modbus::ModbusClient> m_modbusClient;
 
     // The reader
-    std::unique_ptr<more_modbus::ModbusReader> m_modbusReader;
+    std::shared_ptr<more_modbus::ModbusReader> m_modbusReader;
     std::chrono::milliseconds m_registerReadPeriod;
 
     // Used to fast decode deviceKey by slaveAddress.
