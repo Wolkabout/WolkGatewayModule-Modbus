@@ -1,5 +1,5 @@
-wolkgatewaymodule-modbus (0.8.6) stable; urgency=medium
+wolkgatewaymodule-modbus (1.0.0-prerelease) stable; urgency=medium
 
-      * Updated to newest WolkSDK-Cpp.
+      * Complete rework of the application. Using new WolkConnect-Cpp 5.0.0+ that allows WolkAbout IoT Platform 22.GA connectivity.
 
- -- Wolkabout ELab <elab@wolkabout.com>  Tue, 14 Dec 2021 00:00:00 +0100
+ -- Wolkabout ELab <elab@wolkabout.com>  Fri, 11 Feb 2022 00:00:00 +0100
