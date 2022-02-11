@@ -45,15 +45,7 @@ if [ $? -ne 0 ]; then
   echo "Can't checkout to branch named $branch"
   exit
 fi
-git submodule update --recursive
-cd ./MoreModbus || exit
-git submodule init
-git submodule update
-cd .. || exit
-cd ./WolkGatewayModule-SDK-Cpp || exit
-git submodule init
-git submodule update
-cd .. || exit
+git submodule update --init --recursive
 filename="WolkGateway-ModbusModule-v$(cat RELEASE_NOTES.txt | grep "**Version" | head -1 | sed -e "s/**Version //" | sed -e "s/\*\*//").zip"
 echo "filename: $filename"
 zip -qr $filename *
