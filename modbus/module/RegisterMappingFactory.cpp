@@ -60,15 +60,16 @@ std::shared_ptr<more_modbus::RegisterMapping> RegisterMappingFactory::fromJSONMa
             {
                 mapping = std::make_shared<more_modbus::BoolMapping>(
                   jsonMapping.getReference(), jsonMapping.getRegisterType(), jsonMapping.getAddress(),
-                  jsonMapping.getOperationType(), jsonMapping.getBitIndex(), jsonMapping.isReadRestricted(), -1,
-                  jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat(), &defaultValue);
+                  jsonMapping.getOperationType(), jsonMapping.getBitIndex(),
+                  jsonMapping.getMappingType() == MappingType::WriteOnly, -1, jsonMapping.getFrequencyFilterValue(),
+                  jsonMapping.getRepeat(), &defaultValue);
             }
             else
             {
                 mapping = std::make_shared<more_modbus::BoolMapping>(
                   jsonMapping.getReference(), jsonMapping.getRegisterType(), jsonMapping.getAddress(),
-                  jsonMapping.isReadRestricted(), -1, jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat(),
-                  &defaultValue);
+                  jsonMapping.getMappingType() == MappingType::WriteOnly, -1, jsonMapping.getFrequencyFilterValue(),
+                  jsonMapping.getRepeat(), &defaultValue);
             }
         }
         else
@@ -77,14 +78,16 @@ std::shared_ptr<more_modbus::RegisterMapping> RegisterMappingFactory::fromJSONMa
             {
                 mapping = std::make_shared<more_modbus::BoolMapping>(
                   jsonMapping.getReference(), jsonMapping.getRegisterType(), jsonMapping.getAddress(),
-                  jsonMapping.getOperationType(), jsonMapping.getBitIndex(), jsonMapping.isReadRestricted(), -1,
-                  jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat());
+                  jsonMapping.getOperationType(), jsonMapping.getBitIndex(),
+                  jsonMapping.getMappingType() == MappingType::WriteOnly, -1, jsonMapping.getFrequencyFilterValue(),
+                  jsonMapping.getRepeat());
             }
             else
             {
                 mapping = std::make_shared<more_modbus::BoolMapping>(
                   jsonMapping.getReference(), jsonMapping.getRegisterType(), jsonMapping.getAddress(),
-                  jsonMapping.isReadRestricted(), -1, jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat());
+                  jsonMapping.getMappingType() == MappingType::WriteOnly, -1, jsonMapping.getFrequencyFilterValue(),
+                  jsonMapping.getRepeat());
             }
         }
         return mapping;
@@ -112,16 +115,16 @@ std::shared_ptr<more_modbus::RegisterMapping> RegisterMappingFactory::fromJSONMa
         {
             mapping = std::make_shared<more_modbus::UInt16Mapping>(
               jsonMapping.getReference(), jsonMapping.getRegisterType(), jsonMapping.getAddress(),
-              jsonMapping.isReadRestricted(), -1, jsonMapping.getDeadbandValue(), jsonMapping.getFrequencyFilterValue(),
-              jsonMapping.getRepeat(), &defaultValue);
+              jsonMapping.getMappingType() == MappingType::WriteOnly, -1, jsonMapping.getDeadbandValue(),
+              jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat(), &defaultValue);
         }
         else
         {
             // Make the mapping
             mapping = std::make_shared<more_modbus::UInt16Mapping>(
               jsonMapping.getReference(), jsonMapping.getRegisterType(), jsonMapping.getAddress(),
-              jsonMapping.isReadRestricted(), -1, jsonMapping.getDeadbandValue(), jsonMapping.getFrequencyFilterValue(),
-              jsonMapping.getRepeat());
+              jsonMapping.getMappingType() == MappingType::WriteOnly, -1, jsonMapping.getDeadbandValue(),
+              jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat());
         }
         return mapping;
     }
@@ -148,16 +151,16 @@ std::shared_ptr<more_modbus::RegisterMapping> RegisterMappingFactory::fromJSONMa
         {
             mapping = std::make_shared<more_modbus::Int16Mapping>(
               jsonMapping.getReference(), jsonMapping.getRegisterType(), jsonMapping.getAddress(),
-              jsonMapping.isReadRestricted(), -1, jsonMapping.getDeadbandValue(), jsonMapping.getFrequencyFilterValue(),
-              jsonMapping.getRepeat(), &defaultValue);
+              jsonMapping.getMappingType() == MappingType::WriteOnly, -1, jsonMapping.getDeadbandValue(),
+              jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat(), &defaultValue);
         }
         else
         {
             // Make the mapping
             mapping = std::make_shared<more_modbus::Int16Mapping>(
               jsonMapping.getReference(), jsonMapping.getRegisterType(), jsonMapping.getAddress(),
-              jsonMapping.isReadRestricted(), -1, jsonMapping.getDeadbandValue(), jsonMapping.getFrequencyFilterValue(),
-              jsonMapping.getRepeat());
+              jsonMapping.getMappingType() == MappingType::WriteOnly, -1, jsonMapping.getDeadbandValue(),
+              jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat());
         }
         return mapping;
     }
@@ -186,8 +189,9 @@ std::shared_ptr<more_modbus::RegisterMapping> RegisterMappingFactory::fromJSONMa
               jsonMapping.getReference(), jsonMapping.getRegisterType(),
               std::vector<std::int32_t>{static_cast<short>(jsonMapping.getAddress()),
                                         static_cast<short>(jsonMapping.getAddress() + 1)},
-              jsonMapping.getOperationType(), jsonMapping.isReadRestricted(), -1, jsonMapping.getDeadbandValue(),
-              jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat(), &defaultValue);
+              jsonMapping.getOperationType(), jsonMapping.getMappingType() == MappingType::WriteOnly, -1,
+              jsonMapping.getDeadbandValue(), jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat(),
+              &defaultValue);
         }
         else
         {
@@ -196,8 +200,8 @@ std::shared_ptr<more_modbus::RegisterMapping> RegisterMappingFactory::fromJSONMa
               jsonMapping.getReference(), jsonMapping.getRegisterType(),
               std::vector<std::int32_t>{static_cast<short>(jsonMapping.getAddress()),
                                         static_cast<short>(jsonMapping.getAddress() + 1)},
-              jsonMapping.getOperationType(), jsonMapping.isReadRestricted(), -1, jsonMapping.getDeadbandValue(),
-              jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat());
+              jsonMapping.getOperationType(), jsonMapping.getMappingType() == MappingType::WriteOnly, -1,
+              jsonMapping.getDeadbandValue(), jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat());
         }
         return mapping;
     }
@@ -226,8 +230,9 @@ std::shared_ptr<more_modbus::RegisterMapping> RegisterMappingFactory::fromJSONMa
               jsonMapping.getReference(), jsonMapping.getRegisterType(),
               std::vector<std::int32_t>{static_cast<short>(jsonMapping.getAddress()),
                                         static_cast<short>(jsonMapping.getAddress() + 1)},
-              jsonMapping.getOperationType(), jsonMapping.isReadRestricted(), -1, jsonMapping.getDeadbandValue(),
-              jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat(), &defaultValue);
+              jsonMapping.getOperationType(), jsonMapping.getMappingType() == MappingType::WriteOnly, -1,
+              jsonMapping.getDeadbandValue(), jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat(),
+              &defaultValue);
         }
         else
         {
@@ -236,8 +241,8 @@ std::shared_ptr<more_modbus::RegisterMapping> RegisterMappingFactory::fromJSONMa
               jsonMapping.getReference(), jsonMapping.getRegisterType(),
               std::vector<std::int32_t>{static_cast<short>(jsonMapping.getAddress()),
                                         static_cast<short>(jsonMapping.getAddress() + 1)},
-              jsonMapping.getOperationType(), jsonMapping.isReadRestricted(), -1, jsonMapping.getDeadbandValue(),
-              jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat());
+              jsonMapping.getOperationType(), jsonMapping.getMappingType() == MappingType::WriteOnly, -1,
+              jsonMapping.getDeadbandValue(), jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat());
         }
         return mapping;
     }
@@ -266,8 +271,8 @@ std::shared_ptr<more_modbus::RegisterMapping> RegisterMappingFactory::fromJSONMa
               jsonMapping.getReference(), jsonMapping.getRegisterType(),
               std::vector<std::int32_t>{static_cast<short>(jsonMapping.getAddress()),
                                         static_cast<short>(jsonMapping.getAddress() + 1)},
-              jsonMapping.isReadRestricted(), -1, jsonMapping.getDeadbandValue(), jsonMapping.getFrequencyFilterValue(),
-              jsonMapping.getRepeat(), &defaultValue);
+              jsonMapping.getMappingType() == MappingType::WriteOnly, -1, jsonMapping.getDeadbandValue(),
+              jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat(), &defaultValue);
         }
         else
         {
@@ -276,8 +281,8 @@ std::shared_ptr<more_modbus::RegisterMapping> RegisterMappingFactory::fromJSONMa
               jsonMapping.getReference(), jsonMapping.getRegisterType(),
               std::vector<std::int32_t>{static_cast<short>(jsonMapping.getAddress()),
                                         static_cast<short>(jsonMapping.getAddress() + 1)},
-              jsonMapping.isReadRestricted(), -1, jsonMapping.getDeadbandValue(), jsonMapping.getFrequencyFilterValue(),
-              jsonMapping.getRepeat());
+              jsonMapping.getMappingType() == MappingType::WriteOnly, -1, jsonMapping.getDeadbandValue(),
+              jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat());
         }
         return mapping;
     }
@@ -290,8 +295,8 @@ std::shared_ptr<more_modbus::RegisterMapping> RegisterMappingFactory::fromJSONMa
         }
         return std::make_shared<more_modbus::StringMapping>(
           jsonMapping.getReference(), jsonMapping.getRegisterType(), addresses, jsonMapping.getOperationType(),
-          jsonMapping.isReadRestricted(), -1, jsonMapping.getFrequencyFilterValue(), jsonMapping.getRepeat(),
-          jsonMapping.getDefaultValue());
+          jsonMapping.getMappingType() == MappingType::WriteOnly, -1, jsonMapping.getFrequencyFilterValue(),
+          jsonMapping.getRepeat(), jsonMapping.getDefaultValue());
     }
     return nullptr;
 }

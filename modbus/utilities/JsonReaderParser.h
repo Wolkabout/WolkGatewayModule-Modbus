@@ -55,6 +55,8 @@ public:
     {
         try
         {
+            if (object.find(key) == object.cend())
+                return {};
             switch (object.at(key).type())
             {
             case json::value_t::number_integer:

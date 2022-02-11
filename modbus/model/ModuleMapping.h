@@ -41,8 +41,6 @@ public:
 
     explicit ModuleMapping(nlohmann::json j);
 
-    bool isReadRestricted() const;
-
     const std::string& getName() const;
     const std::string& getReference() const;
 

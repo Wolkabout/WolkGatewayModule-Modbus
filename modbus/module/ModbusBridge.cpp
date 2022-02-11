@@ -73,8 +73,7 @@ void ModbusBridge::initialize(const std::map<std::string, std::unique_ptr<Device
                               const std::map<std::uint16_t, std::unique_ptr<Device>>& devices)
 {
     // Create the reader
-    m_modbusReader =
-      std::unique_ptr<more_modbus::ModbusReader>{new more_modbus::ModbusReader{*m_modbusClient, m_registerReadPeriod}};
+    m_modbusReader = std::make_shared<more_modbus::ModbusReader>(*m_modbusClient, m_registerReadPeriod);
 
     // Create the list of devices we're going to add to the reader
     auto modbusDevices = std::vector<std::shared_ptr<more_modbus::ModbusDevice>>{};
