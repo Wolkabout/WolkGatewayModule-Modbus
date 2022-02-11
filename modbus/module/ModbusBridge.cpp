@@ -213,7 +213,7 @@ bool ModbusBridge::isRunning() const
 }
 
 void ModbusBridge::setFeedValueCallback(
-  const std::function<void(const std::string&, const Reading&)>& feedValueCallback)
+  const std::function<void(const std::string&, const std::vector<Reading>&)>& feedValueCallback)
 {
     m_feedValueCallback = feedValueCallback;
 }
@@ -238,6 +238,17 @@ void ModbusBridge::start()
     m_modbusReader->start();
     LOG(DEBUG) << "Writing in DefaultValues into mappings.";
     writeAMapOfValues(m_defaultValueMappingByReference);
+
+    // Publish all the DefaultValues, RepeatWriteValues and SafeModeValues
+    if (m_feedValueCallback)
+    {
+        auto readings = std::map<std::string, std::vector<Reading>>{};
+        makeReadingsFromMap(readings, m_defaultValueMappingByReference, "DFV");
+        makeReadingsFromMap(readings, m_repeatedWriteMappingByReference, "RPW");
+        makeReadingsFromMap(readings, m_safeModeMappingByReference, "SMV");
+        for (const auto& pair : readings)
+            m_feedValueCallback(pair.first, pair.second);
+    }
 }
 
 void ModbusBridge::stop()
@@ -341,84 +352,12 @@ void ModbusBridge::initializeSetUpDeviceCallback(const std::vector<std::shared_p
                       << (status ? "CONNECTED" : "DISCONNECTED") << "'.";
         });
 
-        device->setOnMappingValueChange([this, device](const std::shared_ptr<more_modbus::RegisterMapping>& mapping,
-                                                       const std::vector<std::uint16_t>& bytes) {
-            // Find the device key of the device that had a value update
-            const auto deviceKeyIt = m_deviceKeyBySlaveAddress.find(device->getSlaveAddress());
-            if (deviceKeyIt == m_deviceKeyBySlaveAddress.cend())
-            {
-                LOG(WARN) << TAG
-                          << "Received value update from device with a slave address that is not in the registry.";
-                return;
-            }
-            const auto deviceKey = deviceKeyIt->second;
-
-            // Check that there is a callback
-            if (!m_feedValueCallback)
-            {
-                LOG(WARN) << TAG << "Received value update for '" << deviceKey << "'/'" << mapping->getReference()
-                          << "' but the callback is not set.";
-                return;
-            }
-
-            // Check the type of the mapping
-            const auto mappingTypeIt = m_registerMappingTypeByReference.find(deviceKey);
-            if (mappingTypeIt == m_registerMappingTypeByReference.cend())
-            {
-                LOG(WARN) << TAG << "Received value update for '" << deviceKey << "'/'" << mapping->getReference()
-                          << "' but the mapping type for this mapping is unknown.";
-                return;
-            }
-
-            // Check if it as an attribute
-            if (mappingTypeIt->second == MappingType::Attribute)
-            {
-                // Form the attribute for this value
-                const auto attribute = formAttributeForMappingValue(mapping, bytes);
-                if (attribute.getName().empty())
-                {
-                    LOG(WARN) << TAG << "Received value update for '" << deviceKey << "'/'" << mapping->getReference()
-                              << "' but failed to form the attribute.";
-                    return;
-                }
-                m_attributeCallback(deviceKey, attribute);
-                return;
-            }
-
-            // Form the reading for this value
-            const auto reading = formReadingForMappingValue(mapping, bytes);
-            if (reading.getReference().empty())
-            {
-                LOG(WARN) << TAG << "Received value update for '" << deviceKey << "'/'" << mapping->getReference()
-                          << "' but failed to form the reading.";
-                return;
-            }
-            m_feedValueCallback(deviceKey, reading);
-        });
-
         device->setOnMappingValueChange(
-          [this, device](const std::shared_ptr<more_modbus::RegisterMapping>& mapping, bool data) {
-              // Find the device key of the device that had a value update
-              const auto deviceKeyIt = m_deviceKeyBySlaveAddress.find(device->getSlaveAddress());
-              if (deviceKeyIt == m_deviceKeyBySlaveAddress.cend())
-              {
-                  LOG(WARN) << TAG
-                            << "Received value update from device with a slave address that is not in the registry.";
-                  return;
-              }
-              const auto deviceKey = deviceKeyIt->second;
+          [this, device](const std::shared_ptr<more_modbus::RegisterMapping>& mapping,
+                         const std::vector<std::uint16_t>& bytes) { sendOutMappingValue(device, mapping, bytes); });
 
-              // Check that there is a callback
-              if (!m_feedValueCallback)
-              {
-                  LOG(WARN) << TAG << "Received value update for '" << deviceKey << "'/'" << mapping->getReference()
-                            << "' but the callback is not set.";
-                  return;
-              }
-
-              // Form the reading for this value and call the callback
-              m_feedValueCallback(deviceKey, Reading{mapping->getReference(), data});
-          });
+        device->setOnMappingValueChange([this, device](const std::shared_ptr<more_modbus::RegisterMapping>& mapping,
+                                                       bool data) { sendOutMappingValue(device, mapping, data); });
     }
 }
 
@@ -438,15 +377,25 @@ void ModbusBridge::writeAMapOfValues(const std::map<std::string, std::string>& m
 void ModbusBridge::triggerGroupValueChangeBool(const std::shared_ptr<more_modbus::RegisterMapping>& mapping)
 {
     if (auto group = mapping->getGroup().lock())
+    {
         if (auto device = group->getDevice().lock())
+        {
             device->triggerOnMappingValueChange(mapping, mapping->getBoolValue());
+            sendOutMappingValue(device, mapping, mapping->getBoolValue());
+        }
+    }
 }
 
 void ModbusBridge::triggerGroupValueChangeBytes(const std::shared_ptr<more_modbus::RegisterMapping>& mapping)
 {
     if (auto group = mapping->getGroup().lock())
+    {
         if (auto device = group->getDevice().lock())
+        {
             device->triggerOnMappingValueChange(mapping, mapping->getBytesValues());
+            sendOutMappingValue(device, mapping, mapping->getBytesValues());
+        }
+    }
 }
 
 void ModbusBridge::writeToMapping(const std::shared_ptr<more_modbus::RegisterMapping>& mapping,
@@ -498,6 +447,86 @@ void ModbusBridge::writeToMapping(const std::shared_ptr<more_modbus::RegisterMap
         LOG(ERROR) << TAG << "Failed to write in a value into the mapping. The value is not valid -> '"
                    << exception.what() << "'.";
     }
+}
+
+void ModbusBridge::sendOutMappingValue(const std::shared_ptr<more_modbus::ModbusDevice>& device,
+                                       const std::shared_ptr<more_modbus::RegisterMapping>& mapping,
+                                       const std::vector<std::uint16_t>& bytes)
+{
+    // Find the device key of the device that had a value update
+    const auto deviceKeyIt = m_deviceKeyBySlaveAddress.find(device->getSlaveAddress());
+    if (deviceKeyIt == m_deviceKeyBySlaveAddress.cend())
+    {
+        LOG(WARN) << TAG << "Received value update from device with a slave address that is not in the registry.";
+        return;
+    }
+    const auto deviceKey = deviceKeyIt->second;
+
+    // Check that there is a callback
+    if (!m_feedValueCallback)
+    {
+        LOG(WARN) << TAG << "Received value update for '" << deviceKey << "'/'" << mapping->getReference()
+                  << "' but the callback is not set.";
+        return;
+    }
+
+    // Check the type of the mapping
+    const auto mappingTypeIt = m_registerMappingTypeByReference.find(deviceKey + SEPARATOR + mapping->getReference());
+    if (mappingTypeIt == m_registerMappingTypeByReference.cend())
+    {
+        LOG(WARN) << TAG << "Received value update for '" << deviceKey << "'/'" << mapping->getReference()
+                  << "' but the mapping type for this mapping is unknown.";
+        return;
+    }
+
+    // Check if it as an attribute
+    if (mappingTypeIt->second == MappingType::Attribute)
+    {
+        // Form the attribute for this value
+        const auto attribute = formAttributeForMappingValue(mapping, bytes);
+        if (attribute.getName().empty())
+        {
+            LOG(WARN) << TAG << "Received value update for '" << deviceKey << "'/'" << mapping->getReference()
+                      << "' but failed to form the attribute.";
+            return;
+        }
+        m_attributeCallback(deviceKey, attribute);
+        return;
+    }
+
+    // Form the reading for this value
+    const auto reading = formReadingForMappingValue(mapping, bytes);
+    if (reading.getReference().empty())
+    {
+        LOG(WARN) << TAG << "Received value update for '" << deviceKey << "'/'" << mapping->getReference()
+                  << "' but failed to form the reading.";
+        return;
+    }
+    m_feedValueCallback(deviceKey, {reading});
+}
+
+void ModbusBridge::sendOutMappingValue(const std::shared_ptr<more_modbus::ModbusDevice>& device,
+                                       const std::shared_ptr<more_modbus::RegisterMapping>& mapping, bool value)
+{
+    // Find the device key of the device that had a value update
+    const auto deviceKeyIt = m_deviceKeyBySlaveAddress.find(device->getSlaveAddress());
+    if (deviceKeyIt == m_deviceKeyBySlaveAddress.cend())
+    {
+        LOG(WARN) << TAG << "Received value update from device with a slave address that is not in the registry.";
+        return;
+    }
+    const auto deviceKey = deviceKeyIt->second;
+
+    // Check that there is a callback
+    if (!m_feedValueCallback)
+    {
+        LOG(WARN) << TAG << "Received value update for '" << deviceKey << "'/'" << mapping->getReference()
+                  << "' but the callback is not set.";
+        return;
+    }
+
+    // Form the reading for this value and call the callback
+    m_feedValueCallback(deviceKey, {Reading{mapping->getReference(), value}});
 }
 
 Reading ModbusBridge::formReadingForMappingValue(const std::shared_ptr<more_modbus::RegisterMapping>& mapping,
