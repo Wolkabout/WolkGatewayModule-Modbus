@@ -45,6 +45,8 @@ link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 include_directories(SYSTEM ${CMAKE_PREFIX_PATH}/include)
 
 # Introduce submodules if necessary
+option(BUILD_TESTS "" OFF)
+option(BUILD_EXAMPLES "" OFF)
 option(BUILD_POCO_HTTP_DOWNLOADER "" OFF)
 if (NOT TARGET WolkAboutConnector)
     add_subdirectory(WolkConnect-Cpp)
