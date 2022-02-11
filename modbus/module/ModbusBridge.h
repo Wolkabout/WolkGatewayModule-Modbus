@@ -17,6 +17,7 @@
 #ifndef MODBUSBRIDGE_H
 #define MODBUSBRIDGE_H
 
+#include "WolkConnect-Cpp/WolkSDK-Cpp/core/utilities/StringUtils.h"
 #include "core/model/Device.h"
 #include "core/utilities/Logger.h"
 #include "modbus/model/DeviceTemplate.h"
@@ -104,7 +105,8 @@ public:
      * @brief Setter for the callback which will be invoked once a feed value has been updated.
      * @param feedValueCallback The callback that will be invoked once a feed value has been updated.
      */
-    void setFeedValueCallback(const std::function<void(const std::string&, const Reading&)>& feedValueCallback);
+    void setFeedValueCallback(
+      const std::function<void(const std::string&, const std::vector<Reading>&)>& feedValueCallback);
 
     /**
      * @brief Setter for the callback which will be invoked once an attribute value has been updated.
@@ -165,12 +167,24 @@ private:
     void writeAMapOfValues(const std::map<std::string, std::string>& mapOfValues);
 
     /**
+     * This is a helper method that is used for preparing DefaultValue, RepeatWriteValue and SafeModeValue maps to be
+     * sent out as Readings.
+     *
+     * @param readings The map of readings where they need to be inserted.
+     * @param map The map of values.
+     * @param prefix The prefix that is going to be put for the reading.
+     */
+    template <typename T>
+    static void makeReadingsFromMap(std::map<std::string, std::vector<Reading>>& readings,
+                                    const std::map<std::string, T>& map, const std::string& prefix);
+
+    /**
      * This is a helper method that is used to go up a chain of weak pointers to attempt to notify a device of a mapping
      * value change. This is used for when a boolean value has changed.
      *
      * @param mapping The mapping that changed its value.
      */
-    static void triggerGroupValueChangeBool(const std::shared_ptr<more_modbus::RegisterMapping>& mapping);
+    void triggerGroupValueChangeBool(const std::shared_ptr<more_modbus::RegisterMapping>& mapping);
 
     /**
      * This is a helper method that is used to go up a chain of weak pointers to attempt to notify a device of a mapping
@@ -178,7 +192,7 @@ private:
      *
      * @param mapping The mapping that changed its value.
      */
-    static void triggerGroupValueChangeBytes(const std::shared_ptr<more_modbus::RegisterMapping>& mapping);
+    void triggerGroupValueChangeBytes(const std::shared_ptr<more_modbus::RegisterMapping>& mapping);
 
     /**
      * This is a helper method that is used to initiate a value write into a mapping.
@@ -201,6 +215,29 @@ private:
      */
     template <class RegisterMappingType, class Value>
     void writeToMappingSpecific(const std::shared_ptr<more_modbus::RegisterMapping>& mapping, const Value& value);
+
+    /**
+     * This is a helper method that will go through all the steps necessary to invoke a callback to send out a value to
+     * either the feed value callback or the attribute callback.
+     *
+     * @param device The device that is updating its value.
+     * @param mapping The mapping for which the callback needs to be invoked.
+     * @param value The value in bytes that needs to be sent out.
+     */
+    void sendOutMappingValue(const std::shared_ptr<more_modbus::ModbusDevice>& device,
+                             const std::shared_ptr<more_modbus::RegisterMapping>& mapping,
+                             const std::vector<std::uint16_t>& bytes);
+
+    /**
+     * This is a helper method that will go through all the steps necessary to invoke a callback to send out a value to
+     * either the feed value callback or the attribute callback.
+     *
+     * @param device The device that is updating its value.
+     * @param mapping The mapping for which the callback needs to be invoked.
+     * @param value The boolean value that needs to be sent out.
+     */
+    void sendOutMappingValue(const std::shared_ptr<more_modbus::ModbusDevice>& device,
+                             const std::shared_ptr<more_modbus::RegisterMapping>& mapping, bool value);
 
     /**
      * This is a helper method that will form a reading for the mapping based on its type. It will use the new data
@@ -308,7 +345,7 @@ private:
     std::unique_ptr<KeyValuePersistence> m_safeModePersistence;
 
     // Callbacks that will be invoked with new values once they appear
-    std::function<void(const std::string& deviceKey, const Reading& reading)> m_feedValueCallback;
+    std::function<void(const std::string&, const std::vector<Reading>&)> m_feedValueCallback;
     std::function<void(const std::string& deviceKey, const Attribute& attribute)> m_attributeCallback;
 };
 
@@ -333,6 +370,34 @@ void ModbusBridge::writeToMappingSpecific(const std::shared_ptr<more_modbus::Reg
     {
         LOG(WARN) << TAG << "Failed to write value to '" << typeid(RegisterMappingType).name() << "' -> '"
                   << exception.what() << "'.";
+    }
+}
+
+template <class T> std::string toString(const T& value)
+{
+    return value;
+}
+
+template <> std::string toString(const std::chrono::milliseconds& value)
+{
+    return std::to_string(value.count());
+}
+
+template <class T>
+void ModbusBridge::makeReadingsFromMap(std::map<std::string, std::vector<Reading>>& readings,
+                                       const std::map<std::string, T>& map, const std::string& prefix)
+{
+    for (const auto& pair : map)
+    {
+        // Separate the key
+        const auto tokens = StringUtils::tokenize(pair.first, SEPARATOR);
+        if (tokens.empty())
+            continue;
+        const auto& deviceKey = tokens[0];
+        const auto& reference = tokens[1];
+
+        // Make a reading and push it into the array
+        readings[deviceKey].emplace_back(prefix + "(" + reference + ")", toString(pair.second));
     }
 }
 }    // namespace modbus

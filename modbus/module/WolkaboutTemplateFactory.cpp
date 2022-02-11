@@ -66,7 +66,8 @@ WolkaboutTemplateFactory::makeRegistrationDataFromDeviceConfigTemplate(const Dev
     }
 
     // Return the empty DeviceRegistrationData value with the generated feeds and attributes.
-    return std::unique_ptr<DeviceRegistrationData>(new DeviceRegistrationData{"", "", "", {}, feeds, attributes});
+    return std::unique_ptr<DeviceRegistrationData>(
+      new DeviceRegistrationData{"", "", "", {{ParameterName::OUTBOUND_DATA_MODE, "PUSH"}}, feeds, attributes});
 }
 
 DataType WolkaboutTemplateFactory::getDataTypeFromMapping(const ModuleMapping& mapping)

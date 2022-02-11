@@ -12,15 +12,15 @@
       "name": "Modbus Default Device",
       "mappings": [
         {
-          "name": "Sensor",
-          "reference": "S",
+          "name": "Simple Feed",
+          "reference": "SF",
           "address": 0,
           "registerType": "INPUT_REGISTER",
           "dataType": "INT16"
         },
         {
-          "name": "Floating Point Sensor",
-          "reference": "FPS",
+          "name": "Floating Point Feed",
+          "reference": "FPF",
           "address": 1,
           "registerType": "HOLDING_REGISTER",
           "dataType": "FLOAT",
@@ -28,36 +28,34 @@
           "defaultValue": 10.0
         },
         {
-          "name": "Alarm",
-          "reference": "A",
+          "name": "A Single Bit",
+          "reference": "ASB",
           "address": 1,
           "registerType": "INPUT_CONTACT",
-          "dataType": "BOOL",
-          "mappingType": "ALARM"
+          "dataType": "BOOL"
         },
         {
-          "name": "UInt32 Configuration",
-          "reference": "U32C",
+          "name": "UInt32 Value",
+          "reference": "U32V",
           "address": 3,
           "registerType": "HOLDING_REGISTER",
           "operationType": "MERGE_BIG_ENDIAN",
           "dataType": "UINT32",
-          "mappingType": "CONFIGURATION",
           "repeat": 3000,
           "defaultValue": 10,
           "safeMode": 456
         },
         {
-          "name": "Write-Only Actuator",
-          "reference": "WOA",
+          "name": "Write-Only Coil",
+          "reference": "WOC",
           "address": 3,
           "registerType": "COIL",
           "dataType": "BOOL",
-          "writeOnly": true
+          "mappingType": "WriteOnly"
         },
         {
-          "name": "ASCII String Actuator",
-          "reference": "ASA",
+          "name": "ASCII String",
+          "reference": "AS",
           "address": 10,
           "addressCount": 10,
           "registerType": "HOLDING_REGISTER",
@@ -66,8 +64,8 @@
           "safeMode": "Aloha!"
         },
         {
-          "name": "Bit Sensor",
-          "reference": "BS",
+          "name": "Bit From A Register",
+          "reference": "BFAR",
           "address": 8,
           "bitIndex": 0,
           "registerType": "INPUT_REGISTER",

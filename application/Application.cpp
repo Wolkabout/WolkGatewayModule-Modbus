@@ -272,14 +272,11 @@ int main(int argc, char** argv)
                   .buildWolkMulti();
 
     // Setup all the necessary callbacks for value changes from inside the modbusBridge
-    modbusBridge->setFeedValueCallback([&](const std::string& deviceKey, const Reading& reading) {
-        wolk->addReading(deviceKey, reading);
-        wolk->publish();
+    modbusBridge->setFeedValueCallback([&](const std::string& deviceKey, const std::vector<Reading>& readings) {
+        wolk->addReadings(deviceKey, readings);
     });
-    modbusBridge->setAttributeCallback([&](const std::string& deviceKey, const Attribute& attribute) {
-        wolk->addAttribute(deviceKey, attribute);
-        wolk->publish();
-    });
+    modbusBridge->setAttributeCallback(
+      [&](const std::string& deviceKey, const Attribute& attribute) { wolk->addAttribute(deviceKey, attribute); });
 
     // Track if we registered or not
     auto connected = false;
@@ -322,19 +319,27 @@ int main(int argc, char** argv)
         if (registeredDevices.size() == devicesToRegister.size())
             stateHandler.changeRegistered(true);
         else
+        {
+            LOG(ERROR) << "Failed registration of devices. Waiting 10s...";
+            std::this_thread::sleep_for(std::chrono::seconds{10});
             wolk->registerDevices(devicesToRegister, callbackForRegistration);
+        }
     };
 
     // Now make the loop that will on connect, trigger register, and stuff like that...
     wolk->setConnectionStatusListener([&](bool newConnectionState) {
         stateHandler.changeConnected(newConnectionState);
         if (!stateHandler.isRegistered())
+        {
             wolk->registerDevices(devicesToRegister, callbackForRegistration);
+        }
     });
     wolk->connect();
     while (modbusBridge != nullptr)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        if (stateHandler.isConnected() && stateHandler.isRegistered())
+            wolk->publish();
     }
 
     return 0;
