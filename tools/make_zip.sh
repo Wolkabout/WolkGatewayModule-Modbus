@@ -38,14 +38,9 @@ fi
 
 mkdir -p ./tmp-wgmm
 cd ./tmp-wgmm || exit
-git clone https://github.com/Wolkabout/WolkGatewayModule-Modbus --recurse-submodules
+git clone https://github.com/Wolkabout/WolkGatewayModule-Modbus -b "$branch" --recurse-submodules
 cd ./WolkGatewayModule-Modbus || exit
 git checkout "$branch"
-if [ $? -ne 0 ]; then
-  echo "Can't checkout to branch named $branch"
-  exit
-fi
-git submodule update --init --recursive
 filename="WolkGateway-ModbusModule-v$(cat RELEASE_NOTES.txt | grep "**Version" | head -1 | sed -e "s/**Version //" | sed -e "s/\*\*//").zip"
 echo "filename: $filename"
 zip -qr $filename *
