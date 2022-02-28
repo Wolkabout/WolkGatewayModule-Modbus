@@ -43,6 +43,7 @@ public:
 
     const std::string& getName() const;
     const std::string& getReference() const;
+    const std::string& getUnit() const;
 
     std::chrono::milliseconds getRepeat() const;
     const std::string& getDefaultValue() const;
@@ -66,6 +67,7 @@ private:
     // Identifying information
     std::string m_name;
     std::string m_reference;
+    std::string m_unit;
 
     // Register information
     more_modbus::RegisterType m_registerType;

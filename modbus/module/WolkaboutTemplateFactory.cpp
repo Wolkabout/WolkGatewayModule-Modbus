@@ -40,8 +40,9 @@ WolkaboutTemplateFactory::makeRegistrationDataFromDeviceConfigTemplate(const Dev
         }
         else
         {
-            feeds.emplace(mapping.getReference(), Feed{mapping.getName(), mapping.getReference(),
-                                                       getFeedTypeFromMapping(mapping), toString(dataType)});
+            feeds.emplace(mapping.getReference(),
+                          Feed{mapping.getName(), mapping.getReference(), getFeedTypeFromMapping(mapping),
+                               mapping.getUnit().empty() ? toString(dataType) : mapping.getUnit()});
         }
 
         // Create special feeds
