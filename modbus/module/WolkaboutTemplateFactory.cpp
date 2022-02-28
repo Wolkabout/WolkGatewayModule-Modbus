@@ -54,14 +54,16 @@ WolkaboutTemplateFactory::makeRegistrationDataFromDeviceConfigTemplate(const Dev
         }
         if (mapping.hasSafeMode())
         {
-            auto safeModeFeed = Feed{"SafeModeValue of " + mapping.getName(), "SMV(" + mapping.getReference() + ")",
-                                     FeedType::IN_OUT, toString(dataType)};
+            auto safeModeFeed =
+              Feed{"SafeModeValue of " + mapping.getName(), "SMV(" + mapping.getReference() + ")", FeedType::IN_OUT,
+                   mapping.getUnit().empty() ? toString(dataType) : mapping.getUnit()};
             feeds.emplace(safeModeFeed.getReference(), std::move(safeModeFeed));
         }
         if (!mapping.getDefaultValue().empty())
         {
-            auto defaultValueFeed = Feed{"DefaultValue of " + mapping.getName(), "DFV(" + mapping.getReference() + ")",
-                                         FeedType::IN_OUT, toString(dataType)};
+            auto defaultValueFeed =
+              Feed{"DefaultValue of " + mapping.getName(), "DFV(" + mapping.getReference() + ")", FeedType::IN_OUT,
+                   mapping.getUnit().empty() ? toString(dataType) : mapping.getUnit()};
             feeds.emplace(defaultValueFeed.getReference(), std::move(defaultValueFeed));
         }
     }
