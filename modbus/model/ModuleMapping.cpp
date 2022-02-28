@@ -31,6 +31,7 @@ using nlohmann::json;
 ModuleMapping::ModuleMapping(nlohmann::json j)
 : m_name{JsonReaderParser::read<std::string>(j, "name")}
 , m_reference{JsonReaderParser::read<std::string>(j, "reference")}
+, m_unit{JsonReaderParser::readOrDefault(j, "unit", std::string{})}
 , m_registerType{more_modbus::registerTypeFromString(JsonReaderParser::read<std::string>(j, "registerType"))}
 , m_dataType{more_modbus::outputTypeFromString(JsonReaderParser::read<std::string>(j, "dataType"))}
 , m_operationType{more_modbus::operationTypeFromString(
@@ -64,6 +65,11 @@ const std::string& ModuleMapping::getName() const
 const std::string& ModuleMapping::getReference() const
 {
     return m_reference;
+}
+
+const std::string& ModuleMapping::getUnit() const
+{
+    return m_unit;
 }
 
 std::chrono::milliseconds ModuleMapping::getRepeat() const
