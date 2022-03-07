@@ -21,7 +21,7 @@
 [Service]
  Type=idle
  WorkingDirectory=/usr/bin/
- ExecStart=/usr/bin/modbusModule /etc/modbusModule/moduleConfiguration.json /etc/modbusModule/devicesConfiguration.json
+ ExecStart=/usr/bin/ModbusModule /etc/modbusModule/moduleConfiguration.json /etc/modbusModule/devicesConfiguration.json
  Restart=always
 
 [Install]
