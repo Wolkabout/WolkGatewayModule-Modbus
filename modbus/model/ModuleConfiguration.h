@@ -17,7 +17,7 @@
 #ifndef MODULECONFIGURATION_H
 #define MODULECONFIGURATION_H
 
-#include "core/utilities/json.hpp"
+#include "core/utilities/nlohmann/json.hpp"
 #include "modbus/model/SerialRtuConfiguration.h"
 #include "modbus/model/TcpIpConfiguration.h"
 

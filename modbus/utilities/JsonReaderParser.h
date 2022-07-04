@@ -18,7 +18,7 @@
 #define WOLKGATEWAYMODBUSMODULE_JSONREADERPARSER_H
 
 #include "core/utilities/FileSystemUtils.h"
-#include "core/utilities/json.hpp"
+#include "core/utilities/nlohmann/json.hpp"
 
 namespace wolkabout
 {
