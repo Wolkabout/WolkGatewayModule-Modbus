@@ -135,8 +135,8 @@ public:
     {
         changeConnected(status == wolkabout::ConnectivityStatus::CONNECTED);
         m_modbusBridge.platformStatus(status);
-        if (status == wolkabout::ConnectivityStatus::CONNECTED && m_platformStatusCallback)
-            m_platformStatusCallback();
+        if (m_platformStatusCallback)
+            m_platformStatusCallback(status == wolkabout::ConnectivityStatus::CONNECTED);
     }
 
     void changeConnected(bool connected)
@@ -160,14 +160,14 @@ public:
 
     bool isRegistered() const { return m_registered; }
 
-    void setPlatformStatusCallback(const std::function<void()>& platformStatusCallback)
+    void setPlatformStatusCallback(const std::function<void(bool)>& platformStatusCallback)
     {
         m_platformStatusCallback = platformStatusCallback;
     }
 
 private:
     ModbusBridge& m_modbusBridge;
-    std::function<void()> m_platformStatusCallback;
+    std::function<void(bool)> m_platformStatusCallback;
 
     bool m_connected;
     bool m_registered;
@@ -352,8 +352,10 @@ int main(int argc, char** argv)
     });
 
     // Also, if the registration needs to be triggered by the platform status
-    stateHandler->setPlatformStatusCallback(
-      [&]() { wolk->registerDevices(devicesToRegister, callbackForRegistration); });
+    stateHandler->setPlatformStatusCallback([&](bool status) {
+        if (status)
+            wolk->registerDevices(devicesToRegister, callbackForRegistration);
+    });
 
     wolk->connect();
     while (modbusBridge != nullptr)
