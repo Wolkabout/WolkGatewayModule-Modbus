@@ -25,12 +25,12 @@
 #include "more_modbus/modbus/LibModbusSerialRtuClient.h"
 #include "more_modbus/modbus/LibModbusTcpIpClient.h"
 #include "wolk/WolkMulti.h"
+#include "wolk/api/PlatformStatusListener.h"
 
 #include <algorithm>
 #include <chrono>
 #include <map>
 #include <memory>
-#include <random>
 #include <string>
 #include <thread>
 #include <utility>
@@ -123,12 +123,20 @@ std::pair<DeviceMap, DeviceTypeMap> generateDevices(const ModuleConfiguration& m
     return std::make_pair(std::move(deviceMap), std::move(deviceTypeMap));
 }
 
-class StateHandler
+class StateHandler : public PlatformStatusListener
 {
 public:
     explicit StateHandler(ModbusBridge& modbusBridge)
     : m_modbusBridge(modbusBridge), m_connected{false}, m_registered{false}
     {
+    }
+
+    void platformStatus(ConnectivityStatus status) override
+    {
+        changeConnected(status == wolkabout::ConnectivityStatus::CONNECTED);
+        m_modbusBridge.platformStatus(status);
+        if (status == wolkabout::ConnectivityStatus::CONNECTED && m_platformStatusCallback)
+            m_platformStatusCallback();
     }
 
     void changeConnected(bool connected)
@@ -152,8 +160,14 @@ public:
 
     bool isRegistered() const { return m_registered; }
 
+    void setPlatformStatusCallback(const std::function<void()>& platformStatusCallback)
+    {
+        m_platformStatusCallback = platformStatusCallback;
+    }
+
 private:
     ModbusBridge& m_modbusBridge;
+    std::function<void()> m_platformStatusCallback;
 
     bool m_connected;
     bool m_registered;
@@ -258,7 +272,7 @@ int main(int argc, char** argv)
       std::unique_ptr<JsonFilePersistence>{new JsonFilePersistence(DEFAULT_VALUE_PERSISTENCE_FILE)},
       std::unique_ptr<JsonFilePersistence>{new JsonFilePersistence(REPEATED_WRITE_PERSISTENCE_FILE)},
       std::unique_ptr<JsonFilePersistence>{new JsonFilePersistence(SAFE_MODE_WRITE_PERSISTENCE_FILE)});
-    auto stateHandler = StateHandler{*modbusBridge};
+    auto stateHandler = std::make_shared<StateHandler>(*modbusBridge);
     modbusBridge->initialize(devicesConfiguration.getTemplates(), deviceTypeMap, deviceMap);
 
     // Connect the bridge to Wolk instance
@@ -267,7 +281,7 @@ int main(int argc, char** argv)
                   .host(moduleConfiguration.getMqttHost())
                   .feedUpdateHandler(modbusBridge)
                   .parameterHandler(modbusBridge)
-                  .withPlatformStatus(modbusBridge)
+                  .withPlatformStatus(stateHandler)
                   .withRegistration()
                   .buildWolkMulti();
 
@@ -316,8 +330,10 @@ int main(int argc, char** argv)
     auto callbackForRegistration =
       std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)>{};
     callbackForRegistration = [&](const std::vector<std::string>& registeredDevices, const std::vector<std::string>&) {
+        LOG(INFO) << "Required count of devices: " << devicesToRegister.size() << ".";
+        LOG(INFO) << "Registered devices: " << registeredDevices.size() << ".";
         if (registeredDevices.size() == devicesToRegister.size())
-            stateHandler.changeRegistered(true);
+            stateHandler->changeRegistered(true);
         else
         {
             LOG(ERROR) << "Failed registration of devices. Waiting 10s...";
@@ -328,17 +344,22 @@ int main(int argc, char** argv)
 
     // Now make the loop that will on connect, trigger register, and stuff like that...
     wolk->setConnectionStatusListener([&](bool newConnectionState) {
-        stateHandler.changeConnected(newConnectionState);
-        if (!stateHandler.isRegistered())
+        stateHandler->changeConnected(newConnectionState);
+        if (!stateHandler->isRegistered())
         {
             wolk->registerDevices(devicesToRegister, callbackForRegistration);
         }
     });
+
+    // Also, if the registration needs to be triggered by the platform status
+    stateHandler->setPlatformStatusCallback(
+      [&]() { wolk->registerDevices(devicesToRegister, callbackForRegistration); });
+
     wolk->connect();
     while (modbusBridge != nullptr)
     {
         std::this_thread::sleep_for(std::chrono::seconds(1));
-        if (stateHandler.isConnected() && stateHandler.isRegistered())
+        if (stateHandler->isConnected() && stateHandler->isRegistered())
             wolk->publish();
     }
 
