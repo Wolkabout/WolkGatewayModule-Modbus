@@ -84,8 +84,10 @@ DataType WolkaboutTemplateFactory::getDataTypeFromMapping(const ModuleMapping& m
     {
         if (mapping.getOperationType() == more_modbus::OperationType::TAKE_BIT)
             return DataType::BOOLEAN;
-        else if (mapping.getOperationType() == more_modbus::OperationType::STRINGIFY_UNICODE ||
-                 mapping.getOperationType() == more_modbus::OperationType::STRINGIFY_ASCII)
+        else if (mapping.getOperationType() == more_modbus::OperationType::STRINGIFY_UNICODE_BIG_ENDIAN ||
+                 mapping.getOperationType() == more_modbus::OperationType::STRINGIFY_UNICODE_LITTLE_ENDIAN ||
+                 mapping.getOperationType() == more_modbus::OperationType::STRINGIFY_ASCII_BIG_ENDIAN ||
+                 mapping.getOperationType() == more_modbus::OperationType::STRINGIFY_ASCII_LITTLE_ENDIAN)
             return DataType::STRING;
         return DataType::NUMERIC;
     }
