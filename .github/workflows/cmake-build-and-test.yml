@@ -45,8 +45,3 @@ jobs:
         shell: bash
         # Execute the build.  You can specify a specific target.
         run: make -j$(nproc)
-
-      - name: Check Format
-        uses: jidicula/clang-format-action@v3.5.2
-        with:
-          clang-format-version: 10
