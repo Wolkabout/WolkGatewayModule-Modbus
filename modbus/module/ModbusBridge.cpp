@@ -569,10 +569,18 @@ Reading ModbusBridge::formReadingForMappingValue(const std::shared_ptr<more_modb
         case more_modbus::OutputType::STRING:
             switch (mapping->getOperationType())
             {
-            case more_modbus::OperationType::STRINGIFY_ASCII:
-                return {mapping->getReference(), more_modbus::DataParsers::registersToAsciiString(bytes)};
-            case more_modbus::OperationType::STRINGIFY_UNICODE:
-                return {mapping->getReference(), more_modbus::DataParsers::registersToUnicodeString(bytes)};
+            case more_modbus::OperationType::STRINGIFY_ASCII_BIG_ENDIAN:
+                return {mapping->getReference(),
+                        more_modbus::DataParsers::registersToAsciiString(bytes, more_modbus::DataParsers::Endian::BIG)};
+            case more_modbus::OperationType::STRINGIFY_ASCII_LITTLE_ENDIAN:
+                return {mapping->getReference(), more_modbus::DataParsers::registersToAsciiString(
+                                                   bytes, more_modbus::DataParsers::Endian::LITTLE)};
+            case more_modbus::OperationType::STRINGIFY_UNICODE_BIG_ENDIAN:
+                return {mapping->getReference(), more_modbus::DataParsers::registersToUnicodeString(
+                                                   bytes, more_modbus::DataParsers::Endian::BIG)};
+            case more_modbus::OperationType::STRINGIFY_UNICODE_LITTLE_ENDIAN:
+                return {mapping->getReference(), more_modbus::DataParsers::registersToUnicodeString(
+                                                   bytes, more_modbus::DataParsers::Endian::LITTLE)};
             default:
                 return {"", false};
             }
@@ -633,12 +641,21 @@ Attribute ModbusBridge::formAttributeForMappingValue(const std::shared_ptr<more_
         case more_modbus::OutputType::STRING:
             switch (mapping->getOperationType())
             {
-            case more_modbus::OperationType::STRINGIFY_ASCII:
+            case more_modbus::OperationType::STRINGIFY_ASCII_BIG_ENDIAN:
                 return {mapping->getReference(), DataType::STRING,
-                        more_modbus::DataParsers::registersToAsciiString(bytes)};
-            case more_modbus::OperationType::STRINGIFY_UNICODE:
-                return {mapping->getReference(), DataType::STRING,
-                        more_modbus::DataParsers::registersToUnicodeString(bytes)};
+                        more_modbus::DataParsers::registersToAsciiString(bytes, more_modbus::DataParsers::Endian::BIG)};
+            case more_modbus::OperationType::STRINGIFY_ASCII_LITTLE_ENDIAN:
+                return {
+                  mapping->getReference(), DataType::STRING,
+                  more_modbus::DataParsers::registersToAsciiString(bytes, more_modbus::DataParsers::Endian::LITTLE)};
+            case more_modbus::OperationType::STRINGIFY_UNICODE_BIG_ENDIAN:
+                return {
+                  mapping->getReference(), DataType::STRING,
+                  more_modbus::DataParsers::registersToUnicodeString(bytes, more_modbus::DataParsers::Endian::BIG)};
+            case more_modbus::OperationType::STRINGIFY_UNICODE_LITTLE_ENDIAN:
+                return {
+                  mapping->getReference(), DataType::STRING,
+                  more_modbus::DataParsers::registersToUnicodeString(bytes, more_modbus::DataParsers::Endian::LITTLE)};
             default:
                 return {"", DataType::BOOLEAN, ""};
             }
