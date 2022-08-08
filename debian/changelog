@@ -1,5 +1,5 @@
-wolkgatewaymodule-modbus (1.0.1) stable; urgency=medium
+wolkgatewaymodule-modbus (1.0.2) stable; urgency=medium
 
-      * Made the module listen to the platform status message, and able to start the routine by receiving `CONNECTED`.
+      * Added a new version of `MoreModbus` that introduces a lot of small improvements.
 
- -- Wolkabout ELab <elab@wolkabout.com>  Mon, 1 Jul 2022 00:00:00 +0100
+ -- Wolkabout ELab <elab@wolkabout.com>  Mon, 8 Aug 2022 00:00:00 +0100
