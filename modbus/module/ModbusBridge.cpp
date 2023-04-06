@@ -139,7 +139,11 @@ void ModbusBridge::initialize(const std::map<std::string, std::unique_ptr<Device
             }();
 
             const auto device = std::make_shared<more_modbus::ModbusDevice>(key, slaveAddress);
-            device->createGroups(mappings);
+
+            auto mappingsCopy = std::vector<std::shared_ptr<more_modbus::RegisterMapping>>{};
+            for (const auto& mapping : mappings)
+                mappingsCopy.emplace_back(std::make_shared<more_modbus::RegisterMapping>(*mapping));
+            device->createGroups(mappingsCopy);
             modbusDevices.emplace_back(device);
 
             m_deviceKeyBySlaveAddress.emplace(slaveAddress, key);
