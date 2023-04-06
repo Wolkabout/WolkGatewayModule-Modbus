@@ -5,6 +5,9 @@
 
 WolkGateway module for connecting Modbus devices to WolkAbout IoT Platform by communicating with WolkGateway.
 
+**Version 1.1.0**
+	- [BUGFIX] - Copying the mappings is now properly done.
+
 **Version 1.0.2**
     - [IMPROVEMENT] - Added a new version of `MoreModbus` that introduces a lot of small improvements.
 
