@@ -1,5 +1,5 @@
-wolkgatewaymodule-modbus (1.0.2) stable; urgency=medium
+wolkgatewaymodule-modbus (1.1.0) stable; urgency=medium
 
-      * Added a new version of `MoreModbus` that introduces a lot of small improvements.
+      * Copying the mappings is now properly done.
 
- -- Wolkabout ELab <elab@wolkabout.com>  Mon, 8 Aug 2022 00:00:00 +0100
+ -- Wolkabout ELab <elab@wolkabout.com>  Thu, 6 Apr 2023 00:00:00 +0100
