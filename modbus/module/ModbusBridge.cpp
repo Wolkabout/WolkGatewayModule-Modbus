@@ -95,7 +95,6 @@ void ModbusBridge::initialize(const std::map<std::string, std::unique_ptr<Device
         // Go through the mappings of the template
         for (const auto& mapping : templateInfo.getMappings())
         {
-            mappings.emplace_back(RegisterMappingFactory::fromJSONMapping(mapping));
             mappingTypeByReference.emplace(mapping.getReference(), mapping.getMappingType());
 
             // If any of the mappings are in the special categories
@@ -140,10 +139,13 @@ void ModbusBridge::initialize(const std::map<std::string, std::unique_ptr<Device
 
             const auto device = std::make_shared<more_modbus::ModbusDevice>(key, slaveAddress);
 
-            auto mappingsCopy = std::vector<std::shared_ptr<more_modbus::RegisterMapping>>{};
-            for (const auto& mapping : mappings)
-                mappingsCopy.emplace_back(std::make_shared<more_modbus::RegisterMapping>(*mapping));
-            device->createGroups(mappingsCopy);
+            mappings.clear();
+            for (const auto& mapping : templateInfo.getMappings())
+            {
+                mappings.emplace_back(RegisterMappingFactory::fromJSONMapping(mapping));
+            }
+
+            device->createGroups(mappings);
             modbusDevices.emplace_back(device);
 
             m_deviceKeyBySlaveAddress.emplace(slaveAddress, key);
@@ -405,6 +407,8 @@ void ModbusBridge::triggerGroupValueChangeBytes(const std::shared_ptr<more_modbu
 void ModbusBridge::writeToMapping(const std::shared_ptr<more_modbus::RegisterMapping>& mapping,
                                   const std::string& value)
 {
+    LOG(TRACE) << TAG << METHOD_INFO;
+
     try
     {
         switch (mapping->getOutputType())
@@ -541,53 +545,35 @@ Reading ModbusBridge::formReadingForMappingValue(const std::shared_ptr<more_modb
         switch (mapping->getOutputType())
         {
         case more_modbus::OutputType::UINT16:
-            return {mapping->getReference(), static_cast<std::uint64_t>(bytes[0])};
+        {
+            const auto uint16Mapping = std::dynamic_pointer_cast<more_modbus::UInt16Mapping>(mapping);
+            return {mapping->getReference(), static_cast<std::uint64_t>(uint16Mapping->getUint16Value())};
+        }
         case more_modbus::OutputType::INT16:
-            return {mapping->getReference(), static_cast<std::int64_t>(bytes[0])};
+        {
+            const auto int16Mapping = std::dynamic_pointer_cast<more_modbus::Int16Mapping>(mapping);
+            return {mapping->getReference(), static_cast<std::int64_t>(int16Mapping->getInt16Value())};
+        }
         case more_modbus::OutputType::UINT32:
-            switch (mapping->getOperationType())
-            {
-            case more_modbus::OperationType::MERGE_BIG_ENDIAN:
-                return {mapping->getReference(), static_cast<std::uint64_t>(more_modbus::DataParsers::registersToUint32(
-                                                   bytes, more_modbus::DataParsers::Endian::BIG))};
-            case more_modbus::OperationType::MERGE_LITTLE_ENDIAN:
-                return {mapping->getReference(), static_cast<std::uint64_t>(more_modbus::DataParsers::registersToUint32(
-                                                   bytes, more_modbus::DataParsers::Endian::LITTLE))};
-            default:
-                return {"", false};
-            }
+        {
+            const auto uint32Mapping = std::dynamic_pointer_cast<more_modbus::UInt32Mapping>(mapping);
+            return {mapping->getReference(), static_cast<std::uint64_t>(uint32Mapping->getUint32Value())};
+        }
         case more_modbus::OutputType::INT32:
-            switch (mapping->getOperationType())
-            {
-            case more_modbus::OperationType::MERGE_BIG_ENDIAN:
-                return {mapping->getReference(), static_cast<std::int64_t>(more_modbus::DataParsers::registersToInt32(
-                                                   bytes, more_modbus::DataParsers::Endian::BIG))};
-            case more_modbus::OperationType::MERGE_LITTLE_ENDIAN:
-                return {mapping->getReference(), static_cast<std::int64_t>(more_modbus::DataParsers::registersToInt32(
-                                                   bytes, more_modbus::DataParsers::Endian::LITTLE))};
-            default:
-                return {"", false};
-            }
+        {
+            const auto int32Mapping = std::dynamic_pointer_cast<more_modbus::Int32Mapping>(mapping);
+            return {mapping->getReference(), static_cast<std::int64_t>(int32Mapping->getInt32Value())};
+        }
         case more_modbus::OutputType::FLOAT:
-            return {mapping->getReference(), more_modbus::DataParsers::registersToFloat(bytes)};
+        {
+            const auto floatMapping = std::dynamic_pointer_cast<more_modbus::FloatMapping>(mapping);
+            return {mapping->getReference(), floatMapping->getFloatValue()};
+        }
         case more_modbus::OutputType::STRING:
-            switch (mapping->getOperationType())
-            {
-            case more_modbus::OperationType::STRINGIFY_ASCII_BIG_ENDIAN:
-                return {mapping->getReference(),
-                        more_modbus::DataParsers::registersToAsciiString(bytes, more_modbus::DataParsers::Endian::BIG)};
-            case more_modbus::OperationType::STRINGIFY_ASCII_LITTLE_ENDIAN:
-                return {mapping->getReference(), more_modbus::DataParsers::registersToAsciiString(
-                                                   bytes, more_modbus::DataParsers::Endian::LITTLE)};
-            case more_modbus::OperationType::STRINGIFY_UNICODE_BIG_ENDIAN:
-                return {mapping->getReference(), more_modbus::DataParsers::registersToUnicodeString(
-                                                   bytes, more_modbus::DataParsers::Endian::BIG)};
-            case more_modbus::OperationType::STRINGIFY_UNICODE_LITTLE_ENDIAN:
-                return {mapping->getReference(), more_modbus::DataParsers::registersToUnicodeString(
-                                                   bytes, more_modbus::DataParsers::Endian::LITTLE)};
-            default:
-                return {"", false};
-            }
+        {
+            const auto stringMapping = std::dynamic_pointer_cast<more_modbus::StringMapping>(mapping);
+            return {mapping->getReference(), stringMapping->getStringValue()};
+        }
         default:
             return {"", false};
         }
