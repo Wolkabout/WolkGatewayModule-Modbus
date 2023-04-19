@@ -1,5 +1,6 @@
-wolkgatewaymodule-modbus (1.1.0) stable; urgency=medium
+wolkgatewaymodule-modbus (1.1.1) stable; urgency=medium
 
-      * Copying the mappings is now properly done.
+      * Fixed the issue that was causing mappings to not be interpreted the right way when a value is updated, since the type info gets erased when copying mappings.
+      * Fixed presenting of the value on the platform since mappings value interpretation was completely avoided when publishing readings.
 
- -- Wolkabout ELab <elab@wolkabout.com>  Thu, 6 Apr 2023 00:00:00 +0100
+ -- Wolkabout ELab <elab@wolkabout.com>  Wed, 19 Apr 2023 00:00:00 +0100
