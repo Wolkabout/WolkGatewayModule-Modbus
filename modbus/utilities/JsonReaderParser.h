@@ -106,13 +106,13 @@ public:
      */
     static json::object_t readFile(const std::string& path)
     {
-        if (!FileSystemUtils::isFilePresent(path))
+        if (!legacy::FileSystemUtils::isFilePresent(path))
         {
             throw std::logic_error("Given file does not exist (" + path + ").");
         }
 
         std::string jsonString;
-        if (!FileSystemUtils::readFileContent(path, jsonString))
+        if (!legacy::FileSystemUtils::readFileContent(path, jsonString))
         {
             throw std::logic_error("Unable to read file (" + path + ").");
         }
