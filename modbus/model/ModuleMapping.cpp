@@ -46,6 +46,8 @@ ModuleMapping::ModuleMapping(nlohmann::json j)
 , m_defaultValue{JsonReaderParser::readTypedValue(j, "defaultValue")}
 , m_safeMode{j.find("safeMode") != j.end()}
 , m_safeModeValue{JsonReaderParser::readTypedValue(j, "safeMode")}
+, m_autoLocalUpdate{JsonReaderParser::readOrDefault(j, "autoLocalUpdate", false)}
+, m_autoReadAfterWrite{JsonReaderParser::readOrDefault(j, "autoReadAfterWrite", true)}
 {
     // Now attempt to read the repeat and default value
     if (m_repeat.count() > 0 && j.find("defaultValue") == j.end())
@@ -137,6 +139,16 @@ bool ModuleMapping::hasSafeMode() const
 const std::string& ModuleMapping::getSafeModeValue() const
 {
     return m_safeModeValue;
+}
+
+bool ModuleMapping::isAutoLocalUpdate() const
+{
+    return m_autoLocalUpdate;
+}
+
+bool ModuleMapping::isAutoReadAfterWrite() const
+{
+    return m_autoReadAfterWrite;
 }
 }    // namespace modbus
 }    // namespace wolkabout

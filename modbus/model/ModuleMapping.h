@@ -63,6 +63,10 @@ public:
     more_modbus::OperationType getOperationType() const;
     MappingType getMappingType() const;
 
+    [[nodiscard]] bool isAutoLocalUpdate() const;
+
+    [[nodiscard]] bool isAutoReadAfterWrite() const;
+
 private:
     // Identifying information
     std::string m_name;
@@ -90,6 +94,12 @@ private:
     // Safe mode information
     bool m_safeMode;
     std::string m_safeModeValue;
+
+    // Automatic Local storage
+    bool m_autoLocalUpdate;
+
+    // Automatic Read after write
+    bool m_autoReadAfterWrite;
 };
 }    // namespace modbus
 }    // namespace wolkabout
