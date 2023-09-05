@@ -89,11 +89,13 @@ void ModbusBridge::initialize(const std::map<std::string, std::unique_ptr<Device
         auto repeatValueMappings = std::map<std::string, std::chrono::milliseconds>{};
         auto safeMappings = std::map<std::string, std::string>{};
         auto mappingTypeByReference = std::map<std::string, MappingType>{};
+        auto autoReadMappings = std::map<std::string, bool>{};
 
         // Go through the mappings of the template
         for (const auto& mapping : templateInfo.getMappings())
         {
             mappingTypeByReference.emplace(mapping.getReference(), mapping.getMappingType());
+            autoReadMappings.emplace(mapping.getReference(), mapping.isAutoReadAfterWrite());
 
             // If any of the mappings are in the special categories
             if (!mapping.getDefaultValue().empty())
@@ -202,6 +204,9 @@ void ModbusBridge::initialize(const std::map<std::string, std::unique_ptr<Device
                         m_safeModeMappingByReference.emplace(key + SEPARATOR + mapping.second->getReference(),
                                                              safeModeValue);
                     }
+
+                    m_autoReadByReference.emplace(key + SEPARATOR + mapping.second->getReference(),
+                                                  autoReadMappings[mapping.second->getReference()]);
                 }
             }
         }
