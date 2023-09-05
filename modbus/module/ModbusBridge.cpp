@@ -39,9 +39,7 @@
 #include <utility>
 #include <vector>
 
-namespace wolkabout
-{
-namespace modbus
+namespace wolkabout::modbus
 {
 const char ModbusBridge::SEPARATOR = '.';
 
@@ -750,5 +748,4 @@ void ModbusBridge::handleSafeModeValueReading(const std::string& deviceKey, cons
     m_safeModeMappingByReference[deviceKey + SEPARATOR + ref] = value;
     m_safeModePersistence->storeValue(deviceKey + SEPARATOR + ref, value);
 }
-}    // namespace modbus
-}    // namespace wolkabout
+}    // namespace wolkabout::modbus
