@@ -318,6 +318,13 @@ void ModbusBridge::handleUpdate(const std::string& deviceKey,
                 continue;
             }
 
+            // Check whether we're supposed to read the register right after
+            const auto readAfter = [&]
+            {
+                const auto ref = m_autoReadByReference.find(deviceKey + SEPARATOR + reading.getReference());
+                return ref != m_autoReadByReference.cend() && ref->second;
+            }();
+
             // Handle it like a normal feed
             const auto mappingIt = m_registerMappingByReference.find(deviceKey + SEPARATOR + reading.getReference());
             if (mappingIt == m_registerMappingByReference.cend())
@@ -326,6 +333,8 @@ void ModbusBridge::handleUpdate(const std::string& deviceKey,
                 continue;
             }
             writeToMapping(mappingIt->second, reading.getStringValue());
+            if (readAfter)
+                m_modbusReader->forceReadOfMapping(*mappingIt->second);
         }
     }
 
