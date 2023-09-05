@@ -36,6 +36,9 @@
 #include <thread>
 #include <vector>
 
+using namespace wolkabout;
+using namespace wolkabout::legacy;
+
 namespace wolkabout
 {
 namespace more_modbus

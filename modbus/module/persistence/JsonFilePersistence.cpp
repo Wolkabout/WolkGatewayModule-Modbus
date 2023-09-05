@@ -24,9 +24,10 @@
 
 using namespace nlohmann;
 
-namespace wolkabout
-{
-namespace modbus
+using namespace wolkabout;
+using namespace wolkabout::legacy;
+
+namespace wolkabout::modbus
 {
 JsonFilePersistence::JsonFilePersistence(std::string filePath) : m_filePath(std::move(filePath)) {}
 
@@ -97,5 +98,4 @@ std::map<std::string, std::string> JsonFilePersistence::loadValues()
     // Return the map in any way shape or form we have it
     return map;
 }
-}    // namespace modbus
-}    // namespace wolkabout
+}    // namespace wolkabout::modbus
