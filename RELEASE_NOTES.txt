@@ -5,6 +5,10 @@
 
 WolkGateway module for connecting Modbus devices to WolkAbout IoT Platform by communicating with WolkGateway.
 
+**Version 1.2.0**
+    - [FEATURE] - Added `autoLocalUpdate` field for mappings that allows the mapping to be local copy of the value to be updated immediately. Default is set to `false`.
+    - [FEATURE] - Added `autoReadAfterWrite` field for mappings that allows the mapping to be automatically read right after writing to it. Default is set to `true`.
+
 **Version 1.1.1**
 	- [BUGFIX] - Fixed the issue that was causing mappings to not be interpreted the right way when a value is updated, since the type info gets erased when copying mappings.
 	- [BUGFIX] - Fixed presenting of the value on the platform since mappings value interpretation was completely avoided when publishing readings.
