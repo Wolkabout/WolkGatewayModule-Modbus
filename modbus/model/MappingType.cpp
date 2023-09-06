@@ -18,9 +18,7 @@
 
 #include <algorithm>
 
-namespace wolkabout
-{
-namespace modbus
+namespace wolkabout::modbus
 {
 MappingType mappingTypeFromString(std::string value)
 {
@@ -35,5 +33,4 @@ MappingType mappingTypeFromString(std::string value)
         return MappingType::Attribute;
     return MappingType::Default;
 }
-}    // namespace modbus
-}    // namespace wolkabout
+}    // namespace wolkabout::modbus

@@ -19,9 +19,7 @@
 
 #include <string>
 
-namespace wolkabout
-{
-namespace modbus
+namespace wolkabout::modbus
 {
 // This is the enumeration that describes the type of the mapping based on data access to the platform.
 enum class MappingType
@@ -40,7 +38,6 @@ enum class MappingType
  * @return The parsed MappingType value.
  */
 MappingType mappingTypeFromString(std::string value);
-}    // namespace modbus
-}    // namespace wolkabout
+}    // namespace wolkabout::modbus
 
 #endif    // WOLKGATEWAYMODBUSMODULE_MAPPINGTYPE_H
