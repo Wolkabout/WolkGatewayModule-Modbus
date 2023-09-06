@@ -18,7 +18,7 @@
 
 #include "core/utilities/FileSystemUtils.h"
 #include "core/utilities/Logger.h"
-#include "core/utilities/nlohmann/json.hpp"
+#include <nlohmann/json.hpp>
 
 #include <utility>
 
