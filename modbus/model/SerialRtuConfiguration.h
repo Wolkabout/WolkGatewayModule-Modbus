@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "core/utilities/nlohmann/json.hpp"
+#include <nlohmann/json.hpp>
 #include "more_modbus/modbus/LibModbusSerialRtuClient.h"
 
 #include <string>

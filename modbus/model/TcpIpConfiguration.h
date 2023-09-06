@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "core/utilities/nlohmann/json.hpp"
+#include <nlohmann/json.hpp>
 
 #include <string>
 

@@ -17,7 +17,7 @@
 #ifndef MODBUSREGISTERMAPPING_H
 #define MODBUSREGISTERMAPPING_H
 
-#include "core/utilities/nlohmann/json.hpp"
+#include <nlohmann/json.hpp>
 #include "modbus/model/MappingType.h"
 #include "more_modbus/RegisterMapping.h"
 
