@@ -39,9 +39,7 @@
 #include <utility>
 #include <vector>
 
-namespace wolkabout
-{
-namespace modbus
+namespace wolkabout::modbus
 {
 const char ModbusBridge::SEPARATOR = '.';
 
@@ -91,11 +89,13 @@ void ModbusBridge::initialize(const std::map<std::string, std::unique_ptr<Device
         auto repeatValueMappings = std::map<std::string, std::chrono::milliseconds>{};
         auto safeMappings = std::map<std::string, std::string>{};
         auto mappingTypeByReference = std::map<std::string, MappingType>{};
+        auto autoReadMappings = std::map<std::string, bool>{};
 
         // Go through the mappings of the template
         for (const auto& mapping : templateInfo.getMappings())
         {
             mappingTypeByReference.emplace(mapping.getReference(), mapping.getMappingType());
+            autoReadMappings.emplace(mapping.getReference(), mapping.isAutoReadAfterWrite());
 
             // If any of the mappings are in the special categories
             if (!mapping.getDefaultValue().empty())
@@ -112,28 +112,28 @@ void ModbusBridge::initialize(const std::map<std::string, std::unique_ptr<Device
             const auto key = devices.at(slaveAddress)->getKey();
 
             // Filter out the default, repeat and safe mode values for this device
-            const auto defaultValuesForDevice = [&]() {
+            const auto defaultValuesForDevice = [&]()
+            {
                 auto map = std::map<std::string, std::string>{};
                 std::copy_if(defaultValues.cbegin(), defaultValues.cend(), std::inserter(map, map.end()),
-                             [&](const std::pair<std::string, std::string>& pair) {
-                                 return pair.first.find(key + SEPARATOR) != std::string::npos;
-                             });
+                             [&](const std::pair<std::string, std::string>& pair)
+                             { return pair.first.find(key + SEPARATOR) != std::string::npos; });
                 return map;
             }();
-            const auto repeatValuesForDevice = [&]() {
+            const auto repeatValuesForDevice = [&]()
+            {
                 auto map = std::map<std::string, std::string>{};
                 std::copy_if(repeatedValues.cbegin(), repeatedValues.cend(), std::inserter(map, map.end()),
-                             [&](const std::pair<std::string, std::string>& pair) {
-                                 return pair.first.find(key + SEPARATOR) != std::string::npos;
-                             });
+                             [&](const std::pair<std::string, std::string>& pair)
+                             { return pair.first.find(key + SEPARATOR) != std::string::npos; });
                 return map;
             }();
-            const auto safeModeValueForDevice = [&]() {
+            const auto safeModeValueForDevice = [&]()
+            {
                 auto map = std::map<std::string, std::string>{};
                 std::copy_if(safeModeValues.cbegin(), safeModeValues.cend(), std::inserter(map, map.end()),
-                             [&](const std::pair<std::string, std::string>& pair) {
-                                 return pair.first.find(key + SEPARATOR) != std::string::npos;
-                             });
+                             [&](const std::pair<std::string, std::string>& pair)
+                             { return pair.first.find(key + SEPARATOR) != std::string::npos; });
                 return map;
             }();
 
@@ -204,6 +204,9 @@ void ModbusBridge::initialize(const std::map<std::string, std::unique_ptr<Device
                         m_safeModeMappingByReference.emplace(key + SEPARATOR + mapping.second->getReference(),
                                                              safeModeValue);
                     }
+
+                    m_autoReadByReference.emplace(key + SEPARATOR + mapping.second->getReference(),
+                                                  autoReadMappings[mapping.second->getReference()]);
                 }
             }
         }
@@ -315,6 +318,13 @@ void ModbusBridge::handleUpdate(const std::string& deviceKey,
                 continue;
             }
 
+            // Check whether we're supposed to read the register right after
+            const auto readAfter = [&]
+            {
+                const auto ref = m_autoReadByReference.find(deviceKey + SEPARATOR + reading.getReference());
+                return ref != m_autoReadByReference.cend() && ref->second;
+            }();
+
             // Handle it like a normal feed
             const auto mappingIt = m_registerMappingByReference.find(deviceKey + SEPARATOR + reading.getReference());
             if (mappingIt == m_registerMappingByReference.cend())
@@ -323,6 +333,8 @@ void ModbusBridge::handleUpdate(const std::string& deviceKey,
                 continue;
             }
             writeToMapping(mappingIt->second, reading.getStringValue());
+            if (readAfter)
+                m_modbusReader->forceReadOfMapping(*mappingIt->second);
         }
     }
 
@@ -353,14 +365,16 @@ void ModbusBridge::initializeSetUpDeviceCallback(const std::vector<std::shared_p
     // Set up the device mapping value change logic.
     for (const auto& device : devices)
     {
-        device->setOnStatusChange([device](bool status) {
-            LOG(INFO) << "Device status '" << device->getName() << "' changed to '"
-                      << (status ? "CONNECTED" : "DISCONNECTED") << "'.";
-        });
+        device->setOnStatusChange(
+          [device](bool status)
+          {
+              LOG(INFO) << "Device status '" << device->getName() << "' changed to '"
+                        << (status ? "CONNECTED" : "DISCONNECTED") << "'.";
+          });
 
-        device->setOnMappingValueChange(
-          [this, device](const std::shared_ptr<more_modbus::RegisterMapping>& mapping,
-                         const std::vector<std::uint16_t>& bytes) { sendOutMappingValue(device, mapping, bytes); });
+        device->setOnMappingValueChange([this, device](const std::shared_ptr<more_modbus::RegisterMapping>& mapping,
+                                                       const std::vector<std::uint16_t>& bytes)
+                                        { sendOutMappingValue(device, mapping, bytes); });
 
         device->setOnMappingValueChange([this, device](const std::shared_ptr<more_modbus::RegisterMapping>& mapping,
                                                        bool data) { sendOutMappingValue(device, mapping, data); });
@@ -415,7 +429,8 @@ void ModbusBridge::writeToMapping(const std::shared_ptr<more_modbus::RegisterMap
         {
         case more_modbus::OutputType::BOOL:
         {
-            auto boolValue = [&] {
+            auto boolValue = [&]
+            {
                 auto valueCopy = std::string{value};
                 std::transform(valueCopy.cbegin(), valueCopy.cend(), valueCopy.begin(), ::tolower);
                 if (valueCopy == "true")
@@ -547,32 +562,32 @@ Reading ModbusBridge::formReadingForMappingValue(const std::shared_ptr<more_modb
         case more_modbus::OutputType::UINT16:
         {
             const auto uint16Mapping = std::dynamic_pointer_cast<more_modbus::UInt16Mapping>(mapping);
-            return {mapping->getReference(), static_cast<std::uint64_t>(uint16Mapping->getUint16Value())};
+            return {mapping->getReference(), static_cast<std::uint64_t>(uint16Mapping->getValue())};
         }
         case more_modbus::OutputType::INT16:
         {
             const auto int16Mapping = std::dynamic_pointer_cast<more_modbus::Int16Mapping>(mapping);
-            return {mapping->getReference(), static_cast<std::int64_t>(int16Mapping->getInt16Value())};
+            return {mapping->getReference(), static_cast<std::int64_t>(int16Mapping->getValue())};
         }
         case more_modbus::OutputType::UINT32:
         {
             const auto uint32Mapping = std::dynamic_pointer_cast<more_modbus::UInt32Mapping>(mapping);
-            return {mapping->getReference(), static_cast<std::uint64_t>(uint32Mapping->getUint32Value())};
+            return {mapping->getReference(), static_cast<std::uint64_t>(uint32Mapping->getValue())};
         }
         case more_modbus::OutputType::INT32:
         {
             const auto int32Mapping = std::dynamic_pointer_cast<more_modbus::Int32Mapping>(mapping);
-            return {mapping->getReference(), static_cast<std::int64_t>(int32Mapping->getInt32Value())};
+            return {mapping->getReference(), static_cast<std::int64_t>(int32Mapping->getValue())};
         }
         case more_modbus::OutputType::FLOAT:
         {
             const auto floatMapping = std::dynamic_pointer_cast<more_modbus::FloatMapping>(mapping);
-            return {mapping->getReference(), floatMapping->getFloatValue()};
+            return {mapping->getReference(), floatMapping->getValue()};
         }
         case more_modbus::OutputType::STRING:
         {
             const auto stringMapping = std::dynamic_pointer_cast<more_modbus::StringMapping>(mapping);
-            return {mapping->getReference(), stringMapping->getStringValue()};
+            return {mapping->getReference(), stringMapping->getValue()};
         }
         default:
             return {"", false};
@@ -626,8 +641,19 @@ Attribute ModbusBridge::formAttributeForMappingValue(const std::shared_ptr<more_
                 return {"", DataType::BOOLEAN, ""};
             }
         case more_modbus::OutputType::FLOAT:
-            return {mapping->getReference(), DataType::NUMERIC,
-                    std::to_string(more_modbus::DataParsers::registersToFloat(bytes))};
+            switch (mapping->getOperationType())
+            {
+            case more_modbus::OperationType::MERGE_FLOAT_BIG_ENDIAN:
+                return {mapping->getReference(), DataType::NUMERIC,
+                        std::to_string(
+                          more_modbus::DataParsers::registersToFloat(bytes, more_modbus::DataParsers::Endian::BIG))};
+            case more_modbus::OperationType::MERGE_FLOAT_LITTLE_ENDIAN:
+                return {mapping->getReference(), DataType::NUMERIC,
+                        std::to_string(
+                          more_modbus::DataParsers::registersToFloat(bytes, more_modbus::DataParsers::Endian::LITTLE))};
+            default:
+                return {"", DataType::NUMERIC, ""};
+            }
         case more_modbus::OutputType::STRING:
             switch (mapping->getOperationType())
             {
@@ -736,5 +762,4 @@ void ModbusBridge::handleSafeModeValueReading(const std::string& deviceKey, cons
     m_safeModeMappingByReference[deviceKey + SEPARATOR + ref] = value;
     m_safeModePersistence->storeValue(deviceKey + SEPARATOR + ref, value);
 }
-}    // namespace modbus
-}    // namespace wolkabout
+}    // namespace wolkabout::modbus

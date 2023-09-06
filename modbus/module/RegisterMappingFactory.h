@@ -19,9 +19,7 @@
 
 #include "modbus/model/ModuleMapping.h"
 
-namespace wolkabout
-{
-namespace modbus
+namespace wolkabout::modbus
 {
 /**
  * @brief Collection of method that create RegisterMappings for the MoreModbus library
@@ -37,7 +35,6 @@ public:
      */
     static std::shared_ptr<more_modbus::RegisterMapping> fromJSONMapping(const ModuleMapping& jsonMapping);
 };
-}    // namespace modbus
-}    // namespace wolkabout
+}    // namespace wolkabout::modbus
 
 #endif    // WOLKGATEWAYMODBUSMODULE_REGISTERMAPPINGFACTORY_H

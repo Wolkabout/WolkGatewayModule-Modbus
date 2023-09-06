@@ -17,7 +17,7 @@
 #include "modbus/model/ModuleConfiguration.h"
 
 #include "core/utilities/FileSystemUtils.h"
-#include "core/utilities/nlohmann/json.hpp"
+#include <nlohmann/json.hpp>
 
 namespace wolkabout
 {

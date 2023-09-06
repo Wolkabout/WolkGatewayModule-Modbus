@@ -36,6 +36,9 @@
 #include <thread>
 #include <vector>
 
+using namespace wolkabout;
+using namespace wolkabout::legacy;
+
 namespace wolkabout
 {
 namespace more_modbus
@@ -335,6 +338,7 @@ private:
     std::map<std::string, std::chrono::milliseconds> m_repeatedWriteMappingByReference;
     std::map<std::string, std::string> m_safeModeMappingByReference;
     std::map<std::string, MappingType> m_registerMappingTypeByReference;
+    std::map<std::string, bool> m_autoReadByReference;
 
     // Store connectivity status
     ConnectivityStatus m_connectivityStatus;
