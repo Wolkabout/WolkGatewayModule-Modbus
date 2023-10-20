@@ -3,7 +3,9 @@ DH_VERBOSE = 1
 
 %:
 	dh $@ --builddirectory=out
+override_dh_auto_configure:
+	dh_auto_configure -- -DCMAKE_INSTALL_PREFIX=/opt/wolkabout/module-modbus/
 override_dh_auto_clean:
 override_dh_auto_test:
 override_dh_shlibdeps:
-	dh_shlibdeps -l$(shell pwd)/out/lib
+	dh_shlibdeps -l$(shell pwd)/out/lib -l$(shell pwd)/debian/wolkgatewaymodule-modbus/opt/wolkabout/module-modbus/lib
