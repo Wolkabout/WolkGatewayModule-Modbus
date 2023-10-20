@@ -20,8 +20,8 @@
 
 [Service]
  Type=idle
- WorkingDirectory=/opt/wolkabout/modbus-module/bin
- ExecStart=/opt/wolkabout/modbus-module/bin/ModbusModule /etc/modbusModule/moduleConfiguration.json /etc/modbusModule/devicesConfiguration.json
+ WorkingDirectory=/opt/wolkabout/module-modbus/bin
+ ExecStart=/opt/wolkabout/module-modbus/bin/ModbusModule /etc/modbusModule/moduleConfiguration.json /etc/modbusModule/devicesConfiguration.json
  Restart=always
 
 [Install]
