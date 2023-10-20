@@ -1,6 +1,5 @@
-wolkgatewaymodule-modbus (1.2.0) stable; urgency=medium
+wolkgatewaymodule-modbus (1.2.1) stable; urgency=medium
 
-    * Added `autoLocalUpdate` field for mappings that allows the mapping to be local copy of the value to be updated immediately. Default is set to `false`.
-    * Added `autoReadAfterWrite` field for mappings that allows the mapping to be automatically read right after writing to it. Default is set to `true`.
+    * Store the application/library files in separated folder from the rest of the software.
 
- -- Wolkabout ELab <elab@wolkabout.com>  Wed, 6 Sep 2023 00:00:00 +0100
+ -- Wolkabout ELab <elab@wolkabout.com>  Fri, 20 Oct 2023 00:00:00 +0100
