@@ -48,6 +48,11 @@ using RegistrationDataMap = std::map<std::string, std::unique_ptr<DeviceRegistra
 using DeviceMap = std::map<std::uint16_t, std::unique_ptr<Device>>;
 using DeviceTypeMap = std::map<std::string, std::vector<std::uint16_t>>;
 
+namespace
+{
+const auto LOG_FILE = "/var/log/modbusModule/wolkgatewaymodule-modbus.log";
+}
+
 RegistrationDataMap generateRegistrationData(const DevicesConfiguration& devicesConfiguration)
 {
     auto templates = RegistrationDataMap{};
@@ -173,16 +178,53 @@ private:
     bool m_registered;
 };
 
+wolkabout::legacy::LogLevel parseLogLevel(const std::string& levelStr)
+{
+    const std::string str = wolkabout::legacy::StringUtils::toUpperCase(levelStr);
+    const auto logLevel = [&]() -> wolkabout::legacy::LogLevel {
+        if (str == "TRACE")
+            return wolkabout::legacy::LogLevel::TRACE;
+        else if (str == "DEBUG")
+            return wolkabout::legacy::LogLevel::DEBUG;
+        else if (str == "INFO")
+            return wolkabout::legacy::LogLevel::INFO;
+        else if (str == "WARN")
+            return wolkabout::legacy::LogLevel::WARN;
+        else if (str == "ERROR")
+            return wolkabout::legacy::LogLevel::ERROR;
+
+        throw std::logic_error("Unable to parse log level.");
+    }();
+
+    return logLevel;
+}
+
 int main(int argc, char** argv)
 {
-    // Setup logger
-    Logger::init(LogLevel::TRACE, Logger::Type::CONSOLE);
     if (argc < 3)
     {
         LOG(ERROR) << "WolkGatewayModbusModule Application: Usage -  " << argv[0]
-                   << " [moduleConfigurationFilePath] [devicesConfigurationFilePath]";
+                   << " [moduleConfigurationFilePath] [devicesConfigurationFilePath] [logLevel]";
         return 1;
     }
+
+    // Setup logger
+    const auto level = [&] {
+        if (argc > 3)
+        {
+            const std::string logLevelStr{argv[3]};
+            try
+            {
+                return parseLogLevel(logLevelStr);
+            }
+            catch (std::logic_error& e)
+            {
+                return LogLevel::INFO;
+            }
+        }
+        return LogLevel::INFO;
+    }();
+    Logger::init(level, Logger::Type::CONSOLE | Logger::Type::FILE, LOG_FILE);
 
     // Parse file passed in first arg - module configuration JSON file
     auto moduleConfiguration = ModuleConfiguration{JsonReaderParser::readFile(argv[1])};
