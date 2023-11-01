@@ -5,6 +5,9 @@
 
 WolkGateway module for connecting Modbus devices to WolkAbout IoT Platform by communicating with WolkGateway.
 
+**Version 1.3.0**
+    - [FEATURE] - Implement logging: change log level as argument and log file at '/var/log/modbusModule/'
+
 **Version 1.2.1**
     - [IMPROVEMENT] - Store the application/library files in separated folder from the rest of the software.
 
