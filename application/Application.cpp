@@ -48,6 +48,11 @@ using RegistrationDataMap = std::map<std::string, std::unique_ptr<DeviceRegistra
 using DeviceMap = std::map<std::uint16_t, std::unique_ptr<Device>>;
 using DeviceTypeMap = std::map<std::string, std::vector<std::uint16_t>>;
 
+namespace
+{
+const auto LOG_FILE = "/var/log/modbusModule/wolkgatewaymodule-modbus.log";
+}
+
 RegistrationDataMap generateRegistrationData(const DevicesConfiguration& devicesConfiguration)
 {
     auto templates = RegistrationDataMap{};
@@ -219,7 +224,7 @@ int main(int argc, char** argv)
         }
         return LogLevel::INFO;
     }();
-    Logger::init(level, Logger::Type::CONSOLE);
+    Logger::init(level, Logger::Type::CONSOLE | Logger::Type::FILE, LOG_FILE);
 
     // Parse file passed in first arg - module configuration JSON file
     auto moduleConfiguration = ModuleConfiguration{JsonReaderParser::readFile(argv[1])};
