@@ -74,32 +74,23 @@ std::pair<DeviceMap, DeviceTypeMap> generateDevices(const ModuleConfiguration& m
     // We need to check, in the SERIAL/RTU, that all devices have a slave address
     // and that they're different from one another. In TCP/IP mode, we can have only
     // one device, so we need to check for that (and assign it a slaveAddress, because -1 is an invalid address).
-    auto assigningSlaveAddress = std::uint16_t{1};
 
     // Go through the devices from the config
     for (const auto& deviceInformation : devicesConfiguration.getDevices())
     {
         // Check the slave address
         auto& info = *deviceInformation.second;
-        if (moduleConfiguration.getConnectionType() == ModuleConfiguration::ConnectionType::SERIAL_RTU)
+        // If it doesn't at all have a slaveAddress or if the slaveAddress is already occupied
+        // device is not valid.
+        if (info.getSlaveAddress() == 0)
         {
-            // If it doesn't at all have a slaveAddress or if the slaveAddress is already occupied
-            // device is not valid.
-            if (info.getSlaveAddress() == 0)
-            {
-                LOG(WARN) << "Device " << info.getName() << " is missing a slave adress. Ignoring device...";
-                continue;
-            }
-            const auto deviceIt = deviceMap.find(info.getSlaveAddress());
-            if (deviceIt != deviceMap.cend())
-            {
-                LOG(WARN) << "Device " << info.getName() << " has a conflicting slave adress. Ignoring device...";
-            }
+            LOG(WARN) << "Device " << info.getName() << " is missing a slave address. Ignoring device...";
+            continue;
         }
-        else
+        const auto deviceIt = deviceMap.find(info.getSlaveAddress());
+        if (deviceIt != deviceMap.cend())
         {
-            // If it's an TCP/IP device, assign it the next free slaveAddress.
-            info.setSlaveAddress(assigningSlaveAddress++);
+            LOG(WARN) << "Device " << info.getName() << " has a conflicting slave address. Ignoring device...";
         }
 
         // Assign the DeviceRegistrationData
