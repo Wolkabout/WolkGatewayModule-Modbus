@@ -2,6 +2,7 @@
 
 if [ "$1" = "purge" ] ; then
 	rm -rf /etc/modbusModule
+	rm -rf /var/log/modbusModule
 fi
 
 #DEBHELPER#

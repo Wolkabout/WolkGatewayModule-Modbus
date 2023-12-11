@@ -14,3 +14,5 @@ release*/
 *.files
 *.includes
 *.user
+
+docs/

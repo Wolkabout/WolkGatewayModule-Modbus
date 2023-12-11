@@ -5,6 +5,36 @@
 
 WolkGateway module for connecting Modbus devices to WolkAbout IoT Platform by communicating with WolkGateway.
 
+**Version 1.3.1**
+    - [FEATURE] - Using slave address for Modbus TCP
+
+**Version 1.3.0**
+    - [FEATURE] - Implement logging: change log level as argument and log file at '/var/log/modbusModule/'
+
+**Version 1.2.1**
+    - [IMPROVEMENT] - Store the application/library files in separated folder from the rest of the software.
+
+**Version 1.2.0**
+    - [FEATURE] - Added `autoLocalUpdate` field for mappings that allows the mapping to be local copy of the value to be updated immediately. Default is set to `false`.
+    - [FEATURE] - Added `autoReadAfterWrite` field for mappings that allows the mapping to be automatically read right after writing to it. Default is set to `true`.
+
+**Version 1.1.1**
+	- [BUGFIX] - Fixed the issue that was causing mappings to not be interpreted the right way when a value is updated, since the type info gets erased when copying mappings.
+	- [BUGFIX] - Fixed presenting of the value on the platform since mappings value interpretation was completely avoided when publishing readings.
+
+**Version 1.1.0**
+	- [BUGFIX] - Copying the mappings is now properly done.
+
+**Version 1.0.2**
+    - [IMPROVEMENT] - Added a new version of `MoreModbus` that introduces a lot of small improvements.
+
+**Version 1.0.1**
+	- [IMPROVEMENT] - Made the module listen to the platform status message, and able to start the routine by receiving `CONNECTED`.
+
+**Version 1.0.0**
+    - [REWORK] - Complete rework of the application. Using new WolkConnect-Cpp 5.0.0+ that allows WolkAbout IoT Platform 22.GA connectivity.
+    - [IMPROVEMENT] - Added the docker images to be built when running the `tools/make_release.sh` script.
+
 **Version 0.8.6**
     - [BUGFIX] - Updated to newest WolkSDK-Cpp.
 

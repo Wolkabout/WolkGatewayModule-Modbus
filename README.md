@@ -140,7 +140,17 @@ Single mapping includes one or more Modbus registers that produce a single senso
 device, on the platform. They're characterized by a name, and a reference key, used to identify them, by their register
 type (necessary), data type (necessary), operation type (necessary for some output types), and mapping type.
 
-Register types:
+There are optional features you can enable for mappings, such as:
+
+- Unit type
+- Deadband and Frequency filtering
+- Repeated write
+- Default value
+- Safe Mode value
+- AutoLocalUpdate toggle
+- AutoReadAfterWrite toggle
+
+#### Register types:
 
 * Read & Write:
     - `COIL`
@@ -149,30 +159,66 @@ Register types:
     - `INPUT_REGISTER`
     - `INPUT_CONTACT`
 
-* Data types:
+#### Data types:
+
     - UINT16/INT16
     - BOOL
     - UINT32/INT32 (with merge operations)
     - FLOAT (with merge operation)
     - STRING (with stringify operations)
 
-* Operation types:
+#### Operation types:
+
     - `MERGE_BIG_ENDIAN` or `MERGE_LITTLE_ENDIAN` (in combination with `"dataType": "UINT32/INT32"`)
-    - `MERGE_FLOAT` (in combination with `"dataType": "FLOAT"`)
+    - `MERGE_FLOAT_BIG_ENDIAN` or `MERGE_FLOAT_LITTLE_ENDIAN` (in combination with `"dataType": "FLOAT"`)
     - `TAKE_BIT` (in combination with `"dataType": "BOOL"`)
-    - `STRINGIFY_ASCII` or `STRINGIFY_UNICODE` (in combination with `"dataType": "STRING"`)
+    - `STRINGIFY_ASCII_BIG_ENDIAN`, `STRINGIFY_ASCII_LITTLE_ENDIAN`, `STRINGIFY_UNICODE_BIG_ENDIAN` or `STRINGIFY_UNICODE_LITTLE_ENDIAN` (in combination with `"dataType": "STRING"`)
 
-Mappings are by default registered as:
+#### Unit types:
 
-- Sensors for read only types
-- Actuator for read & write types
+You can add a field `"unit": "CELSIUS"` to a mapping that will register the feed on the platform with the GUID of the
+unit on the platform.
 
-You can override this behaviour by adding a field to the mapping, stating one of the next types (`"mappingType"`):
+#### Deadband and frequency filters:
 
-- `SENSOR`
-- `ACTUATOR`
-- `ALARM` - only for `INPUT_CONTACT`
-- `CONFIGURATION` - only for `COIL` and `HOLDING_REGISTER_ACTUATOR`
+You can add fields `"deadBandFilter":0.1` and `"frequencyFilterValue":1` to add a deadband and frequency filter to your
+mappings.
+
+#### Repeated write
+
+If this feature is enabled, it will write overwrite the value in the register after some time even if the value has not
+changed.
+You can add a field `"repeat":500` and the value will be overwritten every 500ms.
+
+#### Default value
+
+If you want to set a value that will be written in as soon as the application launches, write it in as the default
+value.
+You can add a field `"defaultValue":123` and it will be written in when the application launches.
+
+#### Safe Mode value
+
+If you want a value written into a mapping when the gateway and the module lose connectivity with the platform, you can
+write the value here.
+You can add a field `"safeMode":123` and it will be written in when the communication with the platform is lost.
+
+#### AutoLocalUpdate
+
+The software keeps a local copy of the value of all mappings, and the message to the platform about updates is sent when
+a new value gets read from the modbus register. By default actuation will write into the register, but not in the local
+copy,
+so the value will be read in the next read cycle and sent to the platform.
+If you want the local copy of mapping values to be updated, set the `"autoLocalUpdate":true` for the mapping. This will
+result
+in a message about the feed to never be sent to the platform, and the platform will just implicitly take it as the
+actuation was successful.
+
+#### AutoReadAfterWrite
+
+On actuation, the module will write the value directly into the registers as needed. But it will also read the same
+registers, and notify the platform of value changes if detected - updating the local copy of the values as well.
+If you want this behavior to be turned off, set the `"autoReadAfterWrite":false` for the mapping. This will disable
+the automatic read after writing into a mapping.
 
 ```json5
 {
@@ -213,8 +259,7 @@ You can override this behaviour by adding a field to the mapping, stating one of
       "reference": "mappingReference3",
       "address": 1,
       "registerType": "INPUT_CONTACT",
-      "dataType": "BOOL",
-      "mappingType": "ALARM"
+      "dataType": "BOOL"
       // This is where for the first time, we override the default Mapping type
     },
     {
@@ -223,8 +268,7 @@ You can override this behaviour by adding a field to the mapping, stating one of
       "address": 2,
       "registerType": "HOLDING_REGISTER",
       "operationType": "MERGE_BIG_ENDIAN",
-      "dataType": "UINT32",
-      "mappingType": "CONFIGURATION"
+      "dataType": "UINT32"
     },
     {
       "name": "mappingReference5",
@@ -242,7 +286,9 @@ You can override this behaviour by adding a field to the mapping, stating one of
       "addressCount": 10,
       "registerType": "HOLDING_REGISTER",
       "dataType": "STRING",
-      "operationType": "STRINGIFY_ASCII"
+      "operationType": "STRINGIFY_ASCII_BIG_ENDIAN",
+      "autoLocalUpdate": true,
+      "autoReadAfterWrite": false
     },
     {
       "name": "mappingReference7",
