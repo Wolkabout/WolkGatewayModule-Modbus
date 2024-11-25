@@ -8,5 +8,5 @@ Standards-Version: 4.1.2
 Package: wolkgatewaymodule-modbus
 Architecture: any
 Section: main
-Depends: ${shlibs:Depends}, ${misc:Depends}, libssl1.0.0 | libssl1.1
+Depends: ${shlibs:Depends}, ${misc:Depends}, libssl1.0.0 | libssl1.1, mosquitto
 Description: WolkGateway module used to connect Modbus enabled device to Wolkabout IoT Platform.
